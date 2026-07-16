@@ -1,0 +1,33 @@
+{
+  "name": "opsrabbit-plugin-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Public SDK and developer CLI for OpsRabbit plugins",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "scripts": {
+    "build": "pnpm --workspace-concurrency=1 -r build",
+    "check": "pnpm boundary:check && pnpm --filter @opsrabbit/plugin-sdk check && pnpm --filter @opsrabbit/plugin-sdk build && pnpm --filter @opsrabbit/create-plugin check",
+    "test": "pnpm --workspace-concurrency=1 -r test",
+    "test:coverage": "pnpm --workspace-concurrency=1 -r test:coverage",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "quality": "pnpm format:check && pnpm lint && pnpm check && pnpm test:coverage && pnpm build && pnpm packages:verify && pnpm starters:verify",
+    "boundary:check": "node scripts/verify-package-boundaries.mjs",
+    "packages:verify": "node scripts/verify-packed-packages.mjs",
+    "starters:verify": "node scripts/verify-generated-starters.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.29.0",
+    "@types/node": "24.0.3",
+    "@vitest/coverage-v8": "3.2.4",
+    "eslint": "9.29.0",
+    "prettier": "3.5.3",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.34.1",
+    "vitest": "3.2.4"
+  }
+}

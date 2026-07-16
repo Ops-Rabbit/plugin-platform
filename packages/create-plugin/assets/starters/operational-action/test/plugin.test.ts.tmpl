@@ -1,0 +1,21 @@
+import { createTestContext } from '@opsrabbit/plugin-sdk/testing';
+import { describe, expect, it } from 'vitest';
+import { plugin } from '../src/index.js';
+
+describe('{{id}}', () => {
+  it('records the authorized actor', async () => {
+    const context = createTestContext({ actor: { id: 'operator-a', role: 'operator' } });
+    await expect(plugin.actions?.[0]?.run({ itemId: 'inc-1', reason: 'Investigating' }, context))
+      .resolves.toEqual({ itemId: 'inc-1', acknowledgedBy: 'operator-a' });
+  });
+
+  it('rejects missing justification', async () => {
+    await expect(plugin.actions?.[0]?.run({ itemId: 'inc-1', reason: '' }, createTestContext()))
+      .rejects.toThrow('itemId and reason are required');
+  });
+
+  it('rejects a missing item id', async () => {
+    await expect(plugin.actions?.[0]?.run({ itemId: '', reason: 'Investigating' }, createTestContext()))
+      .rejects.toThrow('itemId and reason are required');
+  });
+});

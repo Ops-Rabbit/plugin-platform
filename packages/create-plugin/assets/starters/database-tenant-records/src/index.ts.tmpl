@@ -1,0 +1,27 @@
+import { definePlugin } from '@opsrabbit/plugin-sdk';
+
+export const plugin = definePlugin({
+  manifest: {
+    id: '{{id}}',
+    name: '{{displayName}}',
+    version: '0.1.0',
+    description: '{{displayName}} managed tenant records',
+    apiVersion: '1.0',
+    main: './dist/index.js',
+    capabilities: ['tools', 'database.tenantRecords']
+  },
+  tools: [
+    {
+      id: 'save-note',
+      description: 'Stores a note through the host-managed tenant record broker.',
+      requiredPermission: 'write',
+      async run(input: { id: string; text: string }, context) {
+        if (!context.tenantRecords) throw new Error('Tenant record capability is unavailable');
+        await context.tenantRecords.put('notes', input.id, { text: input.text });
+        return { id: input.id };
+      }
+    }
+  ]
+});
+
+export default plugin;

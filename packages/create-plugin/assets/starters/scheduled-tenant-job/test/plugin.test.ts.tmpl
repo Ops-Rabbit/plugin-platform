@@ -1,0 +1,19 @@
+import { createTestContext } from '@opsrabbit/plugin-sdk/testing';
+import { describe, expect, it } from 'vitest';
+import { plugin } from '../src/index.js';
+
+describe('{{id}}', () => {
+  it('uses the invocation tenant', async () => {
+    const context = createTestContext({ tenantId: 'tenant-job' });
+    await plugin.scheduledJobs?.[0]?.run(context);
+    expect(context.logs[0]?.fields).toEqual({ tenantId: 'tenant-job' });
+  });
+
+  it('stops before work when cancelled', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const context = createTestContext({ signal: controller.signal });
+    await plugin.scheduledJobs?.[0]?.run(context);
+    expect(context.logs).toEqual([]);
+  });
+});

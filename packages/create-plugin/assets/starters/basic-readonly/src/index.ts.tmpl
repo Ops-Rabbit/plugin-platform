@@ -1,0 +1,26 @@
+import { definePlugin } from '@opsrabbit/plugin-sdk';
+
+export const plugin = definePlugin({
+  manifest: {
+    id: '{{id}}',
+    name: '{{displayName}}',
+    version: '0.1.0',
+    description: '{{displayName}} read-only operational tool',
+    apiVersion: '1.0',
+    main: './dist/index.js',
+    capabilities: ['tools']
+  },
+  tools: [
+    {
+      id: 'status-summary',
+      description: 'Returns a tenant-scoped status summary.',
+      requiredPermission: 'read',
+      async run(input: { service?: string }, context) {
+        context.logger.info('status summary requested', { service: input.service ?? 'all' });
+        return { tenantId: context.tenantId, service: input.service ?? 'all', status: 'unknown' };
+      }
+    }
+  ]
+});
+
+export default plugin;

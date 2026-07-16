@@ -1,0 +1,17 @@
+import { createTestContext } from '@opsrabbit/plugin-sdk/testing';
+import { describe, expect, it } from 'vitest';
+import { plugin } from '../src/index.js';
+
+describe('{{id}}', () => {
+  it('returns only the active tenant context', async () => {
+    const context = createTestContext({ tenantId: 'tenant-a' });
+    const result = await plugin.tools?.[0]?.run({ service: 'api' }, context);
+    expect(result).toEqual({ tenantId: 'tenant-a', service: 'api', status: 'unknown' });
+    expect(context.logs).toHaveLength(1);
+  });
+
+  it('uses an explicit all-services default', async () => {
+    const result = await plugin.tools?.[0]?.run({}, createTestContext({ tenantId: 'tenant-b' }));
+    expect(result).toEqual({ tenantId: 'tenant-b', service: 'all', status: 'unknown' });
+  });
+});

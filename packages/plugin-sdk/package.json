@@ -1,0 +1,49 @@
+{
+  "name": "@opsrabbit/plugin-sdk",
+  "version": "0.1.0",
+  "description": "Public contracts, validation, and testing utilities for OpsRabbit plugins",
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ops-Rabbit/plugin-platform.git",
+    "directory": "packages/plugin-sdk"
+  },
+  "homepage": "https://github.com/Ops-Rabbit/plugin-platform#readme",
+  "bugs": "https://github.com/Ops-Rabbit/plugin-platform/issues",
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "default": "./dist/testing/index.js"
+    },
+    "./packaging": {
+      "types": "./dist/packaging/index.d.ts",
+      "default": "./dist/packaging/index.js"
+    },
+    "./manifest-schema": "./schemas/opsrabbit-plugin.schema.json"
+  },
+  "scripts": {
+    "build": "node ../../scripts/clean-directory.mjs dist && tsc -p tsconfig.build.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --maxWorkers=1 --no-file-parallelism",
+    "test:coverage": "vitest run --coverage --maxWorkers=1 --no-file-parallelism"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

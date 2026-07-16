@@ -1,0 +1,19 @@
+import type { TenantRecordStore } from '@opsrabbit/plugin-sdk';
+import { createTestContext } from '@opsrabbit/plugin-sdk/testing';
+import { describe, expect, it, vi } from 'vitest';
+import { plugin } from '../src/index.js';
+
+describe('{{id}}', () => {
+  it('uses only the host-provided tenant record broker', async () => {
+    const put = vi.fn<TenantRecordStore['put']>();
+    const records: TenantRecordStore = { get: vi.fn(), put, delete: vi.fn() };
+    const context = createTestContext({ tenantId: 'tenant-db', tenantRecords: records });
+    await plugin.tools?.[0]?.run({ id: 'note-1', text: 'hello' }, context);
+    expect(put).toHaveBeenCalledWith('notes', 'note-1', { text: 'hello' });
+  });
+
+  it('fails closed when the broker is unavailable', async () => {
+    await expect(plugin.tools?.[0]?.run({ id: 'note-1', text: 'hello' }, createTestContext()))
+      .rejects.toThrow('Tenant record capability is unavailable');
+  });
+});

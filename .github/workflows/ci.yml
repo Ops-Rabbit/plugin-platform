@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm quality
+      - name: Pack release candidates
+        run: |
+          mkdir -p release-candidates
+          pnpm --dir packages/plugin-sdk pack --pack-destination "$GITHUB_WORKSPACE/release-candidates"
+          pnpm --dir packages/create-plugin pack --pack-destination "$GITHUB_WORKSPACE/release-candidates"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: npm-release-candidates
+          path: release-candidates/*.tgz
+          if-no-files-found: error
+          retention-days: 7

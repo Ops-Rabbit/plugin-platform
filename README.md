@@ -23,8 +23,9 @@ npm run plugin:check
 npm run plugin:pack
 ```
 
-Starters cover a read-only tool, controlled operational action, tenant-scoped
-scheduled job, and host-brokered tenant records. The generated ZIP is intended
+Starters are executable reference plugins covering a read-only tool, controlled
+operational action, tenant-scoped scheduled job, and host-brokered tenant
+records. Run `opsrabbit-plugin examples list` to enumerate them. The generated ZIP is intended
 for quarantine and administrator review in the OpsRabbit Plugins UI.
 
 ## Trust boundary
@@ -36,6 +37,10 @@ runner broker implementation, deployment topology, or capability-token secrets.
 The SDK describes requests and public contracts. It does not grant authority.
 The OpsRabbit host remains responsible for role and resource authorization,
 tenant isolation, capability enforcement, audit, approval, and isolated execution.
+
+`opsrabbit.plugin.json` is authoritative. The compiled entry registers behavior
+only, and the host rejects identifiers or security metadata that do not exactly
+match the manifest.
 
 ## Develop the platform
 

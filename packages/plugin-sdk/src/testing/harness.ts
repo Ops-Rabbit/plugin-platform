@@ -4,6 +4,7 @@ import type {
   PluginLogger,
   TenantRecordStore,
 } from "../contracts/contexts.js";
+import type { JsonValue } from "../contracts/manifest.js";
 
 export interface TestLogEntry {
   level: "debug" | "info" | "warn" | "error";
@@ -21,16 +22,18 @@ export function createTestContext(
     actor?: PluginActor;
     signal?: AbortSignal;
     tenantRecords?: TenantRecordStore;
+    settings?: Readonly<Record<string, JsonValue>>;
   } = {},
 ): TestContext {
   const logs: TestLogEntry[] = [];
   const logger = createCapturingLogger(logs);
   return {
     tenantId: options.tenantId ?? "tenant-test",
-    actor: options.actor ?? { id: "user-test", role: "admin" },
+    actor: options.actor ?? { id: "user-test", role: "admin", kind: "user" },
     signal: options.signal ?? new AbortController().signal,
     logger,
     logs,
+    settings: options.settings ?? {},
     ...(options.tenantRecords === undefined
       ? {}
       : { tenantRecords: options.tenantRecords }),

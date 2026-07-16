@@ -1,20 +1,13 @@
 import { definePlugin } from '@opsrabbit/plugin-sdk';
 
 export const plugin = definePlugin({
-  manifest: {
-    id: '{{id}}',
-    name: '{{displayName}}',
-    version: '0.1.0',
-    description: '{{displayName}} controlled operational action',
-    apiVersion: '1.0',
-    main: './dist/index.js',
-    capabilities: ['actions']
-  },
   actions: [
     {
       id: 'acknowledge',
+      title: 'Acknowledge item',
       description: 'Acknowledges an operational item after host authorization.',
-      requiredPermission: 'write',
+      risk: 'write',
+      requiredRole: 'operator',
       async run(input: { itemId: string; reason: string }, context) {
         if (!input.itemId || !input.reason.trim()) throw new Error('itemId and reason are required');
         context.logger.info('item acknowledged', { itemId: input.itemId, actorId: context.actor.id });

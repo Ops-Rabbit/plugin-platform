@@ -9,6 +9,8 @@ CLI version `{{cliVersion}}` and SDK range `{{sdkVersion}}`.
 - Treat tenant ids, actor ids, record ids, and secret references as opaque values.
 - Declare every capability used by registered tools, actions, routes, widgets,
   jobs, or tenant-record storage.
+- Keep `opsrabbit.plugin.json` authoritative. Do not duplicate identity, version,
+  or capability declarations in runtime source.
 - Never bypass host authorization, capability brokers, audit, cancellation, or
   resource limits.
 - Never embed credentials, database URLs, internal OpsRabbit endpoints, or

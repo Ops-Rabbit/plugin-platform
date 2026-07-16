@@ -1,9 +1,5 @@
 {
-  "id": "{{id}}",
-  "name": "{{displayName}}",
-  "version": "0.1.0",
-  "description": "{{displayName}} read-only operational tool",
-  "apiVersion": "1.0",
-  "main": "./dist/index.js",
-  "capabilities": ["tools"]
+  "id": "{{id}}", "name": "{{displayName}}", "version": "0.1.0",
+  "description": "{{displayName}} read-only operational tool", "apiVersion": "1.0", "main": "./dist/index.js",
+  "capabilities": { "tools": [{ "id": "status-summary", "risk": "read", "audience": "all", "requiredPermission": "read" }] }
 }

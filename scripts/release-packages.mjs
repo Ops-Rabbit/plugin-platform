@@ -1,6 +1,7 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 const root = resolve(import.meta.dirname, "..");
 const releaseDirectory = resolve(root, ".release-packages");
@@ -16,7 +17,7 @@ for (const directory of packages) {
   const manifest = JSON.parse(
     await readFile(resolve(root, directory, "package.json"), "utf8"),
   );
-  if (versionExists(manifest.name, manifest.version)) {
+  if (await versionExists(manifest.name, manifest.version)) {
     process.stdout.write(
       `${manifest.name}@${manifest.version} already exists; skipping.\n`,
     );
@@ -44,21 +45,29 @@ for (const directory of packages) {
     cwd: root,
     stdio: "inherit",
   });
-  waitForVersion(manifest.name, manifest.version);
+  await waitForVersion(manifest.name, manifest.version);
 }
 
-function versionExists(name, version) {
-  return (
-    spawnSync("npm", ["view", `${name}@${version}`, "version"], {
-      stdio: "ignore",
-    }).status === 0
+async function versionExists(name, version) {
+  const encodedName = name.replace("/", "%2f");
+  const response = await fetch(
+    `https://registry.npmjs.org/${encodedName}/${encodeURIComponent(version)}?cache=${Date.now()}`,
+    { headers: { accept: "application/json", "cache-control": "no-cache" } },
   );
+  if (response.status === 404) return false;
+  if (!response.ok) {
+    throw new Error(
+      `npm registry returned ${response.status} while checking ${name}@${version}.`,
+    );
+  }
+  const metadata = await response.json();
+  return metadata.name === name && metadata.version === version;
 }
 
-function waitForVersion(name, version) {
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    if (versionExists(name, version)) return;
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000);
+async function waitForVersion(name, version) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    if (await versionExists(name, version)) return;
+    await delay(5000);
   }
   throw new Error(`${name}@${version} did not become visible in the registry.`);
 }

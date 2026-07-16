@@ -1,6 +1,9 @@
+import type { JsonValue } from "./manifest.js";
+
 export interface PluginActor {
   readonly id: string;
   readonly role: "admin" | "operator" | "viewer" | "system";
+  readonly kind: "user" | "system";
 }
 
 export interface PluginInvocationContext {
@@ -8,7 +11,13 @@ export interface PluginInvocationContext {
   readonly actor: PluginActor;
   readonly signal: AbortSignal;
   readonly logger: PluginLogger;
+  readonly settings: Readonly<Record<string, JsonValue>>;
   readonly tenantRecords?: TenantRecordStore;
+}
+
+export interface PluginRouteContext extends PluginInvocationContext {
+  readonly path: string;
+  readonly query: Readonly<Record<string, string>>;
 }
 
 export interface PluginLogger {
@@ -19,7 +28,14 @@ export interface PluginLogger {
 }
 
 export interface TenantRecordStore {
-  get<T>(collection: string, id: string): Promise<T | undefined>;
-  put<T>(collection: string, id: string, value: T): Promise<void>;
+  get<T extends JsonValue>(
+    collection: string,
+    id: string,
+  ): Promise<T | undefined>;
+  put<T extends JsonValue>(
+    collection: string,
+    id: string,
+    value: T,
+  ): Promise<void>;
   delete(collection: string, id: string): Promise<boolean>;
 }

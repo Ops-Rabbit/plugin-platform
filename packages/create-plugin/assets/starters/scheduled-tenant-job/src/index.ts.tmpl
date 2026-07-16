@@ -1,20 +1,12 @@
 import { definePlugin } from '@opsrabbit/plugin-sdk';
 
 export const plugin = definePlugin({
-  manifest: {
-    id: '{{id}}',
-    name: '{{displayName}}',
-    version: '0.1.0',
-    description: '{{displayName}} tenant-scoped scheduled job',
-    apiVersion: '1.0',
-    main: './dist/index.js',
-    capabilities: ['scheduledJobs']
-  },
   scheduledJobs: [
     {
       id: 'tenant-health-snapshot',
       description: 'Captures a health snapshot for the invocation tenant.',
-      defaultSchedule: '0 */6 * * *',
+      intervalSeconds: 21600,
+      timeoutSeconds: 60,
       async run(context) {
         if (context.signal.aborted) return;
         context.logger.info('tenant health snapshot completed', { tenantId: context.tenantId });

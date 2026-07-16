@@ -1,23 +1,31 @@
-import { isPluginCapability } from "../contracts/capabilities.js";
+import {
+  PLUGIN_PERMISSIONS,
+  PLUGIN_RISKS,
+  PLUGIN_ROLES,
+  PLUGIN_TOOL_AUDIENCES,
+  type PluginDeclaredCapabilities,
+} from "../contracts/capabilities.js";
 import type { ValidationIssue } from "../contracts/errors.js";
 import {
   PLUGIN_API_VERSION,
   type PluginManifest,
 } from "../contracts/manifest.js";
 
-const ID_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
-const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
-const ENTRY_PATTERN = /^\.\/dist\/[A-Za-z0-9._/-]+\.js$/;
-const ALLOWED_KEYS = new Set([
+const ID = /^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$/;
+const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const ENTRY = /^\.\/dist\/[A-Za-z0-9._/-]+\.js$/;
+const COLLECTION = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+const TOP_LEVEL = new Set([
   "id",
   "name",
   "version",
   "description",
   "apiVersion",
   "main",
-  "capabilities",
   "minimumOpsRabbitVersion",
   "publisher",
+  "settings",
+  "capabilities",
 ]);
 
 export interface ValidationResult<T> {
@@ -30,178 +38,448 @@ export function validateManifest(
   input: unknown,
 ): ValidationResult<PluginManifest> {
   const issues: ValidationIssue[] = [];
-  if (!isRecord(input)) {
+  if (!record(input))
     return {
       ok: false,
-      issues: [
-        { path: "$", code: "type", message: "Manifest must be an object." },
-      ],
+      issues: [issue("$", "type", "Manifest must be an object.")],
     };
-  }
-
-  for (const key of Object.keys(input)) {
-    if (!ALLOWED_KEYS.has(key)) {
-      issues.push({
-        path: `$.${key}`,
-        code: "unknown-property",
-        message: `Unknown manifest property: ${key}.`,
-      });
-    }
-  }
-
-  requireString(
-    input,
-    "id",
+  unknownKeys(input, TOP_LEVEL, "$", issues);
+  string(
+    input.id,
+    "$.id",
     issues,
-    (value) => ID_PATTERN.test(value),
-    "Use lowercase kebab-case.",
+    (v) => ID.test(v),
+    "Use lowercase letters, numbers, hyphens, or underscores.",
   );
-  requireString(input, "name", issues);
-  requireString(input, "description", issues);
-  maximumLength(input, "name", 100, issues);
-  maximumLength(input, "description", 500, issues);
-  requireString(
-    input,
-    "version",
+  string(input.name, "$.name", issues, undefined, "Name is required.", 100);
+  string(
+    input.description,
+    "$.description",
     issues,
-    (value) => VERSION_PATTERN.test(value),
+    undefined,
+    "Description is required.",
+    500,
+  );
+  string(
+    input.version,
+    "$.version",
+    issues,
+    (v) => VERSION.test(v),
     "Use semantic version x.y.z.",
   );
-  requireString(
-    input,
-    "main",
+  string(
+    input.main,
+    "$.main",
     issues,
-    isSafeEntry,
-    "Entry must be a relative compiled JavaScript path under ./dist/.",
+    safeEntry,
+    "Entry must be a safe relative JavaScript path under ./dist/.",
   );
-  if (input.minimumOpsRabbitVersion !== undefined) {
-    requireString(
-      input,
-      "minimumOpsRabbitVersion",
-      issues,
-      (value) => VERSION_PATTERN.test(value),
-      "minimumOpsRabbitVersion must use semantic version x.y.z.",
+  if (input.apiVersion !== PLUGIN_API_VERSION)
+    issues.push(
+      issue(
+        "$.apiVersion",
+        "unsupported",
+        `Supported plugin API version is ${PLUGIN_API_VERSION}.`,
+      ),
     );
-  }
-
-  if (input.apiVersion !== PLUGIN_API_VERSION) {
-    issues.push({
-      path: "$.apiVersion",
-      code: "unsupported",
-      message: `Supported plugin API version is ${PLUGIN_API_VERSION}.`,
-    });
-  }
-
-  if (!Array.isArray(input.capabilities) || input.capabilities.length === 0) {
-    issues.push({
-      path: "$.capabilities",
-      code: "required",
-      message: "Declare at least one capability.",
-    });
-  } else {
-    const seen = new Set<string>();
-    for (const [index, capability] of input.capabilities.entries()) {
-      if (typeof capability !== "string" || !isPluginCapability(capability)) {
-        issues.push({
-          path: `$.capabilities[${index}]`,
-          code: "unsupported",
-          message: `Unknown capability: ${String(capability)}.`,
-        });
-      } else if (seen.has(capability)) {
-        issues.push({
-          path: `$.capabilities[${index}]`,
-          code: "duplicate",
-          message: `Capability ${capability} is duplicated.`,
-        });
-      }
-      if (typeof capability === "string") seen.add(capability);
-    }
-  }
-  if (input.publisher !== undefined) validatePublisher(input.publisher, issues);
-
+  if (input.minimumOpsRabbitVersion !== undefined)
+    string(
+      input.minimumOpsRabbitVersion,
+      "$.minimumOpsRabbitVersion",
+      issues,
+      (v) => VERSION.test(v),
+      "Use semantic version x.y.z.",
+    );
+  validatePublisher(input.publisher, issues);
+  validateSettings(input.settings, issues);
+  validateCapabilities(input.capabilities, issues);
   return issues.length === 0
     ? { ok: true, value: input as unknown as PluginManifest, issues }
     : { ok: false, issues };
 }
 
-function isSafeEntry(value: string): boolean {
-  return (
-    ENTRY_PATTERN.test(value) &&
-    !value
-      .split("/")
-      .slice(1)
-      .some((segment) => segment === "." || segment === "..")
+function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
+  if (!record(value)) {
+    issues.push(
+      issue("$.capabilities", "type", "Capabilities must be an object."),
+    );
+    return;
+  }
+  const allowed = new Set([
+    "tools",
+    "actions",
+    "scheduledJobs",
+    "routes",
+    "widgets",
+    "tenantRecords",
+  ]);
+  unknownKeys(value, allowed, "$.capabilities", issues);
+  const capabilities = value as PluginDeclaredCapabilities;
+  namedArray(
+    capabilities.tools,
+    "tools",
+    issues,
+    ["id", "risk", "audience", "requiredPermission"],
+    (entry, path) => {
+      member(entry.risk, PLUGIN_RISKS, `${path}.risk`, issues);
+      optionalMember(
+        entry.audience,
+        PLUGIN_TOOL_AUDIENCES,
+        `${path}.audience`,
+        issues,
+      );
+      optionalMember(
+        entry.requiredPermission,
+        PLUGIN_PERMISSIONS,
+        `${path}.requiredPermission`,
+        issues,
+      );
+    },
   );
+  namedArray(
+    capabilities.actions,
+    "actions",
+    issues,
+    ["id", "risk", "requiredRole", "deploymentAdminOnly"],
+    (entry, path) => {
+      member(entry.risk, PLUGIN_RISKS, `${path}.risk`, issues);
+      member(entry.requiredRole, PLUGIN_ROLES, `${path}.requiredRole`, issues);
+      if (
+        entry.deploymentAdminOnly !== undefined &&
+        typeof entry.deploymentAdminOnly !== "boolean"
+      )
+        issues.push(
+          issue(
+            `${path}.deploymentAdminOnly`,
+            "type",
+            "deploymentAdminOnly must be boolean.",
+          ),
+        );
+    },
+  );
+  namedArray(capabilities.scheduledJobs, "scheduledJobs", issues, ["id"]);
+  namedArray(capabilities.widgets, "widgets", issues, ["id"]);
+  namedArray(
+    capabilities.routes,
+    "routes",
+    issues,
+    ["path", "requiredRole"],
+    (entry, path) => {
+      if (typeof entry.path !== "string" || !safeRoute(entry.path))
+        issues.push(
+          issue(
+            `${path}.path`,
+            "invalid",
+            "Route must begin with / and contain no traversal segments.",
+          ),
+        );
+      member(entry.requiredRole, PLUGIN_ROLES, `${path}.requiredRole`, issues);
+    },
+    "path",
+  );
+  if (capabilities.tenantRecords !== undefined) {
+    if (!record(capabilities.tenantRecords)) {
+      issues.push(
+        issue(
+          "$.capabilities.tenantRecords",
+          "type",
+          "tenantRecords must be an object.",
+        ),
+      );
+      return;
+    }
+    unknownKeys(
+      capabilities.tenantRecords as unknown as Record<string, unknown>,
+      new Set(["collections"]),
+      "$.capabilities.tenantRecords",
+      issues,
+    );
+    const collections = capabilities.tenantRecords?.collections;
+    if (!Array.isArray(collections) || collections.length === 0)
+      issues.push(
+        issue(
+          "$.capabilities.tenantRecords.collections",
+          "required",
+          "Declare at least one tenant-record collection.",
+        ),
+      );
+    else
+      uniqueStrings(
+        collections,
+        "$.capabilities.tenantRecords.collections",
+        issues,
+        COLLECTION,
+      );
+  }
+  const surfaceCount = [
+    capabilities.tools,
+    capabilities.actions,
+    capabilities.scheduledJobs,
+    capabilities.routes,
+    capabilities.widgets,
+  ].reduce((sum, entries) => sum + (entries?.length ?? 0), 0);
+  if (surfaceCount === 0 && !capabilities.tenantRecords)
+    issues.push(
+      issue("$.capabilities", "required", "Declare at least one capability."),
+    );
 }
 
-function maximumLength(
-  object: Record<string, unknown>,
-  key: string,
-  limit: number,
+function namedArray<T extends object>(
+  value: T[] | undefined,
+  section: string,
   issues: ValidationIssue[],
+  allowedKeys: string[],
+  validate?: (entry: T, path: string) => void,
+  key = "id",
 ): void {
-  const value = object[key];
-  if (typeof value === "string" && value.length > limit) {
-    issues.push({
-      path: `$.${key}`,
-      code: "too-long",
-      message: `${key} must be at most ${limit} characters.`,
-    });
+  if (value === undefined) return;
+  if (!Array.isArray(value) || value.length === 0) {
+    issues.push(
+      issue(
+        `$.capabilities.${section}`,
+        "required",
+        `${section} must contain at least one declaration.`,
+      ),
+    );
+    return;
   }
+  const seen = new Set<string>();
+  value.forEach((entry, index) => {
+    const path = `$.capabilities.${section}[${index}]`;
+    if (!record(entry))
+      return issues.push(
+        issue(path, "type", "Capability declaration must be an object."),
+      );
+    const identifier = entry[key];
+    unknownKeys(entry, new Set(allowedKeys), path, issues);
+    if (
+      typeof identifier !== "string" ||
+      (key === "id" ? !ID.test(identifier) : !safeRoute(identifier))
+    )
+      issues.push(
+        issue(`${path}.${key}`, "invalid", `Invalid ${section} ${key}.`),
+      );
+    else if (seen.has(identifier))
+      issues.push(
+        issue(
+          `${path}.${key}`,
+          "duplicate",
+          `Duplicate ${section} ${identifier}.`,
+        ),
+      );
+    else seen.add(identifier);
+    validate?.(entry as T, path);
+  });
 }
 
 function validatePublisher(value: unknown, issues: ValidationIssue[]): void {
-  if (
-    !isRecord(value) ||
-    typeof value.name !== "string" ||
-    value.name.trim() === ""
-  ) {
-    issues.push({
-      path: "$.publisher",
-      code: "invalid",
-      message: "Publisher must contain a non-empty name.",
-    });
+  if (value === undefined) return;
+  if (!record(value)) {
+    issues.push(issue("$.publisher", "type", "Publisher must be an object."));
     return;
   }
-  for (const key of Object.keys(value)) {
-    if (!new Set(["name", "url"]).has(key)) {
-      issues.push({
-        path: `$.publisher.${key}`,
-        code: "unknown-property",
-        message: `Unknown publisher property: ${key}.`,
-      });
-    }
-  }
-  if (value.url !== undefined) {
-    try {
-      if (typeof value.url !== "string")
-        throw new Error("URL must be a string");
-      const url = new URL(value.url);
-      if (!new Set(["https:", "http:"]).has(url.protocol))
-        throw new Error("unsupported protocol");
-    } catch {
-      issues.push({
-        path: "$.publisher.url",
-        code: "invalid",
-        message: "Publisher URL must be an HTTP(S) URL.",
-      });
-    }
-  }
+  unknownKeys(value, new Set(["name", "url"]), "$.publisher", issues);
+  string(
+    value.name,
+    "$.publisher.name",
+    issues,
+    undefined,
+    "Publisher name is required.",
+  );
+  if (value.url !== undefined)
+    string(
+      value.url,
+      "$.publisher.url",
+      issues,
+      httpUrl,
+      "Publisher URL must use HTTP(S).",
+    );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function validateSettings(value: unknown, issues: ValidationIssue[]): void {
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    issues.push(issue("$.settings", "type", "Settings must be an array."));
+    return;
+  }
+  const seen = new Set<string>();
+  value.forEach((entry, index) => {
+    const path = `$.settings[${index}]`;
+    if (!record(entry)) {
+      issues.push(issue(path, "type", "Setting must be an object."));
+      return;
+    }
+    unknownKeys(
+      entry,
+      new Set([
+        "key",
+        "label",
+        "type",
+        "description",
+        "required",
+        "default",
+        "options",
+        "minimum",
+        "maximum",
+      ]),
+      path,
+      issues,
+    );
+    if (typeof entry.key !== "string" || !COLLECTION.test(entry.key))
+      issues.push(
+        issue(
+          `${path}.key`,
+          "invalid",
+          "Setting key must use lowercase snake_case.",
+        ),
+      );
+    else if (seen.has(entry.key))
+      issues.push(
+        issue(`${path}.key`, "duplicate", `Duplicate setting ${entry.key}.`),
+      );
+    else seen.add(entry.key);
+    string(
+      entry.label,
+      `${path}.label`,
+      issues,
+      undefined,
+      "Setting label is required.",
+    );
+    member(
+      entry.type,
+      [
+        "string",
+        "number",
+        "boolean",
+        "select",
+        "string_list",
+        "secret",
+        "json",
+      ] as const,
+      `${path}.type`,
+      issues,
+    );
+    if (entry.type === "secret" && entry.default !== undefined)
+      issues.push(
+        issue(
+          `${path}.default`,
+          "forbidden",
+          "Secret settings cannot have defaults.",
+        ),
+      );
+    if (
+      entry.type === "select" &&
+      (!Array.isArray(entry.options) || entry.options.length === 0)
+    )
+      issues.push(
+        issue(
+          `${path}.options`,
+          "required",
+          "Select settings require options.",
+        ),
+      );
+  });
+}
+
+function unknownKeys(
+  value: Record<string, unknown>,
+  allowed: Set<string>,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  for (const key of Object.keys(value))
+    if (!allowed.has(key))
+      issues.push(
+        issue(
+          `${path}.${key}`,
+          "unknown-property",
+          `Unknown property: ${key}.`,
+        ),
+      );
+}
+function uniqueStrings(
+  values: unknown[],
+  path: string,
+  issues: ValidationIssue[],
+  pattern: RegExp,
+): void {
+  const seen = new Set<string>();
+  values.forEach((value, index) => {
+    if (typeof value !== "string" || !pattern.test(value))
+      issues.push(issue(`${path}[${index}]`, "invalid", "Invalid value."));
+    else if (seen.has(value))
+      issues.push(
+        issue(`${path}[${index}]`, "duplicate", `Duplicate value ${value}.`),
+      );
+    else seen.add(value);
+  });
+}
+function string(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+  predicate?: (value: string) => boolean,
+  message = "Value must be a non-empty string.",
+  max?: number,
+): void {
+  if (
+    typeof value !== "string" ||
+    value.trim() === "" ||
+    (predicate && !predicate(value))
+  )
+    issues.push(issue(path, "invalid", message));
+  else if (max && value.length > max)
+    issues.push(
+      issue(path, "too-long", `Value must be at most ${max} characters.`),
+    );
+}
+function member<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (
+    typeof value !== "string" ||
+    !(allowed as readonly string[]).includes(value)
+  )
+    issues.push(
+      issue(path, "invalid", `Value must be one of: ${allowed.join(", ")}.`),
+    );
+}
+function optionalMember<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (value !== undefined) member(value, allowed, path, issues);
+}
+function safeEntry(value: string): boolean {
+  return (
+    ENTRY.test(value) &&
+    !value
+      .split("/")
+      .slice(1)
+      .some((part) => part === "." || part === "..")
+  );
+}
+function safeRoute(value: string): boolean {
+  return (
+    /^\/[A-Za-z0-9._/-]+$/.test(value) &&
+    !value.split("/").some((part) => part === "." || part === "..")
+  );
+}
+function httpUrl(value: string): boolean {
+  try {
+    return ["http:", "https:"].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+}
+function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-
-function requireString(
-  object: Record<string, unknown>,
-  key: string,
-  issues: ValidationIssue[],
-  predicate: (value: string) => boolean = () => true,
-  detail = "Value must be a non-empty string.",
-): void {
-  const value = object[key];
-  if (typeof value !== "string" || value.trim() === "" || !predicate(value)) {
-    issues.push({ path: `$.${key}`, code: "invalid", message: detail });
-  }
+function issue(path: string, code: string, message: string): ValidationIssue {
+  return { path, code, message };
 }

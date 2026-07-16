@@ -23,5 +23,10 @@ Upload the ZIP under `release/` in the OpsRabbit Plugins administration UI.
 Uploading does not activate a plugin: a deployment administrator must review its
 identity, provenance, capabilities, and compatibility before activation.
 
+`opsrabbit.plugin.json` is authoritative. `src/index.ts` registers behavior, and
+`plugin:check` rejects undeclared or mismatched registrations.
+It loads the compiled entry to perform that comparison, so run it only on
+source you trust, just like this repository's build and test scripts.
+
 Do not commit credentials. Plugins receive only capability-scoped host services;
 they must not connect directly to the OpsRabbit database or internal endpoints.

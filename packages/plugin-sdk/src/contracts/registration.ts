@@ -1,40 +1,68 @@
-import type { PluginCapability } from "./capabilities.js";
-import type { PluginInvocationContext } from "./contexts.js";
-import type { PluginManifest } from "./manifest.js";
+import type {
+  PluginPermission,
+  PluginRole,
+  PluginRisk,
+  PluginToolAudience,
+  PluginWidgetPlacement,
+  PluginWidgetType,
+} from "./capabilities.js";
+import type {
+  PluginInvocationContext,
+  PluginRouteContext,
+} from "./contexts.js";
+import type { JsonValue } from "./manifest.js";
 
-export interface ToolDefinition<TInput = unknown, TOutput = unknown> {
+export interface ToolDefinition<TInput = unknown, TOutput = JsonValue> {
   id: string;
   description: string;
-  requiredPermission?: "read" | "use" | "write" | "manage";
+  risk: PluginRisk;
+  audience?: PluginToolAudience;
+  requiredPermission?: PluginPermission;
+  inputSchema?: Readonly<Record<string, unknown>>;
   run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
 }
 
-export interface ActionDefinition<TInput = unknown, TOutput = unknown>
-  extends ToolDefinition<TInput, TOutput> {
-  destructive?: boolean;
+export interface ActionDefinition<TInput = unknown, TOutput = JsonValue> {
+  id: string;
+  title: string;
+  description?: string;
+  risk: PluginRisk;
+  requiredRole: PluginRole;
+  deploymentAdminOnly?: boolean;
+  sampleInput?: Readonly<Record<string, JsonValue>>;
+  run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
 }
 
 export interface ScheduledJobDefinition {
   id: string;
   description: string;
-  defaultSchedule?: string;
+  intervalSeconds: number;
+  timeoutSeconds?: number;
+  maxRetries?: number;
+  retryBackoffSeconds?: number;
+  allowOverlap?: boolean;
   run(context: PluginInvocationContext): Promise<void>;
 }
 
 export interface ReadRouteDefinition {
-  id: string;
   path: `/${string}`;
-  handle(context: PluginInvocationContext): Promise<unknown>;
+  requiredRole: PluginRole;
+  handle(context: PluginRouteContext): Promise<JsonValue>;
 }
 
 export interface WidgetDefinition {
   id: string;
   title: string;
-  load(context: PluginInvocationContext): Promise<unknown>;
+  description?: string;
+  routePath: `/${string}`;
+  type?: PluginWidgetType;
+  placement?: PluginWidgetPlacement;
+  requiredRole?: PluginRole;
+  refreshSeconds?: number | null;
+  defaultQuery?: Readonly<Record<string, string>>;
 }
 
-export interface PluginRegistration {
-  manifest: PluginManifest;
+export interface PluginDefinition {
   tools?: ToolDefinition[];
   actions?: ActionDefinition[];
   scheduledJobs?: ScheduledJobDefinition[];
@@ -42,17 +70,8 @@ export interface PluginRegistration {
   widgets?: WidgetDefinition[];
 }
 
-export interface PluginDefinition extends PluginRegistration {
-  readonly declaredCapabilities: readonly PluginCapability[];
-}
-
 export function definePlugin(
-  registration: PluginRegistration,
-): PluginDefinition {
-  return Object.freeze({
-    ...registration,
-    declaredCapabilities: Object.freeze([
-      ...registration.manifest.capabilities,
-    ]),
-  });
+  definition: PluginDefinition,
+): Readonly<PluginDefinition> {
+  return Object.freeze({ ...definition });
 }

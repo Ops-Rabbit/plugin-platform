@@ -25,6 +25,34 @@ describe("CLI", () => {
     expect(await main(["validate", "--directory", target])).toBe(0);
   });
 
+  it("generates versioned reference examples and rejects ambiguous selection", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const parent = await mkdtemp(join(tmpdir(), "opsrabbit-example-"));
+    expect(
+      await main([
+        "create",
+        "Example Plugin",
+        "--example",
+        "operational-action",
+        "--output",
+        join(parent, "example"),
+      ]),
+    ).toBe(0);
+    expect(
+      await main([
+        "create",
+        "Ambiguous",
+        "--starter",
+        "basic-readonly",
+        "--example",
+        "operational-action",
+        "--output",
+        join(parent, "ambiguous"),
+      ]),
+    ).toBe(1);
+  });
+
   it("reports command and option errors without throwing", async () => {
     const stderr = vi
       .spyOn(process.stderr, "write")

@@ -25,12 +25,12 @@ jobs:
       - run: pnpm quality
       - name: Pack release candidates
         run: |
-          mkdir -p .release-candidates
-          pnpm --dir packages/plugin-sdk pack --pack-destination "$GITHUB_WORKSPACE/.release-candidates"
-          pnpm --dir packages/create-plugin pack --pack-destination "$GITHUB_WORKSPACE/.release-candidates"
+          mkdir -p release-candidates
+          pnpm --dir packages/plugin-sdk pack --pack-destination "$GITHUB_WORKSPACE/release-candidates"
+          pnpm --dir packages/create-plugin pack --pack-destination "$GITHUB_WORKSPACE/release-candidates"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: npm-release-candidates
-          path: .release-candidates/*.tgz
+          path: release-candidates/*.tgz
           if-no-files-found: error
           retention-days: 7

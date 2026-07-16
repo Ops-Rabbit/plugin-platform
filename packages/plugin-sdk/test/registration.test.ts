@@ -1,47 +1,173 @@
 import { describe, expect, it } from "vitest";
+import type { PluginManifest } from "../src/contracts/manifest.js";
 import { definePlugin } from "../src/contracts/registration.js";
 import { validateRegistration } from "../src/validation/registration.js";
 
-const manifest = {
+const manifest: PluginManifest = {
   id: "tools",
   name: "Tools",
   version: "1.0.0",
   description: "Tools",
-  apiVersion: "1.0" as const,
+  apiVersion: "1.0",
   main: "./dist/index.js",
-  capabilities: ["tools"] as const,
+  capabilities: {
+    tools: [
+      {
+        id: "status",
+        risk: "read",
+        audience: "all",
+        requiredPermission: "read",
+      },
+    ],
+  },
+};
+
+const statusTool = {
+  id: "status",
+  description: "Status",
+  risk: "read" as const,
+  audience: "all" as const,
+  requiredPermission: "read" as const,
+  async run() {
+    return null;
+  },
 };
 
 describe("plugin registration", () => {
-  it("captures immutable declared capabilities", () => {
-    const plugin = definePlugin({
-      manifest: { ...manifest, capabilities: [...manifest.capabilities] },
-    });
-    expect(plugin.declaredCapabilities).toEqual(["tools"]);
+  it("defines a frozen declarative registration", () => {
+    const plugin = definePlugin({ tools: [statusTool] });
+    expect(plugin.tools?.[0]?.id).toBe("status");
     expect(Object.isFrozen(plugin)).toBe(true);
+    expect(validateRegistration(manifest, plugin)).toEqual([]);
   });
 
-  it("rejects registered functionality without its capability", () => {
-    const issues = validateRegistration({
-      manifest: { ...manifest, capabilities: ["tools"] },
-      actions: [{ id: "restart", description: "Restart", async run() {} }],
-    });
-    expect(issues).toContainEqual(
-      expect.objectContaining({ code: "undeclared-capability" }),
+  it("rejects undeclared and missing registrations", () => {
+    expect(
+      validateRegistration(manifest, {
+        actions: [
+          {
+            id: "restart",
+            title: "Restart",
+            risk: "write",
+            requiredRole: "operator",
+            async run() {
+              return null;
+            },
+          },
+        ],
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "undeclared-capability" }),
+        expect.objectContaining({ code: "missing-registration" }),
+      ]),
     );
   });
 
-  it("rejects duplicate ids within a registration section", () => {
-    const run = async () => undefined;
-    const issues = validateRegistration({
-      manifest: { ...manifest, capabilities: ["tools"] },
+  it("rejects duplicate ids and security metadata mismatches", () => {
+    const issues = validateRegistration(manifest, {
+      tools: [statusTool, { ...statusTool, risk: "write" }],
+    });
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "duplicate" }),
+        expect.objectContaining({ code: "metadata-mismatch" }),
+      ]),
+    );
+  });
+
+  it("requires widget routes and matching route roles", () => {
+    const routeManifest: PluginManifest = {
+      ...manifest,
+      capabilities: {
+        routes: [{ path: "/status", requiredRole: "viewer" }],
+        widgets: [{ id: "summary" }],
+      },
+    };
+    const issues = validateRegistration(routeManifest, {
+      routes: [
+        {
+          path: "/status",
+          requiredRole: "admin",
+          async handle() {
+            return null;
+          },
+        },
+      ],
+      widgets: [{ id: "summary", title: "Summary", routePath: "/missing" }],
+    });
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "metadata-mismatch" }),
+        expect.objectContaining({ code: "missing-route" }),
+      ]),
+    );
+  });
+
+  it("rejects malformed entry shapes before iteration", () => {
+    expect(validateRegistration(manifest, null as unknown as never)[0]).toEqual(
+      expect.objectContaining({ code: "type" }),
+    );
+    const malformed = validateRegistration(manifest, {
+      tools: {} as never,
+      extra: [],
+    } as never);
+    expect(malformed).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "type" }),
+        expect.objectContaining({ code: "unknown-property" }),
+      ]),
+    );
+  });
+
+  it("validates handler and scheduler runtime requirements", () => {
+    const runtimeManifest: PluginManifest = {
+      ...manifest,
+      capabilities: {
+        tools: [{ id: "tool", risk: "read" }],
+        actions: [{ id: "action", risk: "write", requiredRole: "operator" }],
+        scheduledJobs: [{ id: "job" }],
+        routes: [{ path: "/route", requiredRole: "viewer" }],
+        widgets: [{ id: "widget" }],
+      },
+    };
+    const issues = validateRegistration(runtimeManifest, {
       tools: [
-        { id: "same", description: "One", run },
-        { id: "same", description: "Two", run },
+        { id: "tool", description: "", risk: "read", run: null as never },
+      ],
+      actions: [
+        {
+          id: "action",
+          title: "",
+          risk: "write",
+          requiredRole: "operator",
+          run: null as never,
+        },
+      ],
+      scheduledJobs: [
+        {
+          id: "job",
+          description: "Job",
+          intervalSeconds: 0,
+          timeoutSeconds: -1,
+          run: null as never,
+        },
+      ],
+      routes: [
+        { path: "/route", requiredRole: "viewer", handle: null as never },
+      ],
+      widgets: [
+        {
+          id: "widget",
+          title: "Widget",
+          routePath: "/route",
+          type: "html" as never,
+          placement: "unknown" as never,
+        },
       ],
     });
-    expect(issues).toContainEqual(
-      expect.objectContaining({ code: "duplicate" }),
-    );
+    expect(
+      issues.filter(({ code }) => code === "invalid-registration"),
+    ).toHaveLength(6);
   });
 });

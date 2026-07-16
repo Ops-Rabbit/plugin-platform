@@ -4,7 +4,7 @@ import { plugin } from '../src/index.js';
 
 describe('{{id}}', () => {
   it('records the authorized actor', async () => {
-    const context = createTestContext({ actor: { id: 'operator-a', role: 'operator' } });
+    const context = createTestContext({ actor: { id: 'operator-a', role: 'operator', kind: 'user' } });
     await expect(plugin.actions?.[0]?.run({ itemId: 'inc-1', reason: 'Investigating' }, context))
       .resolves.toEqual({ itemId: 'inc-1', acknowledgedBy: 'operator-a' });
   });

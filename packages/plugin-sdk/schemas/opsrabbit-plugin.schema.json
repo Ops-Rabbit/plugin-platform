@@ -13,23 +13,124 @@
     "main",
     "capabilities"
   ],
-  "properties": {
-    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$" },
-    "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" },
     "version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
     },
+    "risk": { "enum": ["read", "write", "destructive", "external"] },
+    "role": { "enum": ["viewer", "operator", "admin"] },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "risk"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "risk": { "$ref": "#/$defs/risk" },
+        "audience": { "enum": ["all", "coordinator", "general"] },
+        "requiredPermission": { "enum": ["read", "use", "write", "manage"] }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "risk", "requiredRole"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "risk": { "$ref": "#/$defs/risk" },
+        "requiredRole": { "$ref": "#/$defs/role" },
+        "deploymentAdminOnly": { "type": "boolean" }
+      }
+    },
+    "named": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": { "id": { "$ref": "#/$defs/id" } }
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "requiredRole"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^/(?!.*(?:^|/)\\.\\.?/)[A-Za-z0-9._/-]+$"
+        },
+        "requiredRole": { "$ref": "#/$defs/role" }
+      }
+    },
+    "setting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "type"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+        },
+        "label": { "type": "string", "minLength": 1 },
+        "type": {
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "select",
+            "string_list",
+            "secret",
+            "json"
+          ]
+        },
+        "description": { "type": "string" },
+        "required": { "type": "boolean" },
+        "default": {},
+        "options": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "minimum": { "type": "number" },
+        "maximum": { "type": "number" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "secret" } },
+            "required": ["type"]
+          },
+          "then": {
+            "not": {
+              "properties": { "default": {} },
+              "required": ["default"]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "select" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": { "options": {} },
+            "required": ["options"]
+          }
+        }
+      ]
+    }
+  },
+  "properties": {
+    "id": { "$ref": "#/$defs/id" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "version": { "$ref": "#/$defs/version" },
     "description": { "type": "string", "minLength": 1, "maxLength": 500 },
     "apiVersion": { "const": "1.0" },
     "main": {
       "type": "string",
       "pattern": "^\\./dist/(?!.*(?:^|/)\\.\\.?/)[A-Za-z0-9._/-]+\\.js$"
     },
-    "minimumOpsRabbitVersion": {
-      "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
-    },
+    "minimumOpsRabbitVersion": { "$ref": "#/$defs/version" },
     "publisher": {
       "type": "object",
       "additionalProperties": false,
@@ -39,19 +140,57 @@
         "url": { "type": "string", "pattern": "^https?://" }
       }
     },
-    "capabilities": {
+    "settings": {
       "type": "array",
-      "minItems": 1,
-      "uniqueItems": true,
-      "items": {
-        "enum": [
-          "tools",
-          "actions",
-          "routes.read",
-          "widgets",
-          "scheduledJobs",
-          "database.tenantRecords"
-        ]
+      "items": { "$ref": "#/$defs/setting" },
+      "uniqueItems": true
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "tools": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/tool" }
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/action" }
+        },
+        "scheduledJobs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/named" }
+        },
+        "routes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/route" }
+        },
+        "widgets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/named" }
+        },
+        "tenantRecords": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["collections"],
+          "properties": {
+            "collections": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+              }
+            }
+          }
+        }
       }
     }
   }

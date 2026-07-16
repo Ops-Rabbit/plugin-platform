@@ -68,7 +68,11 @@ async function createCommand(args: string[]): Promise<number> {
     throw new Error(
       "Usage: opsrabbit-plugin create <name> [--starter <id>] [--output <directory>]",
     );
-  const starterValue = valueAfter(args, "--starter") ?? "basic-readonly";
+  const starterOption = valueAfter(args, "--starter");
+  const exampleOption = valueAfter(args, "--example");
+  if (starterOption && exampleOption)
+    throw new Error("Choose either --starter or --example, not both.");
+  const starterValue = starterOption ?? exampleOption ?? "basic-readonly";
   if (!isStarterId(starterValue))
     throw new Error(
       `Unknown starter ${starterValue}. Choose: ${STARTER_IDS.join(", ")}`,
@@ -119,7 +123,7 @@ function help(): string {
   return `OpsRabbit plugin developer CLI
 
 Usage:
-  opsrabbit-plugin create <name> [--starter <id>] [--output <directory>]
+  opsrabbit-plugin create <name> [--starter <id> | --example <id>] [--output <directory>]
   opsrabbit-plugin examples list
   opsrabbit-plugin validate [--directory <directory>]
   opsrabbit-plugin check [--directory <directory>]

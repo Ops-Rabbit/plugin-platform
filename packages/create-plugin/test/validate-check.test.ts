@@ -22,7 +22,10 @@ async function preparedPlugin(): Promise<string> {
     output: target,
   });
   await mkdir(join(target, "dist"));
-  await writeFile(join(target, "dist", "index.js"), "export default {};\n");
+  await writeFile(
+    join(target, "dist", "index.js"),
+    `export default { tools: [{ id: "status-summary", description: "Status", risk: "read", audience: "all", requiredPermission: "read", async run() { return null; } }] };\n`,
+  );
   return target;
 }
 
@@ -75,6 +78,20 @@ describe("plugin directory validation", () => {
     await symlink(other, join(target, "dist", "index.js"));
     expect(await checkPluginDirectory(target)).toContainEqual(
       expect.objectContaining({ code: "invalid-entry" }),
+    );
+  });
+
+  it("distinguishes an entry load failure from missing build output", async () => {
+    const target = await preparedPlugin();
+    await writeFile(
+      join(target, "dist", "index.js"),
+      `throw new Error("entry setup failed");\n`,
+    );
+    expect(await checkPluginDirectory(target)).toContainEqual(
+      expect.objectContaining({
+        code: "entry-load",
+        message: expect.stringContaining("entry setup failed"),
+      }),
     );
   });
 

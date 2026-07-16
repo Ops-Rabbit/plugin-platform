@@ -15,7 +15,10 @@ async function builtPlugin(): Promise<string> {
     output: target,
   });
   await mkdir(join(target, "dist"));
-  await writeFile(join(target, "dist", "index.js"), "export default {};\n");
+  await writeFile(
+    join(target, "dist", "index.js"),
+    `export default { tools: [{ id: "status-summary", description: "Status", risk: "read", audience: "all", requiredPermission: "read", async run() { return null; } }] };\n`,
+  );
   return target;
 }
 

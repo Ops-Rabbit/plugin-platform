@@ -8,87 +8,147 @@ const valid = {
   description: "Incident response helpers.",
   apiVersion: "1.0",
   main: "./dist/index.js",
-  capabilities: ["tools"],
+  publisher: { name: "Example", url: "https://example.com" },
+  settings: [
+    {
+      key: "mode",
+      label: "Mode",
+      type: "select",
+      options: ["safe"],
+      default: "safe",
+    },
+  ],
+  capabilities: {
+    tools: [
+      {
+        id: "status",
+        risk: "read",
+        audience: "all",
+        requiredPermission: "read",
+      },
+    ],
+    actions: [
+      {
+        id: "restart",
+        risk: "destructive",
+        requiredRole: "admin",
+        deploymentAdminOnly: true,
+      },
+    ],
+    scheduledJobs: [{ id: "snapshot" }],
+    routes: [{ path: "/status", requiredRole: "viewer" }],
+    widgets: [{ id: "summary" }],
+    tenantRecords: { collections: ["notes"] },
+  },
 };
 
 describe("validateManifest", () => {
-  it("accepts a valid public manifest", () => {
+  it("accepts a complete named capability manifest", () =>
     expect(validateManifest(valid)).toEqual({
       ok: true,
       value: valid,
       issues: [],
-    });
-  });
-
-  it("rejects non-objects", () => {
+    }));
+  it("rejects non-objects", () =>
     expect(validateManifest(null).issues).toContainEqual(
       expect.objectContaining({ path: "$", code: "type" }),
-    );
-  });
-
-  it("reports invalid identity, version, entry, API, and capabilities together", () => {
+    ));
+  it("rejects invalid identity, compatibility, entry, unknown fields, and empty capabilities", () => {
     const result = validateManifest({
       id: "Bad Name",
       name: "",
-      description: "",
       version: "latest",
+      description: "",
       apiVersion: "2.0",
-      main: "../private.js",
-      capabilities: ["root", "root"],
+      main: "./dist/../private.js",
+      minimumOpsRabbitVersion: "next",
+      unexpected: true,
+      capabilities: {},
     });
-    expect(result.ok).toBe(false);
     expect(result.issues.map(({ path }) => path)).toEqual(
       expect.arrayContaining([
         "$.id",
         "$.name",
-        "$.description",
         "$.version",
-        "$.main",
+        "$.description",
         "$.apiVersion",
-        "$.capabilities[0]",
+        "$.main",
+        "$.minimumOpsRabbitVersion",
+        "$.unexpected",
+        "$.capabilities",
       ]),
     );
   });
-
-  it("rejects missing and duplicate capabilities", () => {
-    expect(
-      validateManifest({ ...valid, capabilities: [] }).issues[0]?.path,
-    ).toBe("$.capabilities");
-    expect(
-      validateManifest({ ...valid, capabilities: ["tools", "tools"] }).issues,
-    ).toContainEqual(expect.objectContaining({ code: "duplicate" }));
-  });
-
-  it("keeps runtime validation aligned with bounded schema fields", () => {
+  it("rejects malformed, duplicate, and invalid capability declarations", () => {
     const result = validateManifest({
       ...valid,
-      unexpected: true,
-      name: "n".repeat(101),
-      description: "d".repeat(501),
-      publisher: { name: "Publisher", url: "file:///private", secret: true },
+      capabilities: {
+        tools: [
+          { id: "status", risk: "root" },
+          { id: "status", risk: "read" },
+        ],
+        actions: [
+          {
+            id: "restart",
+            risk: "write",
+            requiredRole: "owner",
+            deploymentAdminOnly: "yes",
+          },
+        ],
+        routes: [{ path: "/../secret", requiredRole: "viewer" }],
+        tenantRecords: { collections: ["notes", "notes"] },
+      },
     });
     expect(result.issues.map(({ code }) => code)).toEqual(
-      expect.arrayContaining(["unknown-property", "too-long", "invalid"]),
+      expect.arrayContaining(["invalid", "duplicate", "type"]),
     );
   });
-
-  it("rejects malformed publishers", () => {
-    expect(validateManifest({ ...valid, publisher: {} }).issues).toContainEqual(
-      expect.objectContaining({ path: "$.publisher", code: "invalid" }),
-    );
-  });
-
-  it("rejects traversal entries and invalid host compatibility versions", () => {
+  it("validates publishers and setting safety", () => {
     const result = validateManifest({
       ...valid,
-      main: "./dist/../private.js",
-      minimumOpsRabbitVersion: "latest",
+      publisher: { name: "", url: "file:///secret", extra: true },
+      settings: [
+        { key: "token", label: "Token", type: "secret", default: "bad" },
+        { key: "token", label: "Token again", type: "select" },
+      ],
     });
-    expect(result.issues).toEqual(
+    expect(result.issues.map(({ code }) => code)).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ path: "$.main" }),
-        expect.objectContaining({ path: "$.minimumOpsRabbitVersion" }),
+        "unknown-property",
+        "invalid",
+        "forbidden",
+        "duplicate",
+        "required",
       ]),
+    );
+  });
+  it("rejects empty capability arrays and malformed sections", () => {
+    expect(
+      validateManifest({
+        ...valid,
+        capabilities: { tools: [], tenantRecords: { collections: [] } },
+      }).issues,
+    ).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: "required" })]),
+    );
+    expect(validateManifest({ ...valid, capabilities: [] }).issues[0]).toEqual(
+      expect.objectContaining({ path: "$.capabilities", code: "type" }),
+    );
+  });
+
+  it("rejects malformed optional sections and unknown nested properties", () => {
+    const result = validateManifest({
+      ...valid,
+      name: "n".repeat(101),
+      publisher: "publisher",
+      settings: "settings",
+      capabilities: {
+        tools: [{ id: "status", risk: "read", extra: true }],
+        tenantRecords: "records",
+      },
+    });
+    expect(result.issues.map(({ code }) => code)).toEqual(
+      expect.arrayContaining(["too-long", "type", "unknown-property"]),
     );
   });
 });

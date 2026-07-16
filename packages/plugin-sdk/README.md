@@ -7,25 +7,38 @@ checking out the OpsRabbit product source.
 import { definePlugin } from "@opsrabbit/plugin-sdk";
 
 export default definePlugin({
-  manifest: {
-    id: "hello-ops",
-    name: "Hello Ops",
-    version: "0.1.0",
-    description: "A minimal read-only tool.",
-    apiVersion: "1.0",
-    main: "./dist/index.js",
-    capabilities: ["tools"],
-  },
   tools: [
     {
       id: "hello",
       description: "Returns a greeting.",
+      risk: "read",
+      audience: "all",
+      requiredPermission: "read",
       async run(input: { name: string }) {
         return { message: `Hello, ${input.name}` };
       },
     },
   ],
 });
+```
+
+`opsrabbit.plugin.json` is the authoritative identity and capability declaration.
+The entrypoint registers behavior only; the host compares it with the manifest
+before activation. A matching manifest declaration for the tool above is:
+
+```json
+{
+  "capabilities": {
+    "tools": [
+      {
+        "id": "hello",
+        "risk": "read",
+        "audience": "all",
+        "requiredPermission": "read"
+      }
+    ]
+  }
+}
 ```
 
 Use `@opsrabbit/plugin-sdk/testing` for an in-memory invocation context and

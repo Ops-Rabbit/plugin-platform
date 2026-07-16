@@ -1,6 +1,11 @@
 import { access, lstat, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import type { ValidationIssue } from "@opsrabbit/plugin-sdk";
+import { pathToFileURL } from "node:url";
+import {
+  validateRegistration,
+  type PluginDefinition,
+  type ValidationIssue,
+} from "@opsrabbit/plugin-sdk";
 import { validatePluginDirectory } from "./validate.js";
 
 export async function checkPluginDirectory(
@@ -10,8 +15,17 @@ export async function checkPluginDirectory(
   if (!report.manifest) return report.issues;
   const issues = [...report.issues];
   const entry = resolve(directory, report.manifest.main);
+  let entryStat;
   try {
-    const entryStat = await lstat(entry);
+    entryStat = await lstat(entry);
+  } catch {
+    issues.push({
+      path: "$.main",
+      code: "missing-entry",
+      message: `Build output does not exist: ${report.manifest.main}`,
+    });
+  }
+  if (entryStat) {
     if (!entryStat.isFile() || entryStat.isSymbolicLink()) {
       issues.push({
         path: "$.main",
@@ -19,12 +33,31 @@ export async function checkPluginDirectory(
         message: "Compiled entry must be a regular file.",
       });
     }
-  } catch {
-    issues.push({
-      path: "$.main",
-      code: "missing-entry",
-      message: `Build output does not exist: ${report.manifest.main}`,
-    });
+    if (entryStat.isFile() && !entryStat.isSymbolicLink()) {
+      try {
+        const imported = (await import(
+          `${pathToFileURL(entry).href}?check=${entryStat.mtimeMs}`
+        )) as { default?: PluginDefinition } & PluginDefinition;
+        const definition = imported.default ?? imported;
+        if (!definition || typeof definition !== "object") {
+          issues.push({
+            path: "$.main",
+            code: "invalid-entry",
+            message: "Compiled entry must export a plugin definition object.",
+          });
+        } else {
+          issues.push(...validateRegistration(report.manifest, definition));
+        }
+      } catch (error) {
+        issues.push({
+          path: "$.main",
+          code: "entry-load",
+          message: `Compiled entry could not be loaded: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        });
+      }
+    }
   }
   for (const required of ["package.json", "README.md", "LICENSE", "NOTICE"]) {
     try {

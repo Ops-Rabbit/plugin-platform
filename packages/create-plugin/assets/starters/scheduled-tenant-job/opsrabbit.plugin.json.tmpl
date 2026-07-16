@@ -1,9 +1,5 @@
 {
-  "id": "{{id}}",
-  "name": "{{displayName}}",
-  "version": "0.1.0",
-  "description": "{{displayName}} tenant-scoped scheduled job",
-  "apiVersion": "1.0",
-  "main": "./dist/index.js",
-  "capabilities": ["scheduledJobs"]
+  "id": "{{id}}", "name": "{{displayName}}", "version": "0.1.0",
+  "description": "{{displayName}} tenant-scoped scheduled job", "apiVersion": "1.0", "main": "./dist/index.js",
+  "capabilities": { "scheduledJobs": [{ "id": "tenant-health-snapshot" }] }
 }

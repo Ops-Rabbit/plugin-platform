@@ -1,0 +1,43 @@
+{
+  "name": "@opsrabbit/create-plugin",
+  "version": "0.1.0",
+  "description": "CLI for creating, validating, testing, and packaging OpsRabbit plugins",
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ops-Rabbit/plugin-platform.git",
+    "directory": "packages/create-plugin"
+  },
+  "homepage": "https://github.com/Ops-Rabbit/plugin-platform#readme",
+  "bugs": "https://github.com/Ops-Rabbit/plugin-platform/issues",
+  "bin": {
+    "opsrabbit-plugin": "./dist/cli.js",
+    "create-opsrabbit-plugin": "./dist/cli.js",
+    "create-plugin": "./dist/cli.js"
+  },
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "dependencies": {
+    "@opsrabbit/plugin-sdk": "workspace:^",
+    "fflate": "0.8.2"
+  },
+  "scripts": {
+    "build": "node ../../scripts/clean-directory.mjs dist && tsc -p tsconfig.build.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --maxWorkers=1 --no-file-parallelism",
+    "test:coverage": "vitest run --coverage --maxWorkers=1 --no-file-parallelism"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

@@ -1,0 +1,27 @@
+# {{displayName}}
+
+Generated with `@opsrabbit/create-plugin` using the `{{starterId}}` starter.
+
+## Develop and test
+
+```bash
+npm install
+npm run check
+npm test
+npm run test:coverage
+npm run build
+npm run plugin:check
+```
+
+## Create a release artifact
+
+```bash
+npm run plugin:pack
+```
+
+Upload the ZIP under `release/` in the OpsRabbit Plugins administration UI.
+Uploading does not activate a plugin: a deployment administrator must review its
+identity, provenance, capabilities, and compatibility before activation.
+
+Do not commit credentials. Plugins receive only capability-scoped host services;
+they must not connect directly to the OpsRabbit database or internal endpoints.

@@ -1,0 +1,51 @@
+name: Publish npm packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - packages/plugin-sdk/**
+      - packages/create-plugin/**
+      - scripts/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .github/workflows/publish.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-production
+  cancel-in-progress: false
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-24.04
+    environment: npm-production
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Verify exact source revision
+        run: pnpm quality
+      - name: Verify aligned release versions
+        run: node scripts/verify-release-versions.mjs
+      - name: Publish versions using npm trusted publishing
+        if: ${{ env.NPM_TOKEN == '' }}
+        run: node scripts/release-packages.mjs
+      - name: Bootstrap the first versions with a temporary token
+        if: ${{ env.NPM_TOKEN != '' }}
+        run: node scripts/release-packages.mjs
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    env:
+      # Delete this environment secret after npm trusted publishing is configured.
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

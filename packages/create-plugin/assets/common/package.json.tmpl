@@ -1,0 +1,27 @@
+{
+  "name": "{{packageName}}",
+  "version": "0.1.0",
+  "private": true,
+  "description": "{{displayName}} OpsRabbit plugin",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=22.14.0" },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "plugin:check": "opsrabbit-plugin check",
+    "plugin:pack": "npm run build && opsrabbit-plugin pack"
+  },
+  "dependencies": {
+    "@opsrabbit/plugin-sdk": "{{sdkVersion}}"
+  },
+  "devDependencies": {
+    "@opsrabbit/create-plugin": "^{{cliVersion}}",
+    "@types/node": "^22.15.0",
+    "@vitest/coverage-v8": "^3.2.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

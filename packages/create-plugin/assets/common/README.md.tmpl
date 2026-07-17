@@ -19,9 +19,18 @@ npm run plugin:check
 npm run plugin:pack
 ```
 
-For a durable GitHub Release, first update `version` in both `package.json` and
-`opsrabbit.plugin.json`, merge the tested change to `main`, then tag that exact
-commit. For version `1.2.3`:
+For a durable GitHub Release, merge a release-content change to `main`. The
+generated workflow preserves an explicit unreleased version from the PR or
+automatically increments the latest released patch version, synchronizes
+`package.json` and `opsrabbit.plugin.json`, commits that version, tags the exact
+commit, and publishes the release. Set an explicit higher version in the PR for
+a minor or major release.
+
+The workflow ignores README-, AGENTS-, test-, coverage-, workflow-, and
+generated-release-only changes. Automatic patch commits require GitHub Actions
+write access to `main`; if branch protection blocks the bot, set the next
+version explicitly in the PR so no bot commit is required. Manual immutable
+tags remain supported for recovery. For version `1.2.3`:
 
 ```bash
 git tag v1.2.3
@@ -30,8 +39,10 @@ git push origin v1.2.3
 
 The generated `Plugin Release` workflow reruns the quality gates and publishes
 the deterministic ZIP, SHA-256 checksum, SPDX 2.3 SBOM, and release metadata.
-It also creates a GitHub artifact-provenance attestation for the ZIP. A tag is
-rejected unless it exactly matches the manifest and package version. To inspect
+It also creates a GitHub artifact-provenance attestation when the repository
+plan supports that feature; checksum/SBOM publication remains available when
+attestation does not. A tag is rejected unless it exactly matches the manifest
+and package version. To inspect
 the same assets locally before tagging, run:
 
 ```bash
@@ -40,6 +51,8 @@ npm run plugin:release -- --tag v1.2.3
 
 Upload the ZIP under `release/` (manual pack) or `release-assets/` (release set)
 in the OpsRabbit Plugins administration UI.
+Download the explicitly named ZIP asset, not GitHub's automatic **Source code
+(zip)** archive, which is not a deployable plugin bundle.
 Uploading does not activate a plugin: a deployment administrator must review its
 identity, provenance, capabilities, and compatibility before activation.
 

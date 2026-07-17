@@ -1,4 +1,4 @@
-import { mkdtemp } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -23,6 +23,14 @@ describe("CLI", () => {
     const target = join(parent, "cli-plugin");
     expect(await main(["create", "CLI Plugin", "--output", target])).toBe(0);
     expect(await main(["validate", "--directory", target])).toBe(0);
+    await mkdir(join(target, "dist"));
+    await writeFile(
+      join(target, "dist", "index.js"),
+      `export default { tools: [{ id: "status-summary", description: "Status", risk: "read", audience: "all", requiredPermission: "read", async run() { return null; } }] };\n`,
+    );
+    expect(
+      await main(["release", "--directory", target, "--tag", "v0.1.0"]),
+    ).toBe(0);
   });
 
   it("generates versioned reference examples and rejects ambiguous selection", async () => {

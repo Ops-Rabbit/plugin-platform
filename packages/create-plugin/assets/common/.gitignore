@@ -2,5 +2,6 @@ node_modules/
 dist/
 coverage/
 release/
+release-assets/
 .env
 .DS_Store

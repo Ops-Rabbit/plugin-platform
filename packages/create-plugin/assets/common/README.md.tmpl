@@ -13,13 +13,33 @@ npm run build
 npm run plugin:check
 ```
 
-## Create a release artifact
+## Create and publish a release
 
 ```bash
 npm run plugin:pack
 ```
 
-Upload the ZIP under `release/` in the OpsRabbit Plugins administration UI.
+For a durable GitHub Release, first update `version` in both `package.json` and
+`opsrabbit.plugin.json`, merge the tested change to `main`, then tag that exact
+commit. For version `1.2.3`:
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+The generated `Plugin Release` workflow reruns the quality gates and publishes
+the deterministic ZIP, SHA-256 checksum, SPDX 2.3 SBOM, and release metadata.
+It also creates a GitHub artifact-provenance attestation for the ZIP. A tag is
+rejected unless it exactly matches the manifest and package version. To inspect
+the same assets locally before tagging, run:
+
+```bash
+npm run plugin:release -- --tag v1.2.3
+```
+
+Upload the ZIP under `release/` (manual pack) or `release-assets/` (release set)
+in the OpsRabbit Plugins administration UI.
 Uploading does not activate a plugin: a deployment administrator must review its
 identity, provenance, capabilities, and compatibility before activation.
 

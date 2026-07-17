@@ -29,6 +29,18 @@ describe("createPlugin", () => {
         "utf8",
       ),
     ).toContain("test:coverage");
+    const releaseWorkflow = await readFile(
+      join(target, ".github", "workflows", "plugin-release.yml"),
+      "utf8",
+    );
+    expect(releaseWorkflow).toContain("actions/attest-build-provenance");
+    expect(releaseWorkflow).toContain(
+      'run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main',
+    );
+    expect(releaseWorkflow).toContain("persist-credentials: false");
+    expect(await readFile(join(target, "README.md"), "utf8")).toContain(
+      "git push origin v1.2.3",
+    );
   });
 
   it("refuses to overwrite a target", async () => {

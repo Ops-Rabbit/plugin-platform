@@ -28,4 +28,9 @@ Before proposing a release, run `npm run check`, `npm run test:coverage`,
 unit tests for success, authorization-sensitive behavior, invalid input, and
 failure paths. Keep manifest and package versions identical.
 
+Release only from a reviewed commit on `main`. Use an immutable `vX.Y.Z` tag
+that exactly matches both versions; the generated release workflow owns ZIP,
+checksum, SPDX SBOM, provenance-attestation, and GitHub Release creation. Never
+replace an existing tag or hand-edit generated release assets.
+
 Generated metadata: template `{{starterId}}`, generated `{{generatedAt}}`.

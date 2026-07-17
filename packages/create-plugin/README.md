@@ -26,11 +26,16 @@ Available starters:
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.
 
-The generated repository contains unit tests, a CI workflow, `AGENTS.md`, a
-manifest, build configuration, and release packaging. `pack` validates the
+The generated repository contains unit tests, CI and tagged-release workflows,
+`AGENTS.md`, a manifest, build configuration, and release packaging. `pack` validates the
 compiled registration against its authoritative manifest and creates a
 deterministic ZIP for upload to an OpsRabbit deployment. Capability declarations
 are reviewed during deployment and do not grant host access on their own.
+
+`release` additionally requires an exact `vX.Y.Z` tag/version match and creates
+the ZIP, SHA-256 checksum, SPDX 2.3 SBOM, and release metadata. The generated
+tag workflow publishes those files in an immutable GitHub Release and creates a
+GitHub artifact-provenance attestation for the ZIP.
 
 For a Forms-backed plugin, place the versioned starter JSON under `forms/` and
 reference it with `formStarterPack` in `opsrabbit.plugin.json`. `validate` and

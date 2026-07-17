@@ -6,6 +6,7 @@ import { CLI_VERSION, STARTER_IDS, isStarterId } from "./constants.js";
 import { checkPluginDirectory } from "./commands/check.js";
 import { createPlugin } from "./commands/create.js";
 import { packPlugin } from "./commands/pack.js";
+import { preparePluginRelease } from "./commands/release.js";
 import { runPackageScript } from "./commands/run.js";
 import { validatePluginDirectory } from "./commands/validate.js";
 
@@ -31,6 +32,20 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       case "pack": {
         const output = await packPlugin(valueAfter(args, "--directory"));
         process.stdout.write(`Created ${output}\n`);
+        return 0;
+      }
+      case "release": {
+        const directory = valueAfter(args, "--directory");
+        const tag = valueAfter(args, "--tag");
+        const outputDirectory = valueAfter(args, "--output");
+        const artifacts = await preparePluginRelease({
+          ...(directory === undefined ? {} : { directory }),
+          ...(tag === undefined ? {} : { tag }),
+          ...(outputDirectory === undefined ? {} : { outputDirectory }),
+        });
+        process.stdout.write(
+          `Created release artifacts:\n${artifacts.map((path) => `- ${path}`).join("\n")}\n`,
+        );
         return 0;
       }
       case "compatibility": {
@@ -129,6 +144,7 @@ Usage:
   opsrabbit-plugin check [--directory <directory>]
   opsrabbit-plugin test [--directory <directory>]
   opsrabbit-plugin pack [--directory <directory>]
+  opsrabbit-plugin release [--directory <directory>] [--tag <vX.Y.Z>] [--output <directory>]
   opsrabbit-plugin compatibility --api <major.minor> [--host-api <major.minor>]
 `;
 }

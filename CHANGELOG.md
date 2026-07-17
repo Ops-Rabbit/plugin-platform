@@ -3,7 +3,24 @@
 All notable public package changes are documented here. This project follows
 semantic versioning for the SDK contract and CLI.
 
-## 0.2.0 - Unreleased
+## 0.5.0 - Unreleased
+
+- Add a public `release` command that enforces manifest, package, and immutable
+  `vX.Y.Z` tag alignment.
+- Include a tagged GitHub Release workflow in every generated plugin repository.
+- Produce a deterministic plugin ZIP, SHA-256 checksum, SPDX 2.3 SBOM, release
+  metadata, and GitHub artifact-provenance attestation from the scaffold.
+
+## 0.4.0 - 2026-07-17
+
+- Add validated declarative Forms starter packs to the public manifest contract,
+  packaging flow, generated repositories, and in-memory test harness.
+
+## 0.3.0 - 2026-07-17
+
+- Add public Forms workspace navigation declarations and validation.
+
+## 0.2.0 - 2026-07-16
 
 - Make the JSON manifest authoritative and remove duplicated manifest metadata
   from runtime source definitions.

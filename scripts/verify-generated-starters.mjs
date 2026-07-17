@@ -55,6 +55,7 @@ try {
       "build",
       "plugin:check",
       "plugin:pack",
+      "plugin:release",
     ]) {
       run("npm", ["run", script], target);
     }
@@ -68,6 +69,14 @@ try {
         `${pluginManifest.id}-${pluginManifest.version}.zip`,
       ),
     );
+    for (const suffix of ["zip", "zip.sha256", "spdx.json", "release.json"])
+      await access(
+        join(
+          target,
+          "release-assets",
+          `${pluginManifest.id}-${pluginManifest.version}.${suffix}`,
+        ),
+      );
   }
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });

@@ -1,4 +1,5 @@
 import type { PluginDeclaredCapabilities } from "./capabilities.js";
+import type { PluginFormStarterPackReference } from "./forms.js";
 
 export const PLUGIN_API_VERSION = "1.0" as const;
 
@@ -56,5 +57,6 @@ export interface PluginManifest {
   publisher?: { name: string; url?: string };
   settings?: PluginSetting[];
   navigation?: PluginFormsWorkspaceNavigation;
+  formStarterPack?: PluginFormStarterPackReference;
   capabilities: PluginDeclaredCapabilities;
 }

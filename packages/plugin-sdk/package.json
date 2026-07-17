@@ -1,6 +1,6 @@
 {
   "name": "@opsrabbit/plugin-sdk",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Public contracts, validation, and testing utilities for OpsRabbit plugins",
   "type": "module",
   "license": "Apache-2.0",
@@ -34,7 +34,8 @@
       "types": "./dist/packaging/index.d.ts",
       "default": "./dist/packaging/index.js"
     },
-    "./manifest-schema": "./schemas/opsrabbit-plugin.schema.json"
+    "./manifest-schema": "./schemas/opsrabbit-plugin.schema.json",
+    "./form-starter-pack-schema": "./schemas/opsrabbit-form-starter-pack.schema.json"
   },
   "scripts": {
     "build": "node ../../scripts/clean-directory.mjs dist && tsc -p tsconfig.build.json",

@@ -2,6 +2,7 @@ import {
   chmod,
   mkdir,
   mkdtemp,
+  readFile,
   rm,
   symlink,
   writeFile,
@@ -105,6 +106,84 @@ describe("plugin directory validation", () => {
     );
     expect(issues).toContainEqual(
       expect.objectContaining({ code: "invalid-package" }),
+    );
+  });
+
+  it("validates a referenced Forms starter-pack asset", async () => {
+    const target = await preparedPlugin();
+    const manifestPath = join(target, "opsrabbit.plugin.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    await mkdir(join(target, "forms"));
+    await writeFile(
+      manifestPath,
+      JSON.stringify({
+        ...manifest,
+        navigation: {
+          kind: "forms_workspace",
+          moduleKey: "quality",
+          path: "/apps/quality",
+          icon: "building",
+          fallbackTitle: "Quality",
+        },
+        formStarterPack: {
+          moduleKey: "quality",
+          path: "./forms/quality.json",
+        },
+      }),
+    );
+    await writeFile(
+      join(target, "forms", "quality.json"),
+      JSON.stringify({ formatVersion: 1, moduleKey: "other", starters: [] }),
+    );
+    const issues = (await validatePluginDirectory(target)).issues;
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "required" }),
+        expect.objectContaining({ code: "module-mismatch" }),
+      ]),
+    );
+  });
+
+  it("rejects missing, non-file, and oversized starter-pack assets", async () => {
+    const target = await preparedPlugin();
+    const manifestPath = join(target, "opsrabbit.plugin.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    await writeFile(
+      manifestPath,
+      JSON.stringify({
+        ...manifest,
+        navigation: {
+          kind: "forms_workspace",
+          moduleKey: "quality",
+          path: "/apps/quality",
+          icon: "building",
+          fallbackTitle: "Quality",
+        },
+        formStarterPack: {
+          moduleKey: "quality",
+          path: "./forms/quality.json",
+        },
+      }),
+    );
+    await mkdir(join(target, "forms"));
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "asset-read" }),
+    );
+    const assetPath = join(target, "forms", "quality.json");
+    await mkdir(assetPath);
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "asset-type" }),
+    );
+    await rm(assetPath, { recursive: true });
+    await writeFile(assetPath, "x".repeat(1024 * 1024 + 1));
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "asset-size" }),
     );
   });
 });

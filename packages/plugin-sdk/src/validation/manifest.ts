@@ -27,6 +27,7 @@ const TOP_LEVEL = new Set([
   "publisher",
   "settings",
   "navigation",
+  "formStarterPack",
   "capabilities",
 ]);
 
@@ -95,10 +96,74 @@ export function validateManifest(
   validatePublisher(input.publisher, issues);
   validateSettings(input.settings, issues);
   validateNavigation(input.navigation, input.settings, issues);
+  validateFormStarterPackReference(
+    input.formStarterPack,
+    input.navigation,
+    issues,
+  );
   validateCapabilities(input.capabilities, issues);
   return issues.length === 0
     ? { ok: true, value: input as unknown as PluginManifest, issues }
     : { ok: false, issues };
+}
+
+function validateFormStarterPackReference(
+  value: unknown,
+  navigationValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (value === undefined) return;
+  if (!record(value)) {
+    issues.push(
+      issue(
+        "$.formStarterPack",
+        "type",
+        "Form starter-pack reference must be an object.",
+      ),
+    );
+    return;
+  }
+  unknownKeys(
+    value,
+    new Set(["moduleKey", "path"]),
+    "$.formStarterPack",
+    issues,
+  );
+  string(
+    value.moduleKey,
+    "$.formStarterPack.moduleKey",
+    issues,
+    (entry) => COLLECTION.test(entry),
+    "Use lowercase snake_case.",
+  );
+  string(
+    value.path,
+    "$.formStarterPack.path",
+    issues,
+    (entry) => /^\.\/forms\/[a-z][a-z0-9_-]*\.json$/.test(entry),
+    "Use a safe relative JSON path directly under ./forms/.",
+  );
+  if (!record(navigationValue) || navigationValue.kind !== "forms_workspace") {
+    issues.push(
+      issue(
+        "$.formStarterPack",
+        "invalid",
+        "A form starter pack requires forms_workspace navigation.",
+      ),
+    );
+  } else if (
+    typeof value.moduleKey === "string" &&
+    typeof navigationValue.moduleKey === "string" &&
+    value.moduleKey !== navigationValue.moduleKey
+  ) {
+    issues.push(
+      issue(
+        "$.formStarterPack.moduleKey",
+        "invalid",
+        "Starter-pack and navigation module keys must match.",
+      ),
+    );
+  }
 }
 
 function validateNavigation(

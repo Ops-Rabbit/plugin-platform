@@ -48,3 +48,8 @@ package inventories and digests.
 The SDK intentionally contains no OpsRabbit backend, authentication, database,
 runner, licensing, or deployment implementation. Capability declarations are
 requests reviewed and enforced by the host; they never grant access by themselves.
+
+Forms-backed plugins may declare a host-rendered workspace through the optional
+`navigation` manifest field. The host validates the `/apps/<module>` path,
+supported icon, module key, and referenced title/icon settings. Navigation is
+discoverability metadata only and never grants Forms-record or host-service access.

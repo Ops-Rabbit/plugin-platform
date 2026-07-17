@@ -61,6 +61,33 @@
         "requiredRole": { "$ref": "#/$defs/role" }
       }
     },
+    "navigation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "moduleKey", "path", "icon", "fallbackTitle"],
+      "properties": {
+        "kind": { "const": "forms_workspace" },
+        "moduleKey": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/apps/[a-z][a-z0-9_-]*$"
+        },
+        "icon": { "enum": ["headset", "building", "shield_check"] },
+        "fallbackTitle": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "titleSetting": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+        },
+        "iconSetting": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+        },
+        "order": { "type": "number" }
+      }
+    },
     "setting": {
       "type": "object",
       "additionalProperties": false,
@@ -145,6 +172,7 @@
       "items": { "$ref": "#/$defs/setting" },
       "uniqueItems": true
     },
+    "navigation": { "$ref": "#/$defs/navigation" },
     "capabilities": {
       "type": "object",
       "additionalProperties": false,

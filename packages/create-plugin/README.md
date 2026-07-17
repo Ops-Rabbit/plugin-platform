@@ -31,3 +31,9 @@ manifest, build configuration, and release packaging. `pack` validates the
 compiled registration against its authoritative manifest and creates a
 deterministic ZIP for upload to an OpsRabbit deployment. Capability declarations
 are reviewed during deployment and do not grant host access on their own.
+
+For a Forms-backed plugin, place the versioned starter JSON under `forms/` and
+reference it with `formStarterPack` in `opsrabbit.plugin.json`. `validate` and
+`check` validate that asset and its module ownership; `pack` includes it in the
+release ZIP. A repository can contain multiple plugin directories as long as
+each plugin runs these commands from its own package directory.

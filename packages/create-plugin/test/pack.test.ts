@@ -26,6 +26,55 @@ describe("packPlugin", () => {
   it("creates a bounded deterministic archive", async () => {
     const target = await builtPlugin();
     await writeFile(join(target, ".env"), "SECRET=do-not-package");
+    await mkdir(join(target, "forms"));
+    const manifestPath = join(target, "opsrabbit.plugin.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    await writeFile(
+      manifestPath,
+      JSON.stringify({
+        ...manifest,
+        navigation: {
+          kind: "forms_workspace",
+          moduleKey: "quality",
+          path: "/apps/quality",
+          icon: "building",
+          fallbackTitle: "Quality",
+        },
+        formStarterPack: {
+          moduleKey: "quality",
+          path: "./forms/starter.json",
+        },
+      }),
+    );
+    await writeFile(
+      join(target, "forms", "starter.json"),
+      JSON.stringify({
+        formatVersion: 1,
+        moduleKey: "quality",
+        starters: [
+          {
+            starterKey: "quality_report",
+            title: "Quality report",
+            description: "Capture quality data.",
+            recordType: "quality_report",
+            badge: "Quality",
+            icon: "check",
+            schema: {
+              fields: [{ key: "batch", label: "Batch", type: "text" }],
+              sections: [{ key: "main", label: "Main", fieldKeys: ["batch"] }],
+              actions: [{ key: "submit", label: "Submit", kind: "submit" }],
+            },
+            listConfig: {
+              columns: [{ fieldKey: "batch", label: "Batch" }],
+              defaultSort: "updated_at_desc",
+            },
+          },
+        ],
+      }),
+    );
     const first = await packPlugin(target, join(target, "release-a"));
     const second = await packPlugin(target, join(target, "release-b"));
     const firstBytes = await readFile(first);
@@ -33,6 +82,7 @@ describe("packPlugin", () => {
     const files = Object.keys(unzipSync(firstBytes));
     expect(files).toContain("opsrabbit.plugin.json");
     expect(files).toContain("dist/index.js");
+    expect(files).toContain("forms/starter.json");
     expect(files).not.toContain(".env");
   });
 

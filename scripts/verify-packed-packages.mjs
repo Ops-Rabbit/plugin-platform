@@ -59,6 +59,12 @@ try {
       throw new Error("SDK package is missing its public manifest schema");
     }
     if (
+      manifest.name === "@opsrabbit/plugin-sdk" &&
+      !paths.includes("schemas/opsrabbit-form-starter-pack.schema.json")
+    ) {
+      throw new Error("SDK package is missing its Forms starter-pack schema");
+    }
+    if (
       manifest.name === "@opsrabbit/create-plugin" &&
       !paths.some((path) => path.startsWith("assets/starters/"))
     ) {

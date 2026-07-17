@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { PluginManifest } from "../src/contracts/manifest.js";
-import { definePlugin } from "../src/contracts/registration.js";
+import {
+  definePlugin,
+  isPluginToolResult,
+  PLUGIN_TOOL_RESULT_KIND,
+  toolResult,
+} from "../src/contracts/registration.js";
 import { validateRegistration } from "../src/validation/registration.js";
 
 const manifest: PluginManifest = {
@@ -39,6 +44,23 @@ describe("plugin registration", () => {
     expect(plugin.tools?.[0]?.id).toBe("status");
     expect(Object.isFrozen(plugin)).toBe(true);
     expect(validateRegistration(manifest, plugin)).toEqual([]);
+  });
+
+  it("builds a human-readable tool result with structured details", () => {
+    const result = toolResult("Service api is healthy.", {
+      service: "api",
+      healthy: true,
+    });
+
+    expect(result).toEqual({
+      kind: PLUGIN_TOOL_RESULT_KIND,
+      text: "Service api is healthy.",
+      value: { service: "api", healthy: true },
+    });
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(isPluginToolResult(result)).toBe(true);
+    expect(isPluginToolResult({ kind: PLUGIN_TOOL_RESULT_KIND })).toBe(false);
+    expect(isPluginToolResult(null)).toBe(false);
   });
 
   it("rejects undeclared and missing registrations", () => {

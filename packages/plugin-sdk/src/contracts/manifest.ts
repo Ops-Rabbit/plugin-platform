@@ -27,6 +27,24 @@ export type PluginSetting = {
   maximum?: number;
 };
 
+export const PLUGIN_NAVIGATION_ICONS = [
+  "headset",
+  "building",
+  "shield_check",
+] as const;
+export type PluginNavigationIcon = (typeof PLUGIN_NAVIGATION_ICONS)[number];
+
+export type PluginFormsWorkspaceNavigation = {
+  kind: "forms_workspace";
+  moduleKey: string;
+  path: `/apps/${string}`;
+  icon: PluginNavigationIcon;
+  fallbackTitle: string;
+  titleSetting?: string;
+  iconSetting?: string;
+  order?: number;
+};
+
 export interface PluginManifest {
   id: string;
   name: string;
@@ -37,5 +55,6 @@ export interface PluginManifest {
   minimumOpsRabbitVersion?: string;
   publisher?: { name: string; url?: string };
   settings?: PluginSetting[];
+  navigation?: PluginFormsWorkspaceNavigation;
   capabilities: PluginDeclaredCapabilities;
 }

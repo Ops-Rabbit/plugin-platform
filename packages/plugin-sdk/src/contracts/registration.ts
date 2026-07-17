@@ -12,7 +12,39 @@ import type {
 } from "./contexts.js";
 import type { JsonValue } from "./manifest.js";
 
-export interface ToolDefinition<TInput = unknown, TOutput = JsonValue> {
+export const PLUGIN_TOOL_RESULT_KIND = "opsrabbit.tool-result/v1" as const;
+
+export interface PluginToolResult<TValue extends JsonValue = JsonValue> {
+  readonly kind: typeof PLUGIN_TOOL_RESULT_KIND;
+  readonly text: string;
+  readonly value: TValue;
+}
+
+export type PluginToolOutput = JsonValue | PluginToolResult;
+
+export function toolResult<TValue extends JsonValue>(
+  text: string,
+  value: TValue,
+): PluginToolResult<TValue> {
+  return Object.freeze({ kind: PLUGIN_TOOL_RESULT_KIND, text, value });
+}
+
+export function isPluginToolResult(value: unknown): value is PluginToolResult {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (
+    candidate.kind === PLUGIN_TOOL_RESULT_KIND &&
+    typeof candidate.text === "string" &&
+    Object.hasOwn(candidate, "value")
+  );
+}
+
+export interface ToolDefinition<
+  TInput = unknown,
+  TOutput extends PluginToolOutput = PluginToolOutput,
+> {
   id: string;
   description: string;
   risk: PluginRisk;

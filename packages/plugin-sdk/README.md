@@ -4,7 +4,7 @@ The stable public contract for building and testing OpsRabbit plugins without
 checking out the OpsRabbit product source.
 
 ```ts
-import { definePlugin } from "@opsrabbit/plugin-sdk";
+import { definePlugin, toolResult } from "@opsrabbit/plugin-sdk";
 
 export default definePlugin({
   tools: [
@@ -15,7 +15,7 @@ export default definePlugin({
       audience: "all",
       requiredPermission: "read",
       async run(input: { name: string }) {
-        return { message: `Hello, ${input.name}` };
+        return toolResult(`Hello, ${input.name}`, { name: input.name });
       },
     },
   ],
@@ -45,6 +45,16 @@ Use `@opsrabbit/plugin-sdk/testing` for an in-memory invocation context and
 contract assertions. Use `@opsrabbit/plugin-sdk/packaging` for deterministic
 package inventories and digests.
 
+`toolResult(text, value)` preserves a concise agent-visible message alongside a
+structured JSON value. Its tagged shape is recognized by the host without
+guessing based on ordinary business fields. Returning an ordinary JSON value
+remains supported and the host serializes it as the tool message.
+
 The SDK intentionally contains no OpsRabbit backend, authentication, database,
 runner, licensing, or deployment implementation. Capability declarations are
 requests reviewed and enforced by the host; they never grant access by themselves.
+
+Forms-backed plugins may declare a host-rendered workspace through the optional
+`navigation` manifest field. The host validates the `/apps/<module>` path,
+supported icon, module key, and referenced title/icon settings. Navigation is
+discoverability metadata only and never grants Forms-record or host-service access.

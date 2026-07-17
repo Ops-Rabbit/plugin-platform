@@ -8,6 +8,7 @@ import {
 import type { ValidationIssue } from "../contracts/errors.js";
 import {
   PLUGIN_API_VERSION,
+  PLUGIN_NAVIGATION_ICONS,
   type PluginManifest,
 } from "../contracts/manifest.js";
 
@@ -25,6 +26,7 @@ const TOP_LEVEL = new Set([
   "minimumOpsRabbitVersion",
   "publisher",
   "settings",
+  "navigation",
   "capabilities",
 ]);
 
@@ -92,10 +94,128 @@ export function validateManifest(
     );
   validatePublisher(input.publisher, issues);
   validateSettings(input.settings, issues);
+  validateNavigation(input.navigation, input.settings, issues);
   validateCapabilities(input.capabilities, issues);
   return issues.length === 0
     ? { ok: true, value: input as unknown as PluginManifest, issues }
     : { ok: false, issues };
+}
+
+function validateNavigation(
+  value: unknown,
+  settingsValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (value === undefined) return;
+  if (!record(value)) {
+    issues.push(issue("$.navigation", "type", "Navigation must be an object."));
+    return;
+  }
+  unknownKeys(
+    value,
+    new Set([
+      "kind",
+      "moduleKey",
+      "path",
+      "icon",
+      "fallbackTitle",
+      "titleSetting",
+      "iconSetting",
+      "order",
+    ]),
+    "$.navigation",
+    issues,
+  );
+  if (value.kind !== "forms_workspace")
+    issues.push(
+      issue(
+        "$.navigation.kind",
+        "unsupported",
+        "Navigation kind must be forms_workspace.",
+      ),
+    );
+  string(
+    value.moduleKey,
+    "$.navigation.moduleKey",
+    issues,
+    (entry) => COLLECTION.test(entry),
+    "Use lowercase snake_case.",
+  );
+  string(
+    value.path,
+    "$.navigation.path",
+    issues,
+    (entry) => /^\/apps\/[a-z][a-z0-9_-]*$/.test(entry),
+    "Use /apps/<module> without traversal or query segments.",
+  );
+  member(value.icon, PLUGIN_NAVIGATION_ICONS, "$.navigation.icon", issues);
+  string(
+    value.fallbackTitle,
+    "$.navigation.fallbackTitle",
+    issues,
+    undefined,
+    "Fallback title is required.",
+    100,
+  );
+  if (
+    value.order !== undefined &&
+    (typeof value.order !== "number" || !Number.isFinite(value.order))
+  )
+    issues.push(
+      issue(
+        "$.navigation.order",
+        "type",
+        "Navigation order must be a finite number.",
+      ),
+    );
+
+  const settings = Array.isArray(settingsValue)
+    ? new Map(
+        settingsValue.filter(record).map((setting) => [setting.key, setting]),
+      )
+    : new Map<unknown, Record<string, unknown>>();
+  for (const [field, expectedType] of [
+    ["titleSetting", "string"],
+    ["iconSetting", "select"],
+  ] as const) {
+    const key = value[field];
+    if (key === undefined) continue;
+    if (typeof key !== "string" || !COLLECTION.test(key)) {
+      issues.push(
+        issue(
+          `$.navigation.${field}`,
+          "invalid",
+          `${field} must be a setting key.`,
+        ),
+      );
+      continue;
+    }
+    const setting = settings.get(key);
+    if (!setting || setting.type !== expectedType)
+      issues.push(
+        issue(
+          `$.navigation.${field}`,
+          "invalid",
+          `${field} must reference a declared ${expectedType} setting.`,
+        ),
+      );
+    if (
+      field === "iconSetting" &&
+      setting &&
+      (!Array.isArray(setting.options) ||
+        setting.options.some(
+          (icon) =>
+            !PLUGIN_NAVIGATION_ICONS.some((supported) => supported === icon),
+        ))
+    )
+      issues.push(
+        issue(
+          "$.navigation.iconSetting",
+          "invalid",
+          "iconSetting options must use supported navigation icons.",
+        ),
+      );
+  }
 }
 
 function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {

@@ -11,6 +11,12 @@ const valid = {
   publisher: { name: "Example", url: "https://example.com" },
   settings: [
     {
+      key: "title",
+      label: "Title",
+      type: "string",
+      default: "Incidents",
+    },
+    {
       key: "mode",
       label: "Mode",
       type: "select",
@@ -18,6 +24,15 @@ const valid = {
       default: "safe",
     },
   ],
+  navigation: {
+    kind: "forms_workspace",
+    moduleKey: "incidents",
+    path: "/apps/incidents",
+    icon: "shield_check",
+    fallbackTitle: "Incidents",
+    titleSetting: "title",
+    order: 20,
+  },
   capabilities: {
     tools: [
       {
@@ -149,6 +164,36 @@ describe("validateManifest", () => {
     });
     expect(result.issues.map(({ code }) => code)).toEqual(
       expect.arrayContaining(["too-long", "type", "unknown-property"]),
+    );
+  });
+
+  it("rejects unsafe Forms navigation and invalid setting references", () => {
+    const result = validateManifest({
+      ...valid,
+      navigation: {
+        kind: "custom_bundle",
+        moduleKey: "Bad Module",
+        path: "/apps/../secret",
+        icon: "script",
+        fallbackTitle: "",
+        titleSetting: "missing",
+        iconSetting: "mode",
+        order: "first",
+        extra: true,
+      },
+    });
+    expect(result.issues.map(({ path }) => path)).toEqual(
+      expect.arrayContaining([
+        "$.navigation.kind",
+        "$.navigation.moduleKey",
+        "$.navigation.path",
+        "$.navigation.icon",
+        "$.navigation.fallbackTitle",
+        "$.navigation.titleSetting",
+        "$.navigation.iconSetting",
+        "$.navigation.order",
+        "$.navigation.extra",
+      ]),
     );
   });
 });

@@ -58,3 +58,10 @@ Forms-backed plugins may declare a host-rendered workspace through the optional
 `navigation` manifest field. The host validates the `/apps/<module>` path,
 supported icon, module key, and referenced title/icon settings. Navigation is
 discoverability metadata only and never grants Forms-record or host-service access.
+
+Forms-backed plugins may also declare a `formStarterPack` pointing to a strict
+JSON asset under `./forms/`. Use `validateFormStarterPack` in unit tests and the
+published `@opsrabbit/plugin-sdk/form-starter-pack-schema` in editors or other
+tooling. Starter assets contain host-rendered form and list definitions only;
+they cannot contain executable code, SQL, migrations, tenant data, or access
+policy. See the repository's Plugin Contract 0.4 guide for the complete shape.

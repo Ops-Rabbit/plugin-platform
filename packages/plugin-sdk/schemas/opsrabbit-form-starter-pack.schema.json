@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.dev/schemas/plugin/v1/opsrabbit-form-starter-pack.schema.json",
+  "title": "OpsRabbit Forms Starter Pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "moduleKey", "starters"],
+  "$defs": {
+    "key": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "type"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "type": {
+          "enum": [
+            "text",
+            "textarea",
+            "number",
+            "date",
+            "boolean",
+            "select",
+            "attachment"
+          ]
+        },
+        "required": { "type": "boolean" },
+        "placeholder": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "helpText": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "label"],
+            "properties": {
+              "value": { "$ref": "#/$defs/key" },
+              "label": { "type": "string", "minLength": 1, "maxLength": 120 }
+            }
+          }
+        },
+        "listColumn": { "type": "boolean" },
+        "summaryField": { "type": "boolean" },
+        "attachmentMultiple": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "select" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": { "options": {} },
+            "required": ["options"]
+          },
+          "else": {
+            "not": {
+              "properties": { "options": {} },
+              "required": ["options"]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "attachment" } },
+            "required": ["type"]
+          },
+          "else": {
+            "not": {
+              "properties": { "attachmentMultiple": {} },
+              "required": ["attachmentMultiple"]
+            }
+          }
+        }
+      ]
+    },
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fields", "sections", "actions"],
+      "properties": {
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 200,
+          "items": { "$ref": "#/$defs/field" }
+        },
+        "sections": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "label", "fieldKeys"],
+            "properties": {
+              "key": { "$ref": "#/$defs/key" },
+              "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "fieldKeys": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 200,
+                "uniqueItems": true,
+                "items": { "$ref": "#/$defs/key" }
+              }
+            }
+          }
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "label", "kind"],
+            "properties": {
+              "key": { "$ref": "#/$defs/key" },
+              "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "kind": { "enum": ["save_draft", "submit"] }
+            }
+          }
+        }
+      }
+    },
+    "listConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columns", "defaultSort"],
+      "properties": {
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["fieldKey", "label"],
+            "properties": {
+              "fieldKey": { "$ref": "#/$defs/key" },
+              "label": { "type": "string", "minLength": 1, "maxLength": 120 }
+            }
+          }
+        },
+        "searchFields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/key" }
+        },
+        "filterFields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/key" }
+        },
+        "workspace": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["showOnLanding", "defaultOnLanding"],
+          "properties": {
+            "showOnLanding": { "type": "boolean" },
+            "defaultOnLanding": { "type": "boolean" }
+          },
+          "if": {
+            "properties": { "defaultOnLanding": { "const": true } },
+            "required": ["defaultOnLanding"]
+          },
+          "then": {
+            "properties": { "showOnLanding": { "const": true } }
+          }
+        },
+        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "defaultSort": { "const": "updated_at_desc" }
+      }
+    },
+    "starter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "starterKey",
+        "title",
+        "description",
+        "recordType",
+        "badge",
+        "icon",
+        "schema",
+        "listConfig"
+      ],
+      "properties": {
+        "starterKey": { "$ref": "#/$defs/key" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "recordType": { "$ref": "#/$defs/key" },
+        "badge": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "icon": {
+          "enum": [
+            "activity",
+            "alert_triangle",
+            "bar_chart",
+            "book_open",
+            "building",
+            "check",
+            "headset",
+            "mail",
+            "message_square",
+            "search",
+            "variable",
+            "waves"
+          ]
+        },
+        "schema": { "$ref": "#/$defs/schema" },
+        "listConfig": { "$ref": "#/$defs/listConfig" }
+      }
+    }
+  },
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "moduleKey": { "$ref": "#/$defs/key" },
+    "starters": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/starter" }
+    }
+  }
+}

@@ -33,6 +33,13 @@ export async function packPlugin(
     if (await isPresent(path))
       await addToArchive(archive, resolve(directory), path);
   }
+  if (report.manifest.formStarterPack) {
+    await addToArchive(
+      archive,
+      resolve(directory),
+      resolve(directory, report.manifest.formStarterPack.path),
+    );
+  }
   await mkdir(outputDirectory, { recursive: true });
   const output = resolve(
     outputDirectory,

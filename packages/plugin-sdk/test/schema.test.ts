@@ -47,4 +47,45 @@ describe("published manifest schema", () => {
     expect(validateSchema(invalid)).toBe(false);
     expect(validateManifest(invalid).ok).toBe(false);
   });
+
+  it("publishes a strict Forms starter-pack schema", async () => {
+    const schema = JSON.parse(
+      await readFile(
+        resolve(
+          import.meta.dirname,
+          "../schemas/opsrabbit-form-starter-pack.schema.json",
+        ),
+        "utf8",
+      ),
+    );
+    const validateSchema = new Ajv2020({
+      allErrors: true,
+      strict: true,
+    }).compile(schema);
+    const pack = {
+      formatVersion: 1,
+      moduleKey: "quality",
+      starters: [
+        {
+          starterKey: "quality_report",
+          title: "Quality report",
+          description: "Capture quality data.",
+          recordType: "quality_report",
+          badge: "Quality",
+          icon: "check",
+          schema: {
+            fields: [{ key: "batch", label: "Batch", type: "text" }],
+            sections: [{ key: "main", label: "Main", fieldKeys: ["batch"] }],
+            actions: [{ key: "submit", label: "Submit", kind: "submit" }],
+          },
+          listConfig: {
+            columns: [{ fieldKey: "batch", label: "Batch" }],
+            defaultSort: "updated_at_desc",
+          },
+        },
+      ],
+    };
+    expect(validateSchema(pack)).toBe(true);
+    expect(validateSchema({ ...pack, executable: "./script.js" })).toBe(false);
+  });
 });

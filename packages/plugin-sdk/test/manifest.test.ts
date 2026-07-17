@@ -33,6 +33,10 @@ const valid = {
     titleSetting: "title",
     order: 20,
   },
+  formStarterPack: {
+    moduleKey: "incidents",
+    path: "./forms/incidents.json",
+  },
   capabilities: {
     tools: [
       {
@@ -194,6 +198,36 @@ describe("validateManifest", () => {
         "$.navigation.order",
         "$.navigation.extra",
       ]),
+    );
+  });
+
+  it("requires starter packs to use safe paths and the navigation module", () => {
+    const unsafe = validateManifest({
+      ...valid,
+      formStarterPack: {
+        moduleKey: "other",
+        path: "./forms/../secret.json",
+        extra: true,
+      },
+    });
+    expect(unsafe.issues.map(({ path }) => path)).toEqual(
+      expect.arrayContaining([
+        "$.formStarterPack.moduleKey",
+        "$.formStarterPack.path",
+        "$.formStarterPack.extra",
+      ]),
+    );
+    expect(
+      validateManifest({
+        ...valid,
+        navigation: undefined,
+        formStarterPack: {
+          moduleKey: "incidents",
+          path: "./forms/incidents.json",
+        },
+      }).issues,
+    ).toContainEqual(
+      expect.objectContaining({ path: "$.formStarterPack", code: "invalid" }),
     );
   });
 });

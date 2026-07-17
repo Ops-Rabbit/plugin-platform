@@ -88,6 +88,21 @@
         "order": { "type": "number" }
       }
     },
+    "formStarterPack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleKey", "path"],
+      "properties": {
+        "moduleKey": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^\\./forms/[a-z][a-z0-9_-]*\\.json$"
+        }
+      }
+    },
     "setting": {
       "type": "object",
       "additionalProperties": false,
@@ -173,6 +188,7 @@
       "uniqueItems": true
     },
     "navigation": { "$ref": "#/$defs/navigation" },
+    "formStarterPack": { "$ref": "#/$defs/formStarterPack" },
     "capabilities": {
       "type": "object",
       "additionalProperties": false,
@@ -221,5 +237,8 @@
         }
       }
     }
+  },
+  "dependentRequired": {
+    "formStarterPack": ["navigation"]
   }
 }

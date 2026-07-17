@@ -1,4 +1,4 @@
-import { definePlugin } from '@opsrabbit/plugin-sdk';
+import { definePlugin, toolResult } from '@opsrabbit/plugin-sdk';
 
 export const plugin = definePlugin({
   tools: [
@@ -9,8 +9,12 @@ export const plugin = definePlugin({
       audience: 'all',
       requiredPermission: 'read',
       async run(input: { service?: string }, context) {
-        context.logger.info('status summary requested', { service: input.service ?? 'all' });
-        return { tenantId: context.tenantId, service: input.service ?? 'all', status: 'unknown' };
+        const service = input.service ?? 'all';
+        context.logger.info('status summary requested', { service });
+        return toolResult(
+          `Service ${service} status is unknown for tenant ${context.tenantId}.`,
+          { tenantId: context.tenantId, service, status: 'unknown' },
+        );
       }
     }
   ]

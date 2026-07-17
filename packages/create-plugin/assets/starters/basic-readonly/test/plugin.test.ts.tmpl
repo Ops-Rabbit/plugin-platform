@@ -6,12 +6,20 @@ describe('{{id}}', () => {
   it('returns only the active tenant context', async () => {
     const context = createTestContext({ tenantId: 'tenant-a' });
     const result = await plugin.tools?.[0]?.run({ service: 'api' }, context);
-    expect(result).toEqual({ tenantId: 'tenant-a', service: 'api', status: 'unknown' });
+    expect(result).toEqual({
+      kind: 'opsrabbit.tool-result/v1',
+      text: 'Service api status is unknown for tenant tenant-a.',
+      value: { tenantId: 'tenant-a', service: 'api', status: 'unknown' },
+    });
     expect(context.logs).toHaveLength(1);
   });
 
   it('uses an explicit all-services default', async () => {
     const result = await plugin.tools?.[0]?.run({}, createTestContext({ tenantId: 'tenant-b' }));
-    expect(result).toEqual({ tenantId: 'tenant-b', service: 'all', status: 'unknown' });
+    expect(result).toEqual({
+      kind: 'opsrabbit.tool-result/v1',
+      text: 'Service all status is unknown for tenant tenant-b.',
+      value: { tenantId: 'tenant-b', service: 'all', status: 'unknown' },
+    });
   });
 });

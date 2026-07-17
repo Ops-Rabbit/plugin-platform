@@ -33,9 +33,12 @@ export async function preparePluginRelease(
       `package.json version ${String(packageJson.version)} must match plugin version ${manifest.version}.`,
     );
 
-  const tag =
-    options.tag ?? process.env.GITHUB_REF_NAME ?? `v${manifest.version}`;
   const expectedTag = `v${manifest.version}`;
+  const githubTag =
+    process.env.GITHUB_REF_TYPE === "tag"
+      ? process.env.GITHUB_REF_NAME
+      : undefined;
+  const tag = options.tag ?? githubTag ?? expectedTag;
   if (tag !== expectedTag)
     throw new Error(
       `Release tag ${tag} must exactly match plugin version tag ${expectedTag}.`,

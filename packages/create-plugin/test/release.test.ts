@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createPlugin } from "../src/commands/create.js";
 import { preparePluginRelease } from "../src/commands/release.js";
 
@@ -62,6 +62,21 @@ describe("preparePluginRelease", () => {
     await expect(
       preparePluginRelease({ directory: target, tag: "v0.2.0" }),
     ).rejects.toThrow("must exactly match plugin version tag v0.1.0");
+  });
+
+  it("does not treat a GitHub branch or pull-request ref as a release tag", async () => {
+    const target = await releasablePlugin();
+    vi.stubEnv("GITHUB_REF_TYPE", "branch");
+    vi.stubEnv("GITHUB_REF_NAME", "11/merge");
+    try {
+      const artifacts = await preparePluginRelease({ directory: target });
+      const metadata = JSON.parse(await readFile(artifacts[3]!, "utf8")) as {
+        tag: string;
+      };
+      expect(metadata.tag).toBe("v0.1.0");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("rejects divergent package and manifest versions", async () => {

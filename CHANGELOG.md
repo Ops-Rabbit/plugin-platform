@@ -3,7 +3,14 @@
 All notable public package changes are documented here. This project follows
 semantic versioning for the SDK contract and CLI.
 
-## 0.5.0 - Unreleased
+## 0.5.1 - 2026-07-18
+
+- Republish the complete Forms-workflow contract after npm `0.5.0` was
+  published before the workflow validator, JSON Schema, and generated starter
+  reached `main`. Consumers using `navigation.workflow` must use `0.5.1` or
+  newer.
+
+## 0.5.0 - 2026-07-17
 
 - Add the public generic Forms-workflow navigation contract, setting and starter
   cross-validation, schema support, documentation, and generated reference starter.

@@ -62,6 +62,11 @@ describe("packPlugin", () => {
       join(target, "migrations", "declared", "0001_records.sql"),
       "create table records (id text primary key);\n",
     );
+    await mkdir(join(target, "migrations", "declared", "meta"));
+    await writeFile(
+      join(target, "migrations", "declared", "meta", "_journal.json"),
+      JSON.stringify({ entries: [{ tag: "0001_records" }] }),
+    );
     await writeFile(
       join(target, "migrations", "undeclared", "not-validated.txt"),
       "must not ship\n",
@@ -101,6 +106,7 @@ describe("packPlugin", () => {
     expect(files).toContain("dist/index.js");
     expect(files).toContain("forms/starter.json");
     expect(files).toContain("migrations/declared/0001_records.sql");
+    expect(files).toContain("migrations/declared/meta/_journal.json");
     expect(files).not.toContain("migrations/undeclared/not-validated.txt");
     expect(files).not.toContain(".env");
   });

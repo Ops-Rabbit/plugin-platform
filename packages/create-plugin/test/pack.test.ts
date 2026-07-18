@@ -27,6 +27,8 @@ describe("packPlugin", () => {
     const target = await builtPlugin();
     await writeFile(join(target, ".env"), "SECRET=do-not-package");
     await mkdir(join(target, "forms"));
+    await mkdir(join(target, "migrations", "declared"), { recursive: true });
+    await mkdir(join(target, "migrations", "undeclared"), { recursive: true });
     const manifestPath = join(target, "opsrabbit.plugin.json");
     const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Record<
       string,
@@ -47,7 +49,22 @@ describe("packPlugin", () => {
           moduleKey: "quality",
           path: "./forms/starter.json",
         },
+        capabilities: {
+          ...(manifest.capabilities as Record<string, unknown>),
+          database: { mode: "plugin_schema" },
+        },
+        database: {
+          migrationsPath: "./migrations/declared",
+        },
       }),
+    );
+    await writeFile(
+      join(target, "migrations", "declared", "0001_records.sql"),
+      "create table records (id text primary key);\n",
+    );
+    await writeFile(
+      join(target, "migrations", "undeclared", "not-validated.txt"),
+      "must not ship\n",
     );
     await writeFile(
       join(target, "forms", "starter.json"),
@@ -83,6 +100,8 @@ describe("packPlugin", () => {
     expect(files).toContain("opsrabbit.plugin.json");
     expect(files).toContain("dist/index.js");
     expect(files).toContain("forms/starter.json");
+    expect(files).toContain("migrations/declared/0001_records.sql");
+    expect(files).not.toContain("migrations/undeclared/not-validated.txt");
     expect(files).not.toContain(".env");
   });
 

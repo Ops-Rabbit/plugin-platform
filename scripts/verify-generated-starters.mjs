@@ -19,6 +19,7 @@ const starterIds = [
   "scheduled-tenant-job",
   "database-tenant-records",
   "forms-workflow",
+  "service-ingress",
 ];
 await mkdir(tarballDirectory);
 

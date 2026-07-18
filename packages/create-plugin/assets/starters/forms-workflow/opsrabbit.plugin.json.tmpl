@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "description": "{{displayName}} host-rendered Forms workflow",
   "apiVersion": "1.0",
+  "minimumOpsRabbitVersion": "0.2.0",
   "main": "./dist/index.js",
+  "requiredEntitlements": ["configured_forms"],
   "settings": [
     { "key": "menu_title", "label": "Menu title", "type": "string", "default": "{{displayName}}" },
     {
@@ -33,7 +35,10 @@
     }
   },
   "formStarterPack": { "moduleKey": "workflow_requests", "path": "./forms/workflow-requests.json" },
+  "dataInsight": { "catalogRoute": "/analytics-catalog" },
   "capabilities": {
-    "tools": [{ "id": "workflow-guidance", "risk": "read", "audience": "all", "requiredPermission": "read" }]
+    "tools": [{ "id": "workflow-guidance", "risk": "read", "audience": "all", "requiredPermission": "read" }],
+    "actions": [{ "id": "request-external-review", "risk": "write", "requiredRole": "operator", "formPlacement": { "moduleKey": "workflow_requests", "recordType": "workflow_request", "intent": "neutral" } }],
+    "routes": [{ "path": "/analytics-catalog", "requiredRole": "viewer" }]
   }
 }

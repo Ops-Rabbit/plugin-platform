@@ -142,6 +142,85 @@ describe("plugin registration", () => {
     );
   });
 
+  it("requires ingress handlers and exact token security metadata", () => {
+    const ingressManifest: PluginManifest = {
+      ...manifest,
+      capabilities: {
+        ingressRoutes: [
+          {
+            path: "/events",
+            methods: ["POST"],
+            auth: "api_token",
+            requiredScopes: ["events.write"],
+            maxRequestBytes: 1024,
+          },
+        ],
+      },
+    };
+    const issues = validateRegistration(ingressManifest, {
+      ingressRoutes: [
+        {
+          path: "/events",
+          methods: ["PUT"],
+          auth: "api_token",
+          requiredScopes: ["events.admin"],
+          handle: null as never,
+        },
+      ],
+    });
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "metadata-mismatch" }),
+        expect.objectContaining({ code: "invalid-registration" }),
+      ]),
+    );
+  });
+
+  it("requires exact form-action placement and a valid availability function", () => {
+    const actionManifest: PluginManifest = {
+      ...manifest,
+      capabilities: {
+        actions: [
+          {
+            id: "start",
+            risk: "write",
+            requiredRole: "operator",
+            formPlacement: {
+              moduleKey: "inspections",
+              recordType: "inspection",
+              intent: "primary",
+            },
+          },
+        ],
+      },
+    };
+    const issues = validateRegistration(actionManifest, {
+      actions: [
+        {
+          id: "start",
+          title: "Start",
+          risk: "write",
+          requiredRole: "operator",
+          formPlacement: {
+            moduleKey: "inspections",
+            recordType: "inspection",
+            intent: "danger",
+          },
+          available: true as never,
+          async run() {
+            return null;
+          },
+        },
+      ],
+    });
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "metadata-mismatch" }),
+        expect.objectContaining({ path: "$.actions[0].available" }),
+      ]),
+    );
+  });
+
   it("validates handler and scheduler runtime requirements", () => {
     const runtimeManifest: PluginManifest = {
       ...manifest,

@@ -18,8 +18,15 @@ CLI version `{{cliVersion}}` and SDK range `{{sdkVersion}}`.
 - Keep every operation tenant-scoped. Do not cache data across invocation or
   tenant boundaries.
 - Validate untrusted input and avoid logging secrets or full sensitive payloads.
-- Database plugins use the host-provided tenant-record API only. They do not run
-  arbitrary SQL or receive database credentials.
+- Prefer the host-provided tenant-record API for simple records. Plugins that
+  explicitly declare `plugin_schema` may use only the schema-confined database
+  broker and reviewed packaged migrations; they never receive credentials or
+  access host schemas.
+- Ingress routes require scoped API-token authentication in both manifest and
+  runtime registration. A reverse-proxy path restriction is defence-in-depth,
+  not authorization.
+- Large objects use direct, short-lived object-store uploads. Do not stream
+  image or video bodies through plugin ingress handlers.
 - When adopting a newly exposed core capability, update its manifest declaration,
   public SDK types, schema-valid assets, tests, and documentation together. Do not
   copy private host types or recreate host behavior inside the plugin.

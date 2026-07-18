@@ -11,7 +11,6 @@ const INCLUDED_ROOTS = [
   "LICENSE",
   "NOTICE",
   "dist",
-  "migrations",
 ];
 
 export async function packPlugin(
@@ -38,6 +37,13 @@ export async function packPlugin(
       archive,
       resolve(directory),
       resolve(directory, report.manifest.formStarterPack.path),
+    );
+  }
+  if (report.manifest.database) {
+    await addToArchive(
+      archive,
+      resolve(directory),
+      resolve(directory, report.manifest.database.migrationsPath),
     );
   }
   await mkdir(outputDirectory, { recursive: true });

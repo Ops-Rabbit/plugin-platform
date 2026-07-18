@@ -32,6 +32,11 @@ export interface PluginActionCapability {
   risk: PluginRisk;
   requiredRole: PluginRole;
   deploymentAdminOnly?: boolean;
+  formPlacement?: {
+    moduleKey: string;
+    recordType: string;
+    intent: "primary" | "neutral" | "danger";
+  };
 }
 
 export interface PluginScheduledJobCapability {
@@ -43,6 +48,22 @@ export interface PluginRouteCapability {
   requiredRole: PluginRole;
 }
 
+export const PLUGIN_INGRESS_METHODS = [
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+] as const;
+export type PluginIngressMethod = (typeof PLUGIN_INGRESS_METHODS)[number];
+
+export interface PluginIngressRouteCapability {
+  path: `/${string}`;
+  methods: PluginIngressMethod[];
+  auth: "api_token";
+  requiredScopes: string[];
+  maxRequestBytes: number;
+}
+
 export interface PluginWidgetCapability {
   id: string;
 }
@@ -52,6 +73,9 @@ export interface PluginDeclaredCapabilities {
   actions?: PluginActionCapability[];
   scheduledJobs?: PluginScheduledJobCapability[];
   routes?: PluginRouteCapability[];
+  ingressRoutes?: PluginIngressRouteCapability[];
   widgets?: PluginWidgetCapability[];
   tenantRecords?: { collections: string[] };
+  database?: { mode: "plugin_schema" };
+  objectStore?: { read?: boolean; write?: boolean };
 }

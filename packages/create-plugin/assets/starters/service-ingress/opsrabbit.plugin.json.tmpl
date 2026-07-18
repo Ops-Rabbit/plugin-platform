@@ -1,0 +1,18 @@
+{
+  "id": "{{id}}",
+  "name": "{{displayName}}",
+  "version": "0.1.0",
+  "description": "{{displayName}} authenticated service ingress",
+  "apiVersion": "1.0",
+  "minimumOpsRabbitVersion": "0.2.0",
+  "main": "./dist/index.js",
+  "database": { "migrationsPath": "./migrations/sql" },
+  "capabilities": {
+    "ingressRoutes": [
+      { "path": "/events", "methods": ["POST"], "auth": "api_token", "requiredScopes": ["events.write"], "maxRequestBytes": 65536 },
+      { "path": "/evidence/uploads", "methods": ["POST"], "auth": "api_token", "requiredScopes": ["evidence.write"], "maxRequestBytes": 8192 }
+    ],
+    "database": { "mode": "plugin_schema" },
+    "objectStore": { "read": true, "write": true }
+  }
+}

@@ -23,6 +23,7 @@ Available starters:
 - `scheduled-tenant-job`
 - `database-tenant-records`
 - `forms-workflow`
+- `service-ingress`
 
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.
@@ -47,3 +48,10 @@ reference it with `formStarterPack` in `opsrabbit.plugin.json`. `validate` and
 also verifies its settings and root starter. `pack` includes it in the
 release ZIP. A repository can contain multiple plugin directories as long as
 each plugin runs these commands from its own package directory.
+
+The generated Forms-workflow reference also demonstrates
+`requiredEntitlements`. These are host-defined license requirements, not
+capabilities granted by the plugin manifest.
+
+Use `service-ingress` as the reference for scoped API-token ingress,
+plugin-schema migrations, and direct evidence-upload preparation.

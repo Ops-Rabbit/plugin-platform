@@ -13,9 +13,10 @@
         "fields": [
           { "key": "summary", "label": "Summary", "type": "text", "required": true, "summaryField": true },
           { "key": "details", "label": "Details", "type": "textarea" },
-          { "key": "evidence", "label": "Evidence", "type": "attachment", "attachmentMultiple": true }
+          { "key": "evidence", "label": "Evidence", "type": "attachment", "attachmentMultiple": true },
+          { "key": "external_review_requested", "label": "External review requested", "type": "boolean" }
         ],
-        "sections": [{ "key": "request", "label": "Request", "fieldKeys": ["summary", "details", "evidence"] }],
+        "sections": [{ "key": "request", "label": "Request", "fieldKeys": ["summary", "details", "evidence", "external_review_requested"] }],
         "actions": [{ "key": "submit", "label": "Submit", "kind": "submit" }]
       },
       "listConfig": {

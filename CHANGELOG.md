@@ -3,6 +3,25 @@
 All notable public package changes are documented here. This project follows
 semantic versioning for the SDK contract and CLI.
 
+## 0.6.0 - 2026-07-18
+
+- Add generic, strictly validated `requiredEntitlements` manifest metadata so a
+  plugin declares its own license requirements without plugin-id branches in
+  host core.
+- Document that the host owns entitlement recognition, license state, UI
+  suppression, activation enforcement, and audit.
+- Update the generated Forms-workflow reference to require `configured_forms`.
+- Add authenticated internal plugin ingress with exact method, scope, and body
+  limit declarations.
+- Add public schema-confined relational storage and governed object-store broker
+  contracts, migration asset validation, and a generated service-plugin starter.
+- Add generic Form-record placement for executable plugin actions, a
+  module-scoped Forms broker, and explicit Data Insight catalog discovery.
+- Add optional plugin-scoped Forms creation idempotency keys for safely
+  replaying durable ingress events after partial failures.
+- Package only the manifest-declared migration directory, preventing
+  unvalidated sibling migration assets from entering release archives.
+
 ## 0.5.1 - 2026-07-18
 
 - Republish the complete Forms-workflow contract after npm `0.5.0` was

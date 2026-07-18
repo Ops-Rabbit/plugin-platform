@@ -65,6 +65,13 @@ export interface PluginManifest {
   main: string;
   minimumOpsRabbitVersion?: string;
   publisher?: { name: string; url?: string };
+  requiredEntitlements?: string[];
+  database?: {
+    migrationsPath: `./migrations/${string}`;
+  };
+  dataInsight?: {
+    catalogRoute: `/${string}`;
+  };
   settings?: PluginSetting[];
   navigation?: PluginFormsWorkspaceNavigation;
   formStarterPack?: PluginFormStarterPackReference;

@@ -71,3 +71,14 @@ JSON stage-model setting, and optional string/number record-number settings. The
 host, not plugin code, owns root and follow-up persistence, transitions,
 authorization, concurrency, numbering, and audit. See Plugin Contract 0.5 and
 the generated `forms-workflow` starter.
+
+Plugins may declare `requiredEntitlements` as a bounded list of host-defined
+license keys. The host requires every key before exposing or activating the
+plugin and continues to enforce entitlement state on backend invocation paths;
+the manifest declaration never grants a license. See Plugin Contract 0.6.
+
+Service plugins may additionally declare authenticated `ingressRoutes`, a
+schema-confined `database`, and a tenant-scoped `objectStore`. The host supplies
+opaque token principals, broker objects, and short-lived direct-upload URLs; it
+does not expose database or object-store credentials. See Plugin Contract 0.6
+for the mandatory authorization and confinement boundary.

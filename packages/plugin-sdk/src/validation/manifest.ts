@@ -16,6 +16,8 @@ const ID = /^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$/;
 const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const ENTRY = /^\.\/dist\/[A-Za-z0-9._/-]+\.js$/;
 const COLLECTION = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+const ENTITLEMENT = /^[a-z][a-z0-9_]{0,79}$/;
+const SCOPE = /^[a-z][a-z0-9]*(?:[._:-][a-z0-9]+)*$/;
 const TOP_LEVEL = new Set([
   "id",
   "name",
@@ -25,6 +27,9 @@ const TOP_LEVEL = new Set([
   "main",
   "minimumOpsRabbitVersion",
   "publisher",
+  "requiredEntitlements",
+  "database",
+  "dataInsight",
   "settings",
   "navigation",
   "formStarterPack",
@@ -94,6 +99,22 @@ export function validateManifest(
       "Use semantic version x.y.z.",
     );
   validatePublisher(input.publisher, issues);
+  validateRequiredEntitlements(input.requiredEntitlements, issues);
+  validateDatabase(input.database, input.capabilities, issues);
+  validateDataInsight(input.dataInsight, input.capabilities, issues);
+  if (
+    input.database === undefined &&
+    record(input.capabilities) &&
+    input.capabilities.database !== undefined
+  ) {
+    issues.push(
+      issue(
+        "$.capabilities.database",
+        "invalid",
+        "The plugin_schema capability requires a database migrations declaration.",
+      ),
+    );
+  }
   validateSettings(input.settings, issues);
   validateNavigation(input.navigation, input.settings, issues);
   validateFormStarterPackReference(
@@ -102,9 +123,121 @@ export function validateManifest(
     issues,
   );
   validateCapabilities(input.capabilities, issues);
+  if (record(input.capabilities) && Array.isArray(input.capabilities.actions)) {
+    for (const [index, action] of input.capabilities.actions.entries()) {
+      if (
+        record(action) &&
+        record(action.formPlacement) &&
+        (!record(input.navigation) ||
+          typeof input.navigation.moduleKey !== "string" ||
+          action.formPlacement.moduleKey !== input.navigation.moduleKey)
+      ) {
+        issues.push(
+          issue(
+            `$.capabilities.actions[${index}].formPlacement.moduleKey`,
+            "invalid",
+            "Form action placement must use the plugin navigation module.",
+          ),
+        );
+      }
+    }
+  }
   return issues.length === 0
     ? { ok: true, value: input as unknown as PluginManifest, issues }
     : { ok: false, issues };
+}
+
+function validateDataInsight(
+  value: unknown,
+  capabilitiesValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (value === undefined) return;
+  if (!record(value)) {
+    issues.push(
+      issue(
+        "$.dataInsight",
+        "type",
+        "Data Insight declaration must be an object.",
+      ),
+    );
+    return;
+  }
+  unknownKeys(value, new Set(["catalogRoute"]), "$.dataInsight", issues);
+  string(
+    value.catalogRoute,
+    "$.dataInsight.catalogRoute",
+    issues,
+    safeRoute,
+    "Use a safe absolute route path.",
+  );
+  const routes =
+    record(capabilitiesValue) && Array.isArray(capabilitiesValue.routes)
+      ? capabilitiesValue.routes
+      : [];
+  if (
+    !routes.some((route) => record(route) && route.path === value.catalogRoute)
+  )
+    issues.push(
+      issue(
+        "$.dataInsight.catalogRoute",
+        "invalid",
+        "Data Insight catalog route must be declared as a read route capability.",
+      ),
+    );
+}
+
+function validateDatabase(
+  value: unknown,
+  capabilitiesValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (value === undefined) return;
+  if (!record(value)) {
+    issues.push(
+      issue("$.database", "type", "Database declaration must be an object."),
+    );
+    return;
+  }
+  unknownKeys(value, new Set(["migrationsPath"]), "$.database", issues);
+  string(
+    value.migrationsPath,
+    "$.database.migrationsPath",
+    issues,
+    (entry) => /^\.\/migrations\/[a-z][a-z0-9_-]*$/.test(entry),
+    "Use a safe directory directly under ./migrations/.",
+  );
+  if (
+    !record(capabilitiesValue) ||
+    !record(capabilitiesValue.database) ||
+    capabilitiesValue.database.mode !== "plugin_schema"
+  ) {
+    issues.push(
+      issue(
+        "$.database",
+        "invalid",
+        "Database migrations require the plugin_schema database capability.",
+      ),
+    );
+  }
+}
+
+function validateRequiredEntitlements(
+  value: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (value === undefined) return;
+  if (!Array.isArray(value) || value.length === 0 || value.length > 16) {
+    issues.push(
+      issue(
+        "$.requiredEntitlements",
+        "invalid",
+        "Required entitlements must contain between 1 and 16 entries.",
+      ),
+    );
+    return;
+  }
+  uniqueStrings(value, "$.requiredEntitlements", issues, ENTITLEMENT);
 }
 
 function validateFormStarterPackReference(
@@ -383,8 +516,11 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "actions",
     "scheduledJobs",
     "routes",
+    "ingressRoutes",
     "widgets",
     "tenantRecords",
+    "database",
+    "objectStore",
   ]);
   unknownKeys(value, allowed, "$.capabilities", issues);
   const capabilities = value as PluginDeclaredCapabilities;
@@ -410,10 +546,80 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     },
   );
   namedArray(
+    capabilities.ingressRoutes,
+    "ingressRoutes",
+    issues,
+    ["path", "methods", "auth", "requiredScopes", "maxRequestBytes"],
+    (entry, path) => {
+      if (typeof entry.path !== "string" || !safeRoute(entry.path))
+        issues.push(
+          issue(
+            `${path}.path`,
+            "invalid",
+            "Ingress route must be a safe absolute path.",
+          ),
+        );
+      if (!Array.isArray(entry.methods) || entry.methods.length === 0)
+        issues.push(
+          issue(
+            `${path}.methods`,
+            "required",
+            "Declare at least one ingress method.",
+          ),
+        );
+      else
+        uniqueStrings(
+          entry.methods,
+          `${path}.methods`,
+          issues,
+          /^(POST|PUT|PATCH|DELETE)$/,
+        );
+      if (entry.auth !== "api_token")
+        issues.push(
+          issue(
+            `${path}.auth`,
+            "invalid",
+            "Ingress routes require api_token authentication.",
+          ),
+        );
+      if (
+        !Array.isArray(entry.requiredScopes) ||
+        entry.requiredScopes.length === 0
+      )
+        issues.push(
+          issue(
+            `${path}.requiredScopes`,
+            "required",
+            "Declare at least one token scope.",
+          ),
+        );
+      else
+        uniqueStrings(
+          entry.requiredScopes,
+          `${path}.requiredScopes`,
+          issues,
+          SCOPE,
+        );
+      if (
+        !Number.isInteger(entry.maxRequestBytes) ||
+        Number(entry.maxRequestBytes) < 1 ||
+        Number(entry.maxRequestBytes) > 1_048_576
+      )
+        issues.push(
+          issue(
+            `${path}.maxRequestBytes`,
+            "invalid",
+            "Request limit must be between 1 and 1048576 bytes.",
+          ),
+        );
+    },
+    "path",
+  );
+  namedArray(
     capabilities.actions,
     "actions",
     issues,
-    ["id", "risk", "requiredRole", "deploymentAdminOnly"],
+    ["id", "risk", "requiredRole", "deploymentAdminOnly", "formPlacement"],
     (entry, path) => {
       member(entry.risk, PLUGIN_RISKS, `${path}.risk`, issues);
       member(entry.requiredRole, PLUGIN_ROLES, `${path}.requiredRole`, issues);
@@ -428,6 +634,44 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
             "deploymentAdminOnly must be boolean.",
           ),
         );
+      if (entry.formPlacement !== undefined) {
+        if (!record(entry.formPlacement)) {
+          issues.push(
+            issue(
+              `${path}.formPlacement`,
+              "type",
+              "Form placement must be an object.",
+            ),
+          );
+        } else {
+          unknownKeys(
+            entry.formPlacement,
+            new Set(["moduleKey", "recordType", "intent"]),
+            `${path}.formPlacement`,
+            issues,
+          );
+          string(
+            entry.formPlacement.moduleKey,
+            `${path}.formPlacement.moduleKey`,
+            issues,
+            (candidate) => COLLECTION.test(candidate),
+            "Use lowercase snake_case.",
+          );
+          string(
+            entry.formPlacement.recordType,
+            `${path}.formPlacement.recordType`,
+            issues,
+            (candidate) => COLLECTION.test(candidate),
+            "Use lowercase snake_case.",
+          );
+          member(
+            entry.formPlacement.intent,
+            ["primary", "neutral", "danger"] as const,
+            `${path}.formPlacement.intent`,
+            issues,
+          );
+        }
+      }
     },
   );
   namedArray(capabilities.scheduledJobs, "scheduledJobs", issues, ["id"]);
@@ -484,17 +728,82 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
         COLLECTION,
       );
   }
+  validateSingletonCapability(
+    capabilities.database,
+    "database",
+    ["mode"],
+    issues,
+    (entry) => {
+      if (entry.mode !== "plugin_schema")
+        issues.push(
+          issue(
+            "$.capabilities.database.mode",
+            "invalid",
+            "Database mode must be plugin_schema.",
+          ),
+        );
+    },
+  );
+  validateSingletonCapability(
+    capabilities.objectStore,
+    "objectStore",
+    ["read", "write"],
+    issues,
+    (entry) => {
+      for (const key of ["read", "write"] as const)
+        if (entry[key] !== undefined && typeof entry[key] !== "boolean")
+          issues.push(
+            issue(
+              `$.capabilities.objectStore.${key}`,
+              "type",
+              `${key} must be boolean.`,
+            ),
+          );
+      if (entry.read !== true && entry.write !== true)
+        issues.push(
+          issue(
+            "$.capabilities.objectStore",
+            "invalid",
+            "Enable read, write, or both.",
+          ),
+        );
+    },
+  );
   const surfaceCount = [
     capabilities.tools,
     capabilities.actions,
     capabilities.scheduledJobs,
     capabilities.routes,
+    capabilities.ingressRoutes,
     capabilities.widgets,
   ].reduce((sum, entries) => sum + (entries?.length ?? 0), 0);
-  if (surfaceCount === 0 && !capabilities.tenantRecords)
+  if (
+    surfaceCount === 0 &&
+    !capabilities.tenantRecords &&
+    !capabilities.database &&
+    !capabilities.objectStore
+  )
     issues.push(
       issue("$.capabilities", "required", "Declare at least one capability."),
     );
+}
+
+function validateSingletonCapability(
+  value: unknown,
+  name: string,
+  keys: string[],
+  issues: ValidationIssue[],
+  validate: (entry: Record<string, unknown>) => void,
+): void {
+  if (value === undefined) return;
+  if (!record(value)) {
+    issues.push(
+      issue(`$.capabilities.${name}`, "type", `${name} must be an object.`),
+    );
+    return;
+  }
+  unknownKeys(value, new Set(keys), `$.capabilities.${name}`, issues);
+  validate(value);
 }
 
 function namedArray<T extends object>(

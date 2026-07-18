@@ -9,6 +9,9 @@ const valid = {
   apiVersion: "1.0",
   main: "./dist/index.js",
   publisher: { name: "Example", url: "https://example.com" },
+  requiredEntitlements: ["configured_forms", "vision_agent"],
+  database: { migrationsPath: "./migrations/sql" },
+  dataInsight: { catalogRoute: "/status" },
   settings: [
     {
       key: "title",
@@ -60,12 +63,28 @@ const valid = {
         risk: "destructive",
         requiredRole: "admin",
         deploymentAdminOnly: true,
+        formPlacement: {
+          moduleKey: "incidents",
+          recordType: "incident",
+          intent: "danger",
+        },
       },
     ],
     scheduledJobs: [{ id: "snapshot" }],
     routes: [{ path: "/status", requiredRole: "viewer" }],
+    ingressRoutes: [
+      {
+        path: "/events",
+        methods: ["POST", "PUT"],
+        auth: "api_token",
+        requiredScopes: ["events.write"],
+        maxRequestBytes: 65536,
+      },
+    ],
     widgets: [{ id: "summary" }],
     tenantRecords: { collections: ["notes"] },
+    database: { mode: "plugin_schema" },
+    objectStore: { read: true, write: true },
   },
 };
 
@@ -76,6 +95,99 @@ describe("validateManifest", () => {
       value: valid,
       issues: [],
     }));
+  it("rejects empty, malformed, excessive, and duplicate entitlement declarations", () => {
+    expect(
+      validateManifest({ ...valid, requiredEntitlements: [] }).issues,
+    ).toContainEqual(
+      expect.objectContaining({ path: "$.requiredEntitlements" }),
+    );
+    const malformed = validateManifest({
+      ...valid,
+      requiredEntitlements: ["Vision-Agent", "vision_agent", "vision_agent"],
+    });
+    expect(malformed.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "$.requiredEntitlements[0]" }),
+        expect.objectContaining({
+          path: "$.requiredEntitlements[2]",
+          code: "duplicate",
+        }),
+      ]),
+    );
+    expect(
+      validateManifest({
+        ...valid,
+        requiredEntitlements: Array.from(
+          { length: 17 },
+          (_, index) => `entitlement_${index}`,
+        ),
+      }).issues,
+    ).toContainEqual(
+      expect.objectContaining({ path: "$.requiredEntitlements" }),
+    );
+  });
+  it("rejects unsafe ingress, unrequested migrations, and empty object-store access", () => {
+    const result = validateManifest({
+      ...valid,
+      database: { migrationsPath: "../outside" },
+      capabilities: {
+        ...valid.capabilities,
+        database: undefined,
+        objectStore: { read: false, write: false },
+        ingressRoutes: [
+          {
+            path: "/../events",
+            methods: ["GET", "POST", "POST"],
+            auth: "none",
+            requiredScopes: [],
+            maxRequestBytes: 2_000_000,
+          },
+        ],
+      },
+    });
+    expect(result.issues.map(({ path }) => path)).toEqual(
+      expect.arrayContaining([
+        "$.database.migrationsPath",
+        "$.database",
+        "$.capabilities.objectStore",
+        "$.capabilities.ingressRoutes[0].path",
+        "$.capabilities.ingressRoutes[0].methods[0]",
+        "$.capabilities.ingressRoutes[0].methods[2]",
+        "$.capabilities.ingressRoutes[0].auth",
+        "$.capabilities.ingressRoutes[0].requiredScopes",
+        "$.capabilities.ingressRoutes[0].maxRequestBytes",
+      ]),
+    );
+  });
+  it("requires declared Data Insight routes and matching form-action modules", () => {
+    const result = validateManifest({
+      ...valid,
+      dataInsight: { catalogRoute: "/missing" },
+      capabilities: {
+        ...valid.capabilities,
+        actions: [
+          {
+            id: "restart",
+            risk: "write",
+            requiredRole: "operator",
+            formPlacement: {
+              moduleKey: "other",
+              recordType: "incident",
+              intent: "primary",
+            },
+          },
+        ],
+      },
+    });
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "$.dataInsight.catalogRoute" }),
+        expect.objectContaining({
+          path: "$.capabilities.actions[0].formPlacement.moduleKey",
+        }),
+      ]),
+    );
+  });
   it("rejects non-objects", () =>
     expect(validateManifest(null).issues).toContainEqual(
       expect.objectContaining({ path: "$", code: "type" }),
@@ -184,7 +296,9 @@ describe("validateManifest", () => {
     ).toEqual(
       expect.arrayContaining([expect.objectContaining({ code: "required" })]),
     );
-    expect(validateManifest({ ...valid, capabilities: [] }).issues[0]).toEqual(
+    expect(
+      validateManifest({ ...valid, capabilities: [] }).issues,
+    ).toContainEqual(
       expect.objectContaining({ path: "$.capabilities", code: "type" }),
     );
   });

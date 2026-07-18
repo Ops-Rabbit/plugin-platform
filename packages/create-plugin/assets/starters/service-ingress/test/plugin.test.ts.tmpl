@@ -1,0 +1,74 @@
+import { describe, expect, it, vi } from 'vitest';
+import type { JsonValue, PluginIngressContext } from '@opsrabbit/plugin-sdk';
+import plugin from '../src/index.js';
+
+function context(overrides: Partial<PluginIngressContext> = {}): PluginIngressContext {
+  return {
+    tenantId: 'tenant-1',
+    actor: { id: 'token-1', role: 'system', kind: 'system' },
+    signal: new AbortController().signal,
+    logger: { debug() {}, info() {}, warn() {}, error() {} },
+    settings: {},
+    method: 'POST',
+    path: '/events',
+    query: {},
+    headers: {},
+    principal: { kind: 'api_token', tokenId: 'token-1', subjectId: 'device-1', scopes: ['events.write'] },
+    ...overrides,
+  };
+}
+
+describe('service ingress', () => {
+  it('persists an authenticated idempotent event', async () => {
+    const execute = vi.fn(async () => 1);
+    const route = plugin.ingressRoutes?.find((entry) => entry.path === '/events');
+    const result = await route?.handle(
+      { event_id: 'evt-1', value: 42 },
+      context({ database: { execute, query: vi.fn(), queryOne: vi.fn(), transaction: vi.fn() } }),
+    );
+    expect(result).toEqual({ accepted: true, event_id: 'evt-1' });
+    expect(execute).toHaveBeenCalledWith(expect.stringContaining('on conflict'), expect.arrayContaining(['tenant-1', 'evt-1']));
+  });
+
+  it('requests a short-lived governed object upload', async () => {
+    const createUpload = vi.fn(async () => ({ objectId: 'obj-1', method: 'PUT' as const, url: 'https://objects.invalid/upload', headers: {}, expiresAt: new Date().toISOString() }));
+    const route = plugin.ingressRoutes?.find((entry) => entry.path === '/evidence/uploads');
+    const result = await route?.handle(
+      { content_type: 'image/jpeg', content_length: 123, sha256: 'a'.repeat(64) },
+      context({ objectStore: { createUpload, stat: vi.fn(), delete: vi.fn() } }),
+    );
+    expect(result).toEqual(expect.objectContaining({ object_id: 'obj-1', method: 'PUT' }));
+  });
+
+  it.each<JsonValue>([null, [], 'event'])('rejects non-object ingress input: %j', async (value) => {
+    const route = plugin.ingressRoutes!.find((entry) => entry.path === '/events')!;
+    await expect(route.handle(value, context())).rejects.toThrow('Object input is required');
+  });
+
+  it('requires the database capability and a non-empty event id', async () => {
+    const route = plugin.ingressRoutes!.find((entry) => entry.path === '/events')!;
+    await expect(route.handle({ event_id: 'evt-1' }, context())).rejects.toThrow('Plugin database capability is unavailable');
+    await expect(route.handle(
+      { event_id: '  ' },
+      context({ database: { execute: vi.fn(), query: vi.fn(), queryOne: vi.fn(), transaction: vi.fn() } }),
+    )).rejects.toThrow('event_id is required');
+  });
+
+  it('requires the object-store capability', async () => {
+    const route = plugin.ingressRoutes!.find((entry) => entry.path === '/evidence/uploads')!;
+    await expect(route.handle({ content_type: 'image/jpeg' }, context())).rejects.toThrow('Object-store capability is unavailable');
+  });
+
+  it('normalizes missing optional wire values before delegating validation', async () => {
+    const createUpload = vi.fn(async () => ({ objectId: 'obj-2', method: 'PUT' as const, url: 'https://objects.invalid/upload', headers: {}, expiresAt: new Date().toISOString() }));
+    const uploadRoute = plugin.ingressRoutes!.find((entry) => entry.path === '/evidence/uploads')!;
+    await uploadRoute.handle({}, context({ objectStore: { createUpload, stat: vi.fn(), delete: vi.fn() } }));
+    expect(createUpload).toHaveBeenCalledWith({ contentType: '', contentLength: Number.NaN, sha256: '' });
+
+    const eventRoute = plugin.ingressRoutes!.find((entry) => entry.path === '/events')!;
+    await expect(eventRoute.handle(
+      { event_id: 42 },
+      context({ database: { execute: vi.fn(), query: vi.fn(), queryOne: vi.fn(), transaction: vi.fn() } }),
+    )).resolves.toEqual({ accepted: true, event_id: '42' });
+  });
+});

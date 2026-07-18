@@ -21,7 +21,19 @@ const valid = {
       },
     ],
     tenantRecords: { collections: ["records"] },
+    ingressRoutes: [
+      {
+        path: "/events",
+        methods: ["POST"],
+        auth: "api_token",
+        requiredScopes: ["events.write"],
+        maxRequestBytes: 4096,
+      },
+    ],
+    database: { mode: "plugin_schema" },
+    objectStore: { write: true },
   },
+  database: { migrationsPath: "./migrations/sql" },
 };
 
 describe("published manifest schema", () => {

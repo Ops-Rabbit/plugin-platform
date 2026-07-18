@@ -97,6 +97,14 @@ describe("createPlugin", () => {
     git(target, ["add", "src/index.ts"]);
     git(target, ["commit", "-m", "Change plugin runtime"]);
     const after = git(target, ["rev-parse", "HEAD"]);
+    const manifestBeforePlanning = await readFile(
+      join(target, "opsrabbit.plugin.json"),
+      "utf8",
+    );
+    const packageBeforePlanning = await readFile(
+      join(target, "package.json"),
+      "utf8",
+    );
 
     execFileSync(
       process.execPath,
@@ -112,6 +120,15 @@ describe("createPlugin", () => {
     ) as { version: string };
     expect(manifest.version).toBe("0.1.1");
     expect(packageJson.version).toBe("0.1.1");
+    expect(await readFile(join(target, "opsrabbit.plugin.json"), "utf8")).toBe(
+      manifestBeforePlanning.replace(
+        '"version": "0.1.0"',
+        '"version": "0.1.1"',
+      ),
+    );
+    expect(await readFile(join(target, "package.json"), "utf8")).toBe(
+      packageBeforePlanning.replace('"version": "0.1.0"', '"version": "0.1.1"'),
+    );
   });
 });
 

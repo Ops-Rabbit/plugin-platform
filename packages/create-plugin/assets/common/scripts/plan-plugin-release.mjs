@@ -12,8 +12,10 @@ if (!mode || !value)
 
 const manifestPath = resolve(root, "opsrabbit.plugin.json");
 const packagePath = resolve(root, "package.json");
-const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
+const manifestSource = await readFile(manifestPath, "utf8");
+const packageSource = await readFile(packagePath, "utf8");
+const manifest = JSON.parse(manifestSource);
+const packageJson = JSON.parse(packageSource);
 if (manifest.version !== packageJson.version)
   throw new Error("Plugin manifest and package versions differ.");
 
@@ -40,10 +42,14 @@ if (mode === "--tag") {
     ) {
       const [major, minor, patch] = parseVersion(released.at(-1) ?? version);
       version = `${major}.${minor}.${patch + 1}`;
-      manifest.version = version;
-      packageJson.version = version;
-      await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-      await writeFile(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+      await writeFile(
+        manifestPath,
+        replaceJsonVersion(manifestSource, manifest.version, version),
+      );
+      await writeFile(
+        packagePath,
+        replaceJsonVersion(packageSource, packageJson.version, version),
+      );
     }
   }
 }
@@ -99,6 +105,26 @@ function parseVersion(input) {
   if (!match)
     throw new Error(`Unsupported plugin version ${input}; expected X.Y.Z.`);
   return match.slice(1).map(Number);
+}
+
+function replaceJsonVersion(source, currentVersion, nextVersion) {
+  const encodedCurrent = JSON.stringify(currentVersion);
+  const encodedNext = JSON.stringify(nextVersion);
+  const versionProperty = new RegExp(
+    `("version"\\s*:\\s*)${escapeRegExp(encodedCurrent)}`,
+    "gu",
+  );
+  const matches = [...source.matchAll(versionProperty)];
+  if (matches.length !== 1)
+    throw new Error("Expected exactly one JSON version property.");
+  const updated = source.replace(versionProperty, `$1${encodedNext}`);
+  if (JSON.parse(updated).version !== nextVersion)
+    throw new Error("Failed to update the JSON version property.");
+  return updated;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
 function git(args) {

@@ -3,6 +3,15 @@
 All notable public package changes are documented here. This project follows
 semantic versioning for the SDK contract and CLI.
 
+## 0.6.1 - 2026-07-18
+
+- Require a valid Drizzle migration journal whose entries exactly match the
+  declared SQL migration files.
+- Include the required journal in the generated service-ingress starter and in
+  packaged plugin archives.
+- Prevent database plugins that would fail OpsRabbit deployment from passing
+  CLI validation and release packaging.
+
 ## 0.6.0 - 2026-07-18
 
 - Add generic, strictly validated `requiredEntitlements` manifest metadata so a

@@ -54,4 +54,6 @@ The generated Forms-workflow reference also demonstrates
 capabilities granted by the plugin manifest.
 
 Use `service-ingress` as the reference for scoped API-token ingress,
-plugin-schema migrations, and direct evidence-upload preparation.
+journaled plugin-schema Drizzle migrations, and direct evidence-upload
+preparation. Validation requires `meta/_journal.json` and rejects journal
+entries that do not exactly match the packaged SQL migration files.

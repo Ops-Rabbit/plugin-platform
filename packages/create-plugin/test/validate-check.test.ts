@@ -228,9 +228,34 @@ describe("plugin directory validation", () => {
       }),
     );
     await rm(join(migrations, "notes.txt"));
+    await writeFile(join(migrations, "meta", "_journal.json"), "not-json");
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "journal-read" }),
+    );
+    await writeFile(
+      join(migrations, "meta", "_journal.json"),
+      JSON.stringify({ entries: "invalid" }),
+    );
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "journal-entries" }),
+    );
+    await writeFile(
+      join(migrations, "meta", "_journal.json"),
+      JSON.stringify({ entries: [{ tag: "../invalid" }] }),
+    );
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "journal-tag" }),
+    );
+    await writeFile(
+      join(migrations, "meta", "_journal.json"),
+      JSON.stringify({ entries: [{ tag: "0001_missing" }] }),
+    );
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "journal-files" }),
+    );
     await rm(join(migrations, "0001_service_events.sql"));
     expect((await validatePluginDirectory(target)).issues).toContainEqual(
-      expect.objectContaining({ code: "asset-empty" }),
+      expect.objectContaining({ code: "journal-files" }),
     );
   });
 });

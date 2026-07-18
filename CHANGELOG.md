@@ -5,6 +5,11 @@ semantic versioning for the SDK contract and CLI.
 
 ## 0.5.0 - Unreleased
 
+- Add the public generic Forms-workflow navigation contract, setting and starter
+  cross-validation, schema support, documentation, and generated reference starter.
+- Add repository and generated-plugin `AGENTS.md` rules requiring every future
+  public core capability to ship with contracts, schemas, validation, docs,
+  starters, and clean-consumer coverage.
 - Add a public `release` command that enforces manifest, package, and immutable
   `vX.Y.Z` tag alignment.
 - Include a tagged GitHub Release workflow in every generated plugin repository.

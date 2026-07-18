@@ -1,0 +1,15 @@
+import { definePlugin, toolResult } from '@opsrabbit/plugin-sdk';
+
+export default definePlugin({
+  tools: [{
+    id: 'workflow-guidance',
+    description: 'Explain where this host-rendered workflow is managed.',
+    risk: 'read',
+    audience: 'all',
+    requiredPermission: 'read',
+    async run(_input, context) {
+      context.logger.info('Returned Forms workflow guidance', { tenantId: context.tenantId });
+      return toolResult('Use the Forms workspace to create and operate workflow records.', { moduleKey: 'workflow_requests' });
+    },
+  }],
+});

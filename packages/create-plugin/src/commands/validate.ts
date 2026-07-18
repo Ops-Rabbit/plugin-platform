@@ -71,6 +71,22 @@ async function validateReferencedStarterPack(
         ),
       );
     }
+    const rootStarterKey = manifest.navigation?.workflow?.rootStarterKey;
+    if (
+      rootStarterKey &&
+      result.value &&
+      !result.value.starters.some(
+        (starter) => starter.starterKey === rootStarterKey,
+      )
+    ) {
+      issues.push(
+        starterPackIssue(
+          "workflow-root-missing",
+          "Workflow rootStarterKey must name a starter in the referenced asset.",
+          "$.navigation.workflow.rootStarterKey",
+        ),
+      );
+    }
     return issues;
   } catch (error) {
     return [starterPackIssue("asset-read", readableError(error))];

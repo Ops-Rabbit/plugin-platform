@@ -20,6 +20,13 @@ CLI version `{{cliVersion}}` and SDK range `{{sdkVersion}}`.
 - Validate untrusted input and avoid logging secrets or full sensitive payloads.
 - Database plugins use the host-provided tenant-record API only. They do not run
   arbitrary SQL or receive database credentials.
+- When adopting a newly exposed core capability, update its manifest declaration,
+  public SDK types, schema-valid assets, tests, and documentation together. Do not
+  copy private host types or recreate host behavior inside the plugin.
+- Forms schema actions (`save_draft` and `submit`), Forms workflow operations
+  (root creation, follow-ups, and stage transitions), and executable plugin
+  actions are distinct. The host owns Forms authorization, persistence,
+  attachments, lineage, transition concurrency, numbering, and audit.
 
 ## Quality gates
 

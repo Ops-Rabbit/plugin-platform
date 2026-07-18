@@ -1,0 +1,39 @@
+{
+  "id": "{{id}}",
+  "name": "{{displayName}}",
+  "version": "0.1.0",
+  "description": "{{displayName}} host-rendered Forms workflow",
+  "apiVersion": "1.0",
+  "main": "./dist/index.js",
+  "settings": [
+    { "key": "menu_title", "label": "Menu title", "type": "string", "default": "{{displayName}}" },
+    {
+      "key": "workflow_stages",
+      "label": "Workflow stages",
+      "type": "json",
+      "default": [
+        { "key": "new", "label": "New", "purpose": "Review the submitted request.", "owner_mode": "agent_first", "human_gate": "", "form_starter_keys": ["workflow_note"], "transition_form_starter_key": "workflow_note", "allowed_next_stage_keys": ["complete"] },
+        { "key": "complete", "label": "Complete", "purpose": "Retain the completed record.", "owner_mode": "human_only", "human_gate": "Human confirmation required.", "form_starter_keys": [], "transition_form_starter_key": null, "allowed_next_stage_keys": [] }
+      ]
+    },
+    { "key": "record_prefix", "label": "Record prefix", "type": "string", "default": "REQ" },
+    { "key": "record_digits", "label": "Record digits", "type": "number", "default": 8, "minimum": 6, "maximum": 12 }
+  ],
+  "navigation": {
+    "kind": "forms_workspace",
+    "moduleKey": "workflow_requests",
+    "path": "/apps/workflow-requests",
+    "icon": "shield_check",
+    "fallbackTitle": "{{displayName}}",
+    "titleSetting": "menu_title",
+    "workflow": {
+      "rootStarterKey": "workflow_request",
+      "stageModelSetting": "workflow_stages",
+      "recordNumber": { "prefixSetting": "record_prefix", "digitsSetting": "record_digits" }
+    }
+  },
+  "formStarterPack": { "moduleKey": "workflow_requests", "path": "./forms/workflow-requests.json" },
+  "capabilities": {
+    "tools": [{ "id": "workflow-guidance", "risk": "read", "audience": "all", "requiredPermission": "read" }]
+  }
+}

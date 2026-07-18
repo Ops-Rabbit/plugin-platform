@@ -22,6 +22,7 @@ Available starters:
 - `operational-action`
 - `scheduled-tenant-job`
 - `database-tenant-records`
+- `forms-workflow`
 
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.
@@ -42,6 +43,7 @@ publication.
 
 For a Forms-backed plugin, place the versioned starter JSON under `forms/` and
 reference it with `formStarterPack` in `opsrabbit.plugin.json`. `validate` and
-`check` validate that asset and its module ownership; `pack` includes it in the
+`check` validate that asset and its module ownership; a declared Forms workflow
+also verifies its settings and root starter. `pack` includes it in the
 release ZIP. A repository can contain multiple plugin directories as long as
 each plugin runs these commands from its own package directory.

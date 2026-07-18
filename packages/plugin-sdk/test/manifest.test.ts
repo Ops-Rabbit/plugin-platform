@@ -23,6 +23,9 @@ const valid = {
       options: ["safe"],
       default: "safe",
     },
+    { key: "stages", label: "Stages", type: "json", default: [] },
+    { key: "prefix", label: "Prefix", type: "string", default: "INC" },
+    { key: "digits", label: "Digits", type: "number", default: 8 },
   ],
   navigation: {
     kind: "forms_workspace",
@@ -32,6 +35,11 @@ const valid = {
     fallbackTitle: "Incidents",
     titleSetting: "title",
     order: 20,
+    workflow: {
+      rootStarterKey: "incident",
+      stageModelSetting: "stages",
+      recordNumber: { prefixSetting: "prefix", digitsSetting: "digits" },
+    },
   },
   formStarterPack: {
     moduleKey: "incidents",
@@ -138,6 +146,32 @@ describe("validateManifest", () => {
         "forbidden",
         "duplicate",
         "required",
+      ]),
+    );
+  });
+  it("rejects malformed workflows and incompatible setting references", () => {
+    const result = validateManifest({
+      ...valid,
+      navigation: {
+        ...valid.navigation,
+        workflow: {
+          rootStarterKey: "Bad Key",
+          stageModelSetting: "title",
+          recordNumber: {
+            prefixSetting: "digits",
+            digitsSetting: "prefix",
+            extra: true,
+          },
+        },
+      },
+    });
+    expect(result.issues.map(({ path }) => path)).toEqual(
+      expect.arrayContaining([
+        "$.navigation.workflow.rootStarterKey",
+        "$.navigation.workflow.stageModelSetting",
+        "$.navigation.workflow.recordNumber.prefixSetting",
+        "$.navigation.workflow.recordNumber.digitsSetting",
+        "$.navigation.workflow.recordNumber.extra",
       ]),
     );
   });

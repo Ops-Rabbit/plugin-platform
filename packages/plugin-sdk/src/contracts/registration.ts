@@ -7,6 +7,7 @@ import type {
   PluginWidgetType,
 } from "./capabilities.js";
 import type {
+  PluginIngressContext,
   PluginInvocationContext,
   PluginRouteContext,
 } from "./contexts.js";
@@ -61,7 +62,16 @@ export interface ActionDefinition<TInput = unknown, TOutput = JsonValue> {
   risk: PluginRisk;
   requiredRole: PluginRole;
   deploymentAdminOnly?: boolean;
+  formPlacement?: {
+    moduleKey: string;
+    recordType: string;
+    intent: "primary" | "neutral" | "danger";
+  };
   sampleInput?: Readonly<Record<string, JsonValue>>;
+  available?(
+    input: TInput,
+    context: PluginInvocationContext,
+  ): Promise<{ enabled: boolean; reason?: string }>;
   run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
 }
 
@@ -82,6 +92,14 @@ export interface ReadRouteDefinition {
   handle(context: PluginRouteContext): Promise<JsonValue>;
 }
 
+export interface IngressRouteDefinition<TInput = JsonValue> {
+  path: `/${string}`;
+  methods: Array<"POST" | "PUT" | "PATCH" | "DELETE">;
+  auth: "api_token";
+  requiredScopes: string[];
+  handle(input: TInput, context: PluginIngressContext): Promise<JsonValue>;
+}
+
 export interface WidgetDefinition {
   id: string;
   title: string;
@@ -99,6 +117,7 @@ export interface PluginDefinition {
   actions?: ActionDefinition[];
   scheduledJobs?: ScheduledJobDefinition[];
   routes?: ReadRouteDefinition[];
+  ingressRoutes?: IngressRouteDefinition[];
   widgets?: WidgetDefinition[];
 }
 

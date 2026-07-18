@@ -44,7 +44,17 @@
         "id": { "$ref": "#/$defs/id" },
         "risk": { "$ref": "#/$defs/risk" },
         "requiredRole": { "$ref": "#/$defs/role" },
-        "deploymentAdminOnly": { "type": "boolean" }
+        "deploymentAdminOnly": { "type": "boolean" },
+        "formPlacement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["moduleKey", "recordType", "intent"],
+          "properties": {
+            "moduleKey": { "$ref": "#/$defs/settingKey" },
+            "recordType": { "$ref": "#/$defs/settingKey" },
+            "intent": { "enum": ["primary", "neutral", "danger"] }
+          }
+        }
       }
     },
     "named": {
@@ -63,6 +73,45 @@
           "pattern": "^/(?!.*(?:^|/)\\.\\.?/)[A-Za-z0-9._/-]+$"
         },
         "requiredRole": { "$ref": "#/$defs/role" }
+      }
+    },
+    "ingressRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "methods",
+        "auth",
+        "requiredScopes",
+        "maxRequestBytes"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^/(?!.*(?:^|/)\\.\\.?/)[A-Za-z0-9._/-]+$"
+        },
+        "methods": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["POST", "PUT", "PATCH", "DELETE"] }
+        },
+        "auth": { "const": "api_token" },
+        "requiredScopes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:[._:-][a-z0-9]+)*$",
+            "maxLength": 100
+          }
+        },
+        "maxRequestBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        }
       }
     },
     "navigation": {
@@ -204,6 +253,38 @@
         "url": { "type": "string", "pattern": "^https?://" }
       }
     },
+    "requiredEntitlements": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{0,79}$"
+      }
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["migrationsPath"],
+      "properties": {
+        "migrationsPath": {
+          "type": "string",
+          "pattern": "^\\./migrations/[a-z][a-z0-9_-]*$"
+        }
+      }
+    },
+    "dataInsight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["catalogRoute"],
+      "properties": {
+        "catalogRoute": {
+          "type": "string",
+          "pattern": "^/(?!.*(?:^|/)\\.\\.?/)[A-Za-z0-9._/-]+$"
+        }
+      }
+    },
     "settings": {
       "type": "array",
       "items": { "$ref": "#/$defs/setting" },
@@ -236,6 +317,11 @@
           "minItems": 1,
           "items": { "$ref": "#/$defs/route" }
         },
+        "ingressRoutes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/ingressRoute" }
+        },
         "widgets": {
           "type": "array",
           "minItems": 1,
@@ -256,11 +342,54 @@
               }
             }
           }
+        },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode"],
+          "properties": { "mode": { "const": "plugin_schema" } }
+        },
+        "objectStore": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "read": { "type": "boolean" },
+            "write": { "type": "boolean" }
+          }
         }
       }
     }
   },
   "dependentRequired": {
-    "formStarterPack": ["navigation"]
-  }
+    "formStarterPack": ["navigation"],
+    "database": ["capabilities"]
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "database": {} }, "required": ["database"] },
+      "then": {
+        "properties": {
+          "capabilities": {
+            "type": "object",
+            "properties": { "database": {} },
+            "required": ["database"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capabilities": {
+            "type": "object",
+            "properties": { "database": {} },
+            "required": ["database"]
+          }
+        },
+        "required": ["capabilities"]
+      },
+      "then": { "required": ["database"] }
+    }
+  ]
 }

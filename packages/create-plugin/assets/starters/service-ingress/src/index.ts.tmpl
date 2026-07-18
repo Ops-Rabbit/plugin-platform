@@ -1,0 +1,50 @@
+import { definePlugin, type JsonValue } from '@opsrabbit/plugin-sdk';
+
+function objectInput(value: JsonValue): Record<string, JsonValue> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Object input is required');
+  return value;
+}
+
+export default definePlugin({
+  ingressRoutes: [
+    {
+      path: '/events',
+      methods: ['POST'],
+      auth: 'api_token',
+      requiredScopes: ['events.write'],
+      async handle(input, context) {
+        const event = objectInput(input);
+        if (!context.database) throw new Error('Plugin database capability is unavailable');
+        const eventId = String(event.event_id ?? '').trim();
+        if (!eventId) throw new Error('event_id is required');
+        await context.database.execute(
+          'insert into service_events (tenant_id, event_id, payload_json) values ($1, $2, $3) on conflict (tenant_id, event_id) do nothing',
+          [context.tenantId, eventId, JSON.stringify(event)],
+        );
+        return { accepted: true, event_id: eventId };
+      },
+    },
+    {
+      path: '/evidence/uploads',
+      methods: ['POST'],
+      auth: 'api_token',
+      requiredScopes: ['evidence.write'],
+      async handle(input, context) {
+        const request = objectInput(input);
+        if (!context.objectStore) throw new Error('Object-store capability is unavailable');
+        const upload = await context.objectStore.createUpload({
+          contentType: String(request.content_type ?? ''),
+          contentLength: Number(request.content_length),
+          sha256: String(request.sha256 ?? ''),
+        });
+        return {
+          object_id: upload.objectId,
+          method: upload.method,
+          url: upload.url,
+          headers: { ...upload.headers },
+          expires_at: upload.expiresAt,
+        };
+      },
+    },
+  ],
+});

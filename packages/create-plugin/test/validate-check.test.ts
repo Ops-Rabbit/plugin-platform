@@ -208,4 +208,29 @@ describe("plugin directory validation", () => {
       expect.objectContaining({ code: "asset-size" }),
     );
   });
+
+  it("validates referenced plugin-schema migration assets", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "opsrabbit-service-"));
+    const target = join(parent, "service");
+    await createPlugin({
+      name: "Service",
+      starter: "service-ingress",
+      output: target,
+    });
+    expect((await validatePluginDirectory(target)).issues).toEqual([]);
+
+    const migrations = join(target, "migrations", "sql");
+    await writeFile(join(migrations, "notes.txt"), "not a migration");
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({
+        code: "asset-entry",
+        path: "$.database.migrationsPath",
+      }),
+    );
+    await rm(join(migrations, "notes.txt"));
+    await rm(join(migrations, "0001_service_events.sql"));
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "asset-empty" }),
+    );
+  });
 });

@@ -12,4 +12,37 @@ export default definePlugin({
       return toolResult('Use the Forms workspace to create and operate workflow records.', { moduleKey: 'workflow_requests' });
     },
   }],
+  actions: [{
+    id: 'request-external-review',
+    title: 'Request external review',
+    risk: 'write',
+    requiredRole: 'operator',
+    formPlacement: { moduleKey: 'workflow_requests', recordType: 'workflow_request', intent: 'neutral' },
+    async available(input: { submission_id?: string }, context) {
+      const submission = input.submission_id && await context.forms?.getSubmission(input.submission_id);
+      return submission
+        ? { enabled: submission.values.external_review_requested !== true }
+        : { enabled: false, reason: 'Workflow request was not found.' };
+    },
+    async run(input: { submission_id?: string }, context) {
+      if (!input.submission_id || !context.forms) throw new Error('Forms capability is unavailable');
+      await context.forms.updateSubmission(input.submission_id, { external_review_requested: true });
+      return { requested: true, submission_id: input.submission_id };
+    },
+  }],
+  routes: [{
+    path: '/analytics-catalog',
+    requiredRole: 'viewer',
+    async handle() {
+      return {
+        schema_version: 1,
+        metric_contract_version: '1.0.0',
+        datasets: [{
+          dataset_id: 'workflow.requests', label: 'Workflow requests', module_key: 'workflow_requests',
+          record_type: 'workflow_request', dimensions: [{ field_key: 'external_review_requested', value_type: 'boolean', sensitivity: 'internal' }],
+          measures: [{ key: 'request_count', aggregation: 'count', unit: 'requests' }], default_time_field: null,
+        }],
+      };
+    },
+  }],
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createTestContext } from '@opsrabbit/plugin-sdk/testing';
 import plugin from '../src/index.js';
 
@@ -12,7 +12,40 @@ describe('{{displayName}}', () => {
     });
   });
 
-  it('registers no executable action for a Forms transition', () => {
-    expect(plugin.actions).toBeUndefined();
+  it('keeps plugin actions distinct from Forms transitions', async () => {
+    const updateSubmission = vi.fn(async () => ({ id: 'form-1', moduleKey: 'workflow_requests', recordType: 'workflow_request', status: 'submitted', values: { external_review_requested: true } }));
+    const context = createTestContext({ tenantId: 'tenant-a' });
+    const result = await plugin.actions?.[0]?.run(
+      { submission_id: 'form-1' },
+      { ...context, forms: { createSubmission: vi.fn(), getSubmission: vi.fn(), updateSubmission, attachObject: vi.fn() } },
+    );
+    expect(result).toEqual({ requested: true, submission_id: 'form-1' });
+    expect(updateSubmission).toHaveBeenCalledWith('form-1', { external_review_requested: true });
+  });
+
+  it('reports action availability from the current Form record', async () => {
+    const action = plugin.actions?.[0];
+    const base = createTestContext({ tenantId: 'tenant-a' });
+    const available = await action?.available?.(
+      { submission_id: 'form-1' },
+      { ...base, forms: { createSubmission: vi.fn(), getSubmission: vi.fn(async () => ({ id: 'form-1', moduleKey: 'workflow_requests', recordType: 'workflow_request', status: 'submitted', values: {} })), updateSubmission: vi.fn(), attachObject: vi.fn() } },
+    );
+    expect(available).toEqual({ enabled: true });
+    const alreadyRequested = await action?.available?.(
+      { submission_id: 'form-1' },
+      { ...base, forms: { createSubmission: vi.fn(), getSubmission: vi.fn(async () => ({ id: 'form-1', moduleKey: 'workflow_requests', recordType: 'workflow_request', status: 'submitted', values: { external_review_requested: true } })), updateSubmission: vi.fn(), attachObject: vi.fn() } },
+    );
+    expect(alreadyRequested).toEqual({ enabled: false });
+    await expect(action?.available?.({}, base)).resolves.toEqual({ enabled: false, reason: 'Workflow request was not found.' });
+    await expect(action?.run({}, base)).rejects.toThrow('Forms capability is unavailable');
+  });
+
+  it('publishes a typed Forms analytics catalog', async () => {
+    const catalog = await plugin.routes?.[0]?.handle({
+      ...createTestContext({ tenantId: 'tenant-a' }),
+      path: '/analytics-catalog',
+      query: {},
+    });
+    expect(catalog).toEqual(expect.objectContaining({ schema_version: 1 }));
   });
 });

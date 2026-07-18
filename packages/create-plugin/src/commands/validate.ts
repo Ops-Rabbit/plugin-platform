@@ -1,4 +1,4 @@
-import { lstat, readFile } from "node:fs/promises";
+import { lstat, readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   validateFormStarterPack,
@@ -30,8 +30,71 @@ export async function validatePluginDirectory(
   }
   const result = validateManifest(input);
   if (!result.ok || !result.value) return { issues: result.issues };
-  const issues = await validateReferencedStarterPack(directory, result.value);
+  const issues = [
+    ...(await validateReferencedStarterPack(directory, result.value)),
+    ...(await validateReferencedMigrations(directory, result.value)),
+  ];
   return { manifest: result.value, issues };
+}
+
+async function validateReferencedMigrations(
+  directory: string,
+  manifest: PluginManifest,
+): Promise<ValidationIssue[]> {
+  if (!manifest.database) return [];
+  const root = resolve(directory, manifest.database.migrationsPath);
+  try {
+    const rootStat = await lstat(root);
+    if (!rootStat.isDirectory() || rootStat.isSymbolicLink())
+      return [
+        migrationIssue(
+          "asset-type",
+          "Migrations path must be a regular directory.",
+        ),
+      ];
+    const entries = await readdir(root, { withFileTypes: true });
+    if (entries.length === 0)
+      return [
+        migrationIssue(
+          "asset-empty",
+          "Migrations directory must contain SQL files.",
+        ),
+      ];
+    const issues: ValidationIssue[] = [];
+    let totalBytes = 0;
+    for (const entry of entries) {
+      const path = resolve(root, entry.name);
+      const stat = await lstat(path);
+      if (
+        !entry.isFile() ||
+        stat.isSymbolicLink() ||
+        !/^\d{4}_[a-z][a-z0-9_]*\.sql$/.test(entry.name)
+      ) {
+        issues.push(
+          migrationIssue(
+            "asset-entry",
+            `Invalid migration file: ${entry.name}.`,
+          ),
+        );
+        continue;
+      }
+      totalBytes += stat.size;
+    }
+    if (totalBytes > 1024 * 1024)
+      issues.push(
+        migrationIssue(
+          "asset-size",
+          "Migration assets exceed the 1 MiB limit.",
+        ),
+      );
+    return issues;
+  } catch (error) {
+    return [migrationIssue("asset-read", readableError(error))];
+  }
+}
+
+function migrationIssue(code: string, message: string): ValidationIssue {
+  return { path: "$.database.migrationsPath", code, message };
 }
 
 async function validateReferencedStarterPack(

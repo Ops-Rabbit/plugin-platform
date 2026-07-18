@@ -1,0 +1,7 @@
+create table service_events (
+  tenant_id text not null,
+  event_id text not null,
+  payload_json jsonb not null,
+  created_at timestamptz not null default now(),
+  primary key (tenant_id, event_id)
+);

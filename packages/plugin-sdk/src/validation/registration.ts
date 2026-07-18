@@ -11,6 +11,7 @@ const SECTIONS = [
   "actions",
   "scheduledJobs",
   "routes",
+  "ingressRoutes",
   "widgets",
 ] as const;
 
@@ -47,6 +48,13 @@ export function validateRegistration(
     manifest.capabilities.actions,
     definition.actions,
     issues,
+  );
+  validateNamed(
+    "ingressRoutes",
+    manifest.capabilities.ingressRoutes,
+    definition.ingressRoutes,
+    issues,
+    "path",
   );
   validateNamed(
     "scheduledJobs",
@@ -111,7 +119,9 @@ export function validateRegistration(
       (declared.risk !== action.risk ||
         declared.requiredRole !== action.requiredRole ||
         Boolean(declared.deploymentAdminOnly) !==
-          Boolean(action.deploymentAdminOnly))
+          Boolean(action.deploymentAdminOnly) ||
+        JSON.stringify(declared.formPlacement ?? null) !==
+          JSON.stringify(action.formPlacement ?? null))
     ) {
       issues.push(
         issue(
@@ -133,10 +143,51 @@ export function validateRegistration(
           `Action ${action.id} requires a title and run function.`,
         ),
       );
+    if (
+      action.available !== undefined &&
+      typeof action.available !== "function"
+    )
+      issues.push(
+        issue(
+          `$.actions[${index}].available`,
+          "invalid-registration",
+          `Action ${action.id} availability must be a function.`,
+        ),
+      );
   }
   const declaredRoutes = new Map(
     (manifest.capabilities.routes ?? []).map((entry) => [entry.path, entry]),
   );
+  const declaredIngressRoutes = new Map(
+    (manifest.capabilities.ingressRoutes ?? []).map((entry) => [
+      entry.path,
+      entry,
+    ]),
+  );
+  for (const [index, route] of (definition.ingressRoutes ?? []).entries()) {
+    const declared = declaredIngressRoutes.get(route.path);
+    if (
+      declared &&
+      (declared.auth !== route.auth ||
+        !sameStrings(declared.methods, route.methods) ||
+        !sameStrings(declared.requiredScopes, route.requiredScopes))
+    )
+      issues.push(
+        issue(
+          `$.ingressRoutes[${index}]`,
+          "metadata-mismatch",
+          `Ingress route ${route.path} security metadata differs from the manifest.`,
+        ),
+      );
+    if (typeof route.handle !== "function")
+      issues.push(
+        issue(
+          `$.ingressRoutes[${index}].handle`,
+          "invalid-registration",
+          `Ingress route ${route.path} requires a handle function.`,
+        ),
+      );
+  }
   for (const [index, route] of (definition.routes ?? []).entries()) {
     if (declaredRoutes.get(route.path)?.requiredRole !== route.requiredRole)
       issues.push(
@@ -272,6 +323,17 @@ function validateNamed(
           `Manifest declares ${section} ${id}, but the entry does not register it.`,
         ),
       );
+}
+function sameStrings(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  const sortedLeft = [...left].sort();
+  const sortedRight = [...right].sort();
+  return (
+    sortedLeft.length === sortedRight.length &&
+    sortedLeft.every((value, index) => value === sortedRight[index])
+  );
 }
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

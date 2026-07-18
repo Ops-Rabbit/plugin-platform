@@ -147,6 +147,28 @@ describe("plugin directory validation", () => {
     );
   });
 
+  it("requires a workflow root declared by the referenced starter pack", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "opsrabbit-workflow-"));
+    const target = join(parent, "workflow");
+    await createPlugin({
+      name: "Workflow",
+      starter: "forms-workflow",
+      output: target,
+    });
+    const manifestPath = join(target, "opsrabbit.plugin.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+      navigation: { workflow: { rootStarterKey: string } };
+    };
+    manifest.navigation.workflow.rootStarterKey = "missing_root";
+    await writeFile(manifestPath, JSON.stringify(manifest));
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({
+        code: "workflow-root-missing",
+        path: "$.navigation.workflow.rootStarterKey",
+      }),
+    );
+  });
+
   it("rejects missing, non-file, and oversized starter-pack assets", async () => {
     const target = await preparedPlugin();
     const manifestPath = join(target, "opsrabbit.plugin.json");

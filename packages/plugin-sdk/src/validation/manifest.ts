@@ -187,6 +187,7 @@ function validateNavigation(
       "titleSetting",
       "iconSetting",
       "order",
+      "workflow",
     ]),
     "$.navigation",
     issues,
@@ -281,6 +282,93 @@ function validateNavigation(
         ),
       );
   }
+  validateFormsWorkflow(value.workflow, settings, issues);
+}
+
+function validateFormsWorkflow(
+  value: unknown,
+  settings: Map<unknown, Record<string, unknown>>,
+  issues: ValidationIssue[],
+): void {
+  if (value === undefined) return;
+  if (!record(value)) {
+    issues.push(
+      issue("$.navigation.workflow", "type", "Workflow must be an object."),
+    );
+    return;
+  }
+  unknownKeys(
+    value,
+    new Set(["rootStarterKey", "stageModelSetting", "recordNumber"]),
+    "$.navigation.workflow",
+    issues,
+  );
+  string(
+    value.rootStarterKey,
+    "$.navigation.workflow.rootStarterKey",
+    issues,
+    (entry) => COLLECTION.test(entry),
+    "Use lowercase snake_case.",
+  );
+  validateSettingReference(
+    value.stageModelSetting,
+    "$.navigation.workflow.stageModelSetting",
+    "json",
+    settings,
+    issues,
+  );
+  if (value.recordNumber === undefined) return;
+  if (!record(value.recordNumber)) {
+    issues.push(
+      issue(
+        "$.navigation.workflow.recordNumber",
+        "type",
+        "Record number must be an object.",
+      ),
+    );
+    return;
+  }
+  unknownKeys(
+    value.recordNumber,
+    new Set(["prefixSetting", "digitsSetting"]),
+    "$.navigation.workflow.recordNumber",
+    issues,
+  );
+  validateSettingReference(
+    value.recordNumber.prefixSetting,
+    "$.navigation.workflow.recordNumber.prefixSetting",
+    "string",
+    settings,
+    issues,
+  );
+  validateSettingReference(
+    value.recordNumber.digitsSetting,
+    "$.navigation.workflow.recordNumber.digitsSetting",
+    "number",
+    settings,
+    issues,
+  );
+}
+
+function validateSettingReference(
+  value: unknown,
+  path: string,
+  expectedType: string,
+  settings: Map<unknown, Record<string, unknown>>,
+  issues: ValidationIssue[],
+): void {
+  if (typeof value !== "string" || !COLLECTION.test(value)) {
+    issues.push(issue(path, "invalid", "Value must be a setting key."));
+    return;
+  }
+  if (settings.get(value)?.type !== expectedType)
+    issues.push(
+      issue(
+        path,
+        "invalid",
+        `Value must reference a declared ${expectedType} setting.`,
+      ),
+    );
 }
 
 function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {

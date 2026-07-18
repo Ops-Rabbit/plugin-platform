@@ -1,0 +1,45 @@
+{
+  "formatVersion": 1,
+  "moduleKey": "workflow_requests",
+  "starters": [
+    {
+      "starterKey": "workflow_request",
+      "title": "Workflow request",
+      "description": "Create the root record for the workflow.",
+      "recordType": "workflow_request",
+      "badge": "Request",
+      "icon": "activity",
+      "schema": {
+        "fields": [
+          { "key": "summary", "label": "Summary", "type": "text", "required": true, "summaryField": true },
+          { "key": "details", "label": "Details", "type": "textarea" },
+          { "key": "evidence", "label": "Evidence", "type": "attachment", "attachmentMultiple": true }
+        ],
+        "sections": [{ "key": "request", "label": "Request", "fieldKeys": ["summary", "details", "evidence"] }],
+        "actions": [{ "key": "submit", "label": "Submit", "kind": "submit" }]
+      },
+      "listConfig": {
+        "columns": [{ "fieldKey": "system_record_id", "label": "Record" }, { "fieldKey": "summary", "label": "Summary" }, { "fieldKey": "system_workflow_stage", "label": "Stage" }],
+        "searchFields": ["summary", "details"],
+        "filterFields": ["summary"],
+        "workspace": { "showOnLanding": true, "defaultOnLanding": true },
+        "pageSize": 25,
+        "defaultSort": "updated_at_desc"
+      }
+    },
+    {
+      "starterKey": "workflow_note",
+      "title": "Workflow note",
+      "description": "Add a governed follow-up record to the workflow root.",
+      "recordType": "workflow_note",
+      "badge": "Note",
+      "icon": "message_square",
+      "schema": {
+        "fields": [{ "key": "note", "label": "Note", "type": "textarea", "required": true }],
+        "sections": [{ "key": "note", "label": "Note", "fieldKeys": ["note"] }],
+        "actions": [{ "key": "submit", "label": "Add note", "kind": "submit" }]
+      },
+      "listConfig": { "columns": [{ "fieldKey": "note", "label": "Note" }], "defaultSort": "updated_at_desc" }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+import { describe, expect, it } from 'vitest';
+import { createTestContext } from '@opsrabbit/plugin-sdk/testing';
+import plugin from '../src/index.js';
+
+describe('{{displayName}}', () => {
+  it('keeps workflow execution in the host-rendered Forms workspace', async () => {
+    const result = await plugin.tools?.[0]?.run({}, createTestContext({ tenantId: 'tenant-a' }));
+    expect(result).toEqual({
+      kind: 'opsrabbit.tool-result/v1',
+      text: 'Use the Forms workspace to create and operate workflow records.',
+      value: { moduleKey: 'workflow_requests' },
+    });
+  });
+
+  it('registers no executable action for a Forms transition', () => {
+    expect(plugin.actions).toBeUndefined();
+  });
+});

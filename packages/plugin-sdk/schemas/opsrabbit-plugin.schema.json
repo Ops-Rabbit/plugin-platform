@@ -15,6 +15,10 @@
   ],
   "$defs": {
     "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" },
+    "settingKey": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+    },
     "version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
@@ -85,7 +89,25 @@
           "type": "string",
           "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
         },
-        "order": { "type": "number" }
+        "order": { "type": "number" },
+        "workflow": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rootStarterKey", "stageModelSetting"],
+          "properties": {
+            "rootStarterKey": { "$ref": "#/$defs/settingKey" },
+            "stageModelSetting": { "$ref": "#/$defs/settingKey" },
+            "recordNumber": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["prefixSetting", "digitsSetting"],
+              "properties": {
+                "prefixSetting": { "$ref": "#/$defs/settingKey" },
+                "digitsSetting": { "$ref": "#/$defs/settingKey" }
+              }
+            }
+          }
+        }
       }
     },
     "formStarterPack": {

@@ -65,3 +65,9 @@ published `@opsrabbit/plugin-sdk/form-starter-pack-schema` in editors or other
 tooling. Starter assets contain host-rendered form and list definitions only;
 they cannot contain executable code, SQL, migrations, tenant data, or access
 policy. See the repository's Plugin Contract 0.4 guide for the complete shape.
+
+A Forms workspace may declare `navigation.workflow` to identify its root starter,
+JSON stage-model setting, and optional string/number record-number settings. The
+host, not plugin code, owns root and follow-up persistence, transitions,
+authorization, concurrency, numbering, and audit. See Plugin Contract 0.5 and
+the generated `forms-workflow` starter.

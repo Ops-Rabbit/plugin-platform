@@ -7,6 +7,22 @@ import { STARTER_IDS } from "../src/constants.js";
 import { createPlugin } from "../src/commands/create.js";
 
 describe("createPlugin", () => {
+  it("keeps clean-consumer verification aligned with the public starter inventory", async () => {
+    const verifier = await readFile(
+      join(
+        import.meta.dirname,
+        "..",
+        "..",
+        "..",
+        "scripts",
+        "verify-generated-starters.mjs",
+      ),
+      "utf8",
+    );
+    for (const starter of STARTER_IDS)
+      expect(verifier).toContain(`"${starter}"`);
+  });
+
   it.each(STARTER_IDS)("creates a complete %s repository", async (starter) => {
     const parent = await mkdtemp(join(tmpdir(), "opsrabbit-create-"));
     const target = join(parent, starter);

@@ -44,7 +44,17 @@ export type PluginFormsWorkspaceNavigation = {
   titleSetting?: string;
   iconSetting?: string;
   order?: number;
+  workflow?: PluginFormsWorkflowNavigation;
 };
+
+export interface PluginFormsWorkflowNavigation {
+  rootStarterKey: string;
+  stageModelSetting: string;
+  recordNumber?: {
+    prefixSetting: string;
+    digitsSetting: string;
+  };
+}
 
 export interface PluginManifest {
   id: string;

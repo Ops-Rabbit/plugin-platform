@@ -7,7 +7,7 @@ This repository publishes:
 
 - [`@opsrabbit/plugin-sdk`](./packages/plugin-sdk): contracts, manifest schema,
   validation, compatibility checks, package inventory, and an isolated test harness.
-- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, four starters,
+- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, five starters,
   reference implementations, generated tests, CI, README, and `AGENTS.md`.
 
 ## Create a plugin
@@ -24,8 +24,8 @@ npm run plugin:pack
 ```
 
 Starters are executable reference plugins covering a read-only tool, controlled
-operational action, tenant-scoped scheduled job, and host-brokered tenant
-records. Run `opsrabbit-plugin examples list` to enumerate them. The generated ZIP is intended
+operational action, tenant-scoped scheduled job, host-brokered tenant records,
+and a host-rendered Forms workflow. Run `opsrabbit-plugin examples list` to enumerate them. The generated ZIP is intended
 for quarantine and administrator review in the OpsRabbit Plugins UI.
 
 ## Trust boundary
@@ -54,5 +54,6 @@ pnpm quality
 See [contributing](./CONTRIBUTING.md), [security](./SECURITY.md), and
 [release operations](./docs/releasing.md). The [starter reference](./docs/starter-reference.md),
 [Forms workspace navigation](./docs/plugin-contract-v0.3.md), and
-[Forms starter-pack](./docs/plugin-contract-v0.4.md) guides explain the contract
+[Forms starter-pack](./docs/plugin-contract-v0.4.md), and
+[Forms workflow](./docs/plugin-contract-v0.5.md) guides explain the contract
 and expected tests for each plugin shape.

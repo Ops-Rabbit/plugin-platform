@@ -5,6 +5,7 @@ export const STARTER_IDS = [
   "operational-action",
   "scheduled-tenant-job",
   "database-tenant-records",
+  "forms-workflow",
 ] as const;
 
 export type StarterId = (typeof STARTER_IDS)[number];

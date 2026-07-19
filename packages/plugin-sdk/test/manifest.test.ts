@@ -11,7 +11,17 @@ const valid = {
   publisher: { name: "Example", url: "https://example.com" },
   requiredEntitlements: ["configured_forms", "vision_agent"],
   database: { migrationsPath: "./migrations/sql" },
-  dataInsight: { catalogRoute: "/status" },
+  dataInsight: {
+    catalogRoute: "/status",
+    templatesRoute: "/insights-templates",
+    workspace: {
+      enabledSetting: "insights_enabled",
+      placement: "tab",
+      defaultTemplateId: "operations-overview",
+      defaultTab: "records",
+      allowUserDefault: true,
+    },
+  },
   settings: [
     {
       key: "title",
@@ -29,6 +39,12 @@ const valid = {
     { key: "stages", label: "Stages", type: "json", default: [] },
     { key: "prefix", label: "Prefix", type: "string", default: "INC" },
     { key: "digits", label: "Digits", type: "number", default: 8 },
+    {
+      key: "insights_enabled",
+      label: "Insights enabled",
+      type: "boolean",
+      default: true,
+    },
   ],
   navigation: {
     kind: "forms_workspace",
@@ -71,7 +87,10 @@ const valid = {
       },
     ],
     scheduledJobs: [{ id: "snapshot" }],
-    routes: [{ path: "/status", requiredRole: "viewer" }],
+    routes: [
+      { path: "/status", requiredRole: "viewer" },
+      { path: "/insights-templates", requiredRole: "viewer" },
+    ],
     ingressRoutes: [
       {
         path: "/events",
@@ -185,6 +204,56 @@ describe("validateManifest", () => {
         expect.objectContaining({
           path: "$.capabilities.actions[0].formPlacement.moduleKey",
         }),
+      ]),
+    );
+  });
+  it("validates Insights workspace settings and template routes", () => {
+    const result = validateManifest({
+      ...valid,
+      dataInsight: {
+        catalogRoute: "/status",
+        templatesRoute: "/missing-templates",
+        workspace: {
+          enabledSetting: "title",
+          placement: "panel",
+          defaultTemplateId: "Bad Template",
+          defaultTab: "dashboard",
+          allowUserDefault: "yes",
+        },
+      },
+    });
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "$.dataInsight.templatesRoute" }),
+        expect.objectContaining({
+          path: "$.dataInsight.workspace.enabledSetting",
+        }),
+        expect.objectContaining({ path: "$.dataInsight.workspace.placement" }),
+        expect.objectContaining({
+          path: "$.dataInsight.workspace.defaultTemplateId",
+        }),
+        expect.objectContaining({ path: "$.dataInsight.workspace.defaultTab" }),
+        expect.objectContaining({
+          path: "$.dataInsight.workspace.allowUserDefault",
+        }),
+      ]),
+    );
+  });
+  it("requires Data Insight routes to be viewer-readable", () => {
+    const result = validateManifest({
+      ...valid,
+      capabilities: {
+        ...valid.capabilities,
+        routes: valid.capabilities.routes.map((route) => ({
+          ...route,
+          requiredRole: "operator",
+        })),
+      },
+    });
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "$.dataInsight.catalogRoute" }),
+        expect.objectContaining({ path: "$.dataInsight.templatesRoute" }),
       ]),
     );
   });

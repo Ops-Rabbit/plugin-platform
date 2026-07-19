@@ -1,5 +1,6 @@
 export * from "./contracts/capabilities.js";
 export * from "./contracts/contexts.js";
+export * from "./contracts/data-insight.js";
 export * from "./contracts/errors.js";
 export * from "./contracts/forms.js";
 export * from "./contracts/manifest.js";

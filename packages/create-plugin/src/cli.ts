@@ -111,9 +111,12 @@ async function createCommand(args: string[]): Promise<number> {
 
 function examplesCommand(args: string[]): number {
   if (args[0] !== "list")
-    throw new Error("Usage: opsrabbit-plugin examples list");
+    throw new Error("Usage: opsrabbit-plugin examples list [--verbose]");
+  const verbose = args.includes("--verbose");
   process.stdout.write(
-    `${STARTER_IDS.map((id) => `${id}\t${STARTER_DESCRIPTIONS[id]}`).join("\n")}\n`,
+    `${STARTER_IDS.map((id) =>
+      verbose ? `${id}\t${STARTER_DESCRIPTIONS[id]}` : id,
+    ).join("\n")}\n`,
   );
   return 0;
 }
@@ -146,7 +149,7 @@ function help(): string {
 
 Usage:
   opsrabbit-plugin create <name> [--starter <id> | --example <id>] [--output <directory>]
-  opsrabbit-plugin examples list
+  opsrabbit-plugin examples list [--verbose]
   opsrabbit-plugin validate [--directory <directory>]
   opsrabbit-plugin check [--directory <directory>]
   opsrabbit-plugin test [--directory <directory>]

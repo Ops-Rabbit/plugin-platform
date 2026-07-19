@@ -3,6 +3,23 @@
 All notable public package changes are documented here. This project follows
 semantic versioning for the SDK contract and CLI.
 
+## 0.7.1 - 2026-07-19
+
+- Add the generated `forms-insights` reference with Forms metadata, analytics
+  and template catalogs, editable dashboard defaults, and clean-consumer tests.
+- Document first-use dashboard materialization, grant-aware layout editing,
+  Records-tab drill-through, and generic agent catalog/query tools.
+- Preserve the script-compatible `examples list` output and add descriptive
+  `examples list --verbose` output.
+
+## 0.7.0 - 2026-07-19
+
+- Add the public Forms Insights workspace manifest contract, dashboard-template
+  types, strict manifest validation, JSON Schema support, and host compatibility
+  guidance.
+- Support metric, table, text, bar, line, area, pie, donut, and scatter template
+  widgets through caller-scoped Forms analytics.
+
 ## 0.6.1 - 2026-07-18
 
 - Require a valid Drizzle migration journal whose entries exactly match the

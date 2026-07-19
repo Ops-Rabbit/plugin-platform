@@ -3,6 +3,7 @@ import { appendFile, mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { validateManifest } from "@opsrabbit/plugin-sdk";
 import { STARTER_IDS } from "../src/constants.js";
 import { createPlugin } from "../src/commands/create.js";
 
@@ -31,6 +32,7 @@ describe("createPlugin", () => {
       await readFile(join(target, "opsrabbit.plugin.json"), "utf8"),
     ) as { id: string };
     expect(manifest.id).toBe(`example-${starter}`);
+    expect(validateManifest(manifest).issues).toEqual([]);
     expect(
       await readFile(join(target, "src", "index.ts"), "utf8"),
     ).not.toContain("{{");

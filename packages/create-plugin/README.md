@@ -28,6 +28,8 @@ Available starters:
 
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.
+`opsrabbit-plugin examples list` retains its script-friendly one-ID-per-line
+output; add `--verbose` for descriptions.
 
 The generated repository contains unit tests, CI and automatic-release workflows,
 `AGENTS.md`, a manifest, build configuration, and release packaging. `pack` validates the

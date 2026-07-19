@@ -85,6 +85,13 @@ matching caller-visible list in the plugin's Records tab. Agents use the host's
 generic Data Insight catalog and bounded query tools rather than plugin-specific
 SQL or query tools. A referenced `enabledSetting` must be a declared boolean
 setting. See Plugin Contract 0.7 and the generated `forms-insights` starter.
+Validate analytics output with `validateFormsAnalyticsCatalog` and
+`validateDataInsightDashboardTemplateCatalog`. The matching published JSON
+Schemas are available from
+`@opsrabbit/plugin-sdk/forms-analytics-catalog-schema` and
+`@opsrabbit/plugin-sdk/data-insight-template-catalog-schema` for editor and CI
+validation; runtime validation additionally checks duplicate identifiers and
+query/widget references that JSON Schema cannot express.
 
 Plugins may declare `requiredEntitlements` as a bounded list of host-defined
 license keys. The host requires every key before exposing or activating the

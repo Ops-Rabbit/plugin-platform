@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.ai/schemas/data-insight-template-catalog-v1.json",
+  "title": "OpsRabbit Data Insight Template Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "templates"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "templates": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "$ref": "#/$defs/template" }
+    }
+  },
+  "$defs": {
+    "key": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$"
+    },
+    "jsonObject": { "type": "object" },
+    "template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "queries", "widgets"],
+      "properties": {
+        "id": { "$ref": "#/$defs/key" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "suggested_questions": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+        },
+        "layout": { "$ref": "#/$defs/jsonObject" },
+        "queries": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/query" }
+        },
+        "widgets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 40,
+          "items": { "$ref": "#/$defs/widget" }
+        }
+      }
+    },
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "dataset_id", "name", "semantic_query"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "dataset_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,159}$"
+        },
+        "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "description": { "type": "string" },
+        "semantic_query": { "$ref": "#/$defs/jsonObject" },
+        "visualization_hint": { "type": "string" }
+      }
+    },
+    "widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "type", "title"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "type": {
+          "enum": [
+            "metric",
+            "table",
+            "text",
+            "bar",
+            "line",
+            "area",
+            "pie",
+            "donut",
+            "scatter"
+          ]
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "description": { "type": "string" },
+        "query_key": { "$ref": "#/$defs/key" },
+        "text_content": { "type": "string" },
+        "config": { "$ref": "#/$defs/jsonObject" },
+        "position": { "$ref": "#/$defs/jsonObject" }
+      }
+    }
+  }
+}

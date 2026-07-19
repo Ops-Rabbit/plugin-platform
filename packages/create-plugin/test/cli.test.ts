@@ -14,7 +14,23 @@ describe("CLI", () => {
     expect(await main(["--help"])).toBe(0);
     expect(await main(["--version"])).toBe(0);
     expect(await main(["examples", "list"])).toBe(0);
-    expect(stdout).toHaveBeenCalled();
+    expect(stdout).toHaveBeenCalledWith(
+      `${[
+        "basic-readonly",
+        "operational-action",
+        "scheduled-tenant-job",
+        "database-tenant-records",
+        "forms-workflow",
+        "forms-insights",
+        "service-ingress",
+      ].join("\n")}\n`,
+    );
+    expect(await main(["examples", "list", "--verbose"])).toBe(0);
+    expect(stdout).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "forms-insights\tForms analytics catalog, editable Insights dashboard, and Records drill-through.",
+      ),
+    );
   });
 
   it("creates a plugin and reports validation", async () => {

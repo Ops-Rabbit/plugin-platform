@@ -78,8 +78,20 @@ A Forms-backed plugin may declare `dataInsight.templatesRoute` and a tab-based
 widget references, layout hints, and suggested questions, never SQL. The host
 validates the route and configured default template, executes queries through
 the caller-scoped Forms analytics boundary, and owns any per-user default-tab
-preference. A referenced `enabledSetting` must be a declared boolean setting.
-See Plugin Contract 0.7.
+preference. On first authorized use, the host materializes the template as
+normal saved queries and an editable Data Insight dashboard. Dashboard grants
+control rendering and layout writes; query-backed widgets may drill into the
+matching caller-visible list in the plugin's Records tab. Agents use the host's
+generic Data Insight catalog and bounded query tools rather than plugin-specific
+SQL or query tools. A referenced `enabledSetting` must be a declared boolean
+setting. See Plugin Contract 0.7 and the generated `forms-insights` starter.
+Validate analytics output with `validateFormsAnalyticsCatalog` and
+`validateDataInsightDashboardTemplateCatalog`. The matching published JSON
+Schemas are available from
+`@opsrabbit/plugin-sdk/forms-analytics-catalog-schema` and
+`@opsrabbit/plugin-sdk/data-insight-template-catalog-schema` for editor and CI
+validation; runtime validation additionally checks duplicate identifiers and
+query/widget references that JSON Schema cannot express.
 
 Plugins may declare `requiredEntitlements` as a bounded list of host-defined
 license keys. The host requires every key before exposing or activating the

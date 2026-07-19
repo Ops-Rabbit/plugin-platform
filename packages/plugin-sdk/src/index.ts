@@ -6,6 +6,7 @@ export * from "./contracts/forms.js";
 export * from "./contracts/manifest.js";
 export * from "./contracts/registration.js";
 export * from "./validation/compatibility.js";
+export * from "./validation/data-insight.js";
 export * from "./validation/forms.js";
 export * from "./validation/manifest.js";
 export * from "./validation/registration.js";

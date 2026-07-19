@@ -1,0 +1,66 @@
+import { describe, expect, it } from "vitest";
+import {
+  validateDataInsightDashboardTemplateCatalog,
+  validateFormsAnalyticsCatalog,
+} from "@opsrabbit/plugin-sdk";
+import { createTestContext } from "@opsrabbit/plugin-sdk/testing";
+import plugin from "../src/index.js";
+
+describe("{{displayName}}", () => {
+  it("publishes a caller-scoped Forms analytics catalog", async () => {
+    const catalog = await plugin.routes?.[0]?.handle({
+      ...createTestContext({ tenantId: "tenant-a" }),
+      path: "/analytics-catalog",
+      query: {},
+    });
+    expect(catalog).toEqual(
+      expect.objectContaining({
+        schema_version: 1,
+        datasets: [
+          expect.objectContaining({
+            dataset_id: "insights.records",
+            module_key: "insight_records",
+            record_type: "insight_record",
+          }),
+        ],
+      }),
+    );
+    expect(validateFormsAnalyticsCatalog(catalog)).toEqual(
+      expect.objectContaining({ ok: true, issues: [] }),
+    );
+  });
+
+  it("publishes stable saved-query and widget references", async () => {
+    const templates = await plugin.routes?.[1]?.handle({
+      ...createTestContext({ tenantId: "tenant-a" }),
+      path: "/analytics-templates",
+      query: {},
+    });
+    expect(templates).toEqual(
+      expect.objectContaining({
+        schema_version: 1,
+        templates: [
+          expect.objectContaining({
+            id: "records-overview",
+            queries: expect.arrayContaining([
+              expect.objectContaining({
+                key: "records-by-category",
+                dataset_id: "insights.records",
+              }),
+            ]),
+            widgets: expect.arrayContaining([
+              expect.objectContaining({
+                key: "category-chart",
+                query_key: "records-by-category",
+                type: "bar",
+              }),
+            ]),
+          }),
+        ],
+      }),
+    );
+    expect(validateDataInsightDashboardTemplateCatalog(templates)).toEqual(
+      expect.objectContaining({ ok: true, issues: [] }),
+    );
+  });
+});

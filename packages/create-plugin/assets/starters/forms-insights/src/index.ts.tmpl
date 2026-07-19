@@ -1,0 +1,107 @@
+import {
+  definePlugin,
+  type DataInsightDashboardTemplateCatalog,
+  type FormsAnalyticsCatalog,
+  type JsonValue,
+} from "@opsrabbit/plugin-sdk";
+
+const analyticsCatalog = {
+  schema_version: 1,
+  metric_contract_version: "1.0.0",
+  datasets: [
+    {
+      dataset_id: "insights.records",
+      label: "Insight records",
+      module_key: "insight_records",
+      record_type: "insight_record",
+      dimensions: [
+        { field_key: "category", value_type: "text", sensitivity: "internal" },
+      ],
+      measures: [
+        { key: "record_count", aggregation: "count", unit: "records" },
+        {
+          key: "total_amount",
+          field_key: "amount",
+          aggregation: "sum",
+          unit: "units",
+        },
+      ],
+      default_time_field: null,
+    },
+  ],
+} satisfies FormsAnalyticsCatalog;
+
+const templateCatalog = {
+  schema_version: 1,
+  templates: [
+    {
+      id: "records-overview",
+      title: "Records overview",
+      description: "Caller-visible record totals and category distribution.",
+      suggested_questions: ["Which category has the most records?"],
+      layout: { columns: 12 },
+      queries: [
+        {
+          key: "record-count",
+          dataset_id: "insights.records",
+          name: "Record count",
+          semantic_query: {
+            dimensions: [],
+            measures: ["record_count"],
+            filters: [],
+            limit: 1,
+          },
+          visualization_hint: "metric",
+        },
+        {
+          key: "records-by-category",
+          dataset_id: "insights.records",
+          name: "Records by category",
+          semantic_query: {
+            dimensions: ["category"],
+            measures: ["record_count"],
+            filters: [],
+            limit: 20,
+          },
+          visualization_hint: "bar",
+        },
+      ],
+      widgets: [
+        {
+          key: "record-total",
+          type: "metric",
+          title: "Records",
+          query_key: "record-count",
+          position: { x: 0, y: 0, w: 4, h: 2 },
+        },
+        {
+          key: "category-chart",
+          type: "bar",
+          title: "Records by category",
+          query_key: "records-by-category",
+          config: { x_field: "category", value_field: "record_count" },
+          position: { x: 0, y: 2, w: 8, h: 4 },
+        },
+      ],
+    },
+  ],
+} satisfies DataInsightDashboardTemplateCatalog;
+
+export default definePlugin({
+  routes: [
+    {
+      path: "/analytics-catalog",
+      requiredRole: "viewer",
+      async handle() {
+        return analyticsCatalog as unknown as JsonValue;
+      },
+    },
+    {
+      path: "/analytics-templates",
+      requiredRole: "viewer",
+      async handle() {
+        return templateCatalog as unknown as JsonValue;
+      },
+    },
+  ],
+});

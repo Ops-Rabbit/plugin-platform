@@ -8,7 +8,7 @@ This repository publishes:
 - [`@opsrabbit/plugin-sdk`](./packages/plugin-sdk): contracts, manifest schema,
   validation, compatibility checks, governed service-plugin contracts, package
   inventory, and an isolated test harness.
-- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, six starters,
+- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, seven starters,
   reference implementations, generated tests, CI, README, and `AGENTS.md`.
 
 ## Create a plugin
@@ -26,8 +26,9 @@ npm run plugin:pack
 
 Starters are executable reference plugins covering a read-only tool, controlled
 operational action, tenant-scoped scheduled job, host-brokered tenant records,
-a host-rendered Forms workflow, and authenticated service ingress with
-plugin-owned storage. Run `opsrabbit-plugin examples list` to enumerate them. The generated ZIP is intended
+a host-rendered Forms workflow, a Forms Insights workspace, and authenticated
+service ingress with plugin-owned storage. Run `opsrabbit-plugin examples list`
+to enumerate them. The generated ZIP is intended
 for quarantine and administrator review in the OpsRabbit Plugins UI.
 
 ## Trust boundary

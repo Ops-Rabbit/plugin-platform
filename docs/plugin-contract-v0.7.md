@@ -45,12 +45,56 @@ release.
 
 The route supplies metadata only. The host validates catalog limits, dataset
 references, and widget references, then executes each query as the authenticated
-caller. A template cannot contain SQL, grant access, persist a dashboard, or
-expose records hidden by Forms authorization.
+caller. A template cannot contain SQL, grant access, or expose records hidden by
+Forms authorization. The host—not plugin code—persists the materialized saved
+queries, dashboard, widgets, and layout.
 
 ## Preferences and saved dashboards
 
 The host may persist the initial Records/Insights tab for the current tenant,
-user, and module when `allowUserDefault` is enabled. Enabling a plugin never
-creates saved queries or dashboards. Agents and users create those through the
-normal host services, preserving owner and grant rules.
+user, and module when `allowUserDefault` is enabled. Enabling a plugin alone does
+not create analytics resources. The first authorized operator or administrator
+who opens Insights materializes the configured template through the normal host
+saved-query and dashboard services, preserving owner and grant rules. Later
+opens render the accessible existing dashboard instead of duplicating it.
+
+Users with dashboard write access can edit its metadata and widget set, drag or
+resize widgets, and add their accessible saved queries. Layout changes use the
+normal dashboard update authorization. Read-only users receive a static grid.
+
+For query-backed widgets, the host can resolve the dataset's `module_key` and
+`record_type` to a published, workspace-visible Form definition. **View records**
+then deep-links to that list in the plugin workspace's Records tab. The target
+catalog and list API remain caller-scoped; the link does not grant record access.
+
+## Agent tools
+
+Do not add SQL or duplicate generic analytics tools to the plugin. OpsRabbit
+agents use the host-provided Data Insight tools:
+
+- `data_insight_catalog_list` discovers enabled plugin/Form datasets and fields.
+- `data_insight_query_preview` executes a bounded semantic query as the current
+  actor.
+- Saved-query and dashboard tools persist user-requested analysis under normal
+  owner and grant rules.
+
+## Generate a reference plugin
+
+The CLI includes a complete reference with Forms metadata, analytics and
+template routes, settings, widget layouts, and tests:
+
+```bash
+npm create @opsrabbit/plugin@latest quality-insights -- --starter forms-insights
+cd quality-insights
+npm install
+npm run check
+npm run test:coverage
+npm run build
+npm run plugin:check
+npm run plugin:pack
+```
+
+The generated manifest requires OpsRabbit `0.3.0` or newer and the
+`configured_forms` and `data_insight` entitlements. Install and publish its Forms
+starter pack before expecting datasets, Records drill-through, or dashboard
+results.

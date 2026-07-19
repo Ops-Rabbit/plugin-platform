@@ -1,0 +1,31 @@
+{
+  "formatVersion": 1,
+  "moduleKey": "insight_records",
+  "starters": [
+    {
+      "starterKey": "insight_record",
+      "title": "Insight record",
+      "description": "Capture records exposed through the plugin analytics catalog.",
+      "recordType": "insight_record",
+      "badge": "Insight",
+      "icon": "bar_chart",
+      "schema": {
+        "fields": [
+          { "key": "reference", "label": "Reference", "type": "text", "required": true, "summaryField": true },
+          { "key": "category", "label": "Category", "type": "select", "required": true, "options": [{ "value": "standard", "label": "Standard" }, { "value": "priority", "label": "Priority" }] },
+          { "key": "amount", "label": "Amount", "type": "number", "required": true }
+        ],
+        "sections": [{ "key": "record", "label": "Record", "fieldKeys": ["reference", "category", "amount"] }],
+        "actions": [{ "key": "submit", "label": "Submit", "kind": "submit" }]
+      },
+      "listConfig": {
+        "columns": [{ "fieldKey": "reference", "label": "Reference" }, { "fieldKey": "category", "label": "Category" }, { "fieldKey": "amount", "label": "Amount" }],
+        "searchFields": ["reference"],
+        "filterFields": ["category"],
+        "workspace": { "showOnLanding": true, "defaultOnLanding": true },
+        "pageSize": 25,
+        "defaultSort": "updated_at_desc"
+      }
+    }
+  ]
+}

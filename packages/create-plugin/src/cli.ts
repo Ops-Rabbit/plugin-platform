@@ -2,7 +2,12 @@
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { checkApiCompatibility } from "@opsrabbit/plugin-sdk";
-import { CLI_VERSION, STARTER_IDS, isStarterId } from "./constants.js";
+import {
+  CLI_VERSION,
+  STARTER_DESCRIPTIONS,
+  STARTER_IDS,
+  isStarterId,
+} from "./constants.js";
 import { checkPluginDirectory } from "./commands/check.js";
 import { createPlugin } from "./commands/create.js";
 import { packPlugin } from "./commands/pack.js";
@@ -107,7 +112,9 @@ async function createCommand(args: string[]): Promise<number> {
 function examplesCommand(args: string[]): number {
   if (args[0] !== "list")
     throw new Error("Usage: opsrabbit-plugin examples list");
-  process.stdout.write(`${STARTER_IDS.join("\n")}\n`);
+  process.stdout.write(
+    `${STARTER_IDS.map((id) => `${id}\t${STARTER_DESCRIPTIONS[id]}`).join("\n")}\n`,
+  );
   return 0;
 }
 

@@ -1,0 +1,40 @@
+{
+  "id": "{{id}}",
+  "name": "{{displayName}}",
+  "version": "0.1.0",
+  "description": "{{displayName}} Forms analytics and editable Insights workspace",
+  "apiVersion": "1.0",
+  "minimumOpsRabbitVersion": "0.3.0",
+  "main": "./dist/index.js",
+  "requiredEntitlements": ["configured_forms", "data_insight"],
+  "settings": [
+    { "key": "menu_title", "label": "Menu title", "type": "string", "default": "{{displayName}}" },
+    { "key": "insights_enabled", "label": "Insights enabled", "type": "boolean", "default": true }
+  ],
+  "navigation": {
+    "kind": "forms_workspace",
+    "moduleKey": "insight_records",
+    "path": "/apps/insight-records",
+    "icon": "bar_chart",
+    "fallbackTitle": "{{displayName}}",
+    "titleSetting": "menu_title"
+  },
+  "formStarterPack": { "moduleKey": "insight_records", "path": "./forms/insight-records.json" },
+  "dataInsight": {
+    "catalogRoute": "/analytics-catalog",
+    "templatesRoute": "/analytics-templates",
+    "workspace": {
+      "enabledSetting": "insights_enabled",
+      "placement": "tab",
+      "defaultTemplateId": "records-overview",
+      "defaultTab": "records",
+      "allowUserDefault": true
+    }
+  },
+  "capabilities": {
+    "routes": [
+      { "path": "/analytics-catalog", "requiredRole": "viewer" },
+      { "path": "/analytics-templates", "requiredRole": "viewer" }
+    ]
+  }
+}

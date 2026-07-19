@@ -23,6 +23,7 @@ Available starters:
 - `scheduled-tenant-job`
 - `database-tenant-records`
 - `forms-workflow`
+- `forms-insights`
 - `service-ingress`
 
 Each starter is also a versioned reference example. Use
@@ -52,6 +53,20 @@ each plugin runs these commands from its own package directory.
 The generated Forms-workflow reference also demonstrates
 `requiredEntitlements`. These are host-defined license requirements, not
 capabilities granted by the plugin manifest.
+
+Use `forms-insights` for a complete Forms-backed analytics reference. It
+generates a published starter pack, a caller-scoped analytics catalog, an
+Insights template route, a configurable Insights tab, dashboard widgets, and
+tests for both wire catalogs. After installation and publication, the host
+materializes the default template into ordinary saved queries and an editable
+Data Insight dashboard. Users with dashboard write access can drag, resize, and
+add saved-query widgets. Query-backed widgets can open the matching list in the
+plugin workspace's Records tab. Agents use the host's generic Data Insight
+catalog and bounded query tools; the plugin does not reimplement them.
+
+```bash
+npm create @opsrabbit/plugin@latest quality-insights -- --starter forms-insights
+```
 
 Use `service-ingress` as the reference for scoped API-token ingress,
 journaled plugin-schema Drizzle migrations, and direct evidence-upload

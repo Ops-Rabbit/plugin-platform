@@ -12,6 +12,7 @@ needed. Run `opsrabbit-plugin examples list` to see the ids and generate one wit
 | `scheduled-tenant-job`    | `scheduledJobs`                 | Tenant-scoped background work and cancellation                    |
 | `database-tenant-records` | named tool and tenant records   | Host-brokered persistence with no SQL client or credentials       |
 | `forms-workflow`          | Forms metadata and read tool    | Root/follow-up forms, configured stages, numbering, host boundary |
+| `forms-insights`          | Forms analytics and Insights    | Catalog, templates, editable dashboard, Records drill-through     |
 | `service-ingress`         | ingress, database, object store | Scoped tokens, journaled Drizzle migrations, evidence uploads     |
 
 Each generated repository includes unit tests, coverage enforcement, TypeScript

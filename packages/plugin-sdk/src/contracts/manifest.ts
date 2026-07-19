@@ -71,6 +71,14 @@ export interface PluginManifest {
   };
   dataInsight?: {
     catalogRoute: `/${string}`;
+    templatesRoute?: `/${string}`;
+    workspace?: {
+      enabledSetting?: string;
+      placement: "tab";
+      defaultTemplateId: string;
+      defaultTab?: "records" | "insights";
+      allowUserDefault?: boolean;
+    };
   };
   settings?: PluginSetting[];
   navigation?: PluginFormsWorkspaceNavigation;

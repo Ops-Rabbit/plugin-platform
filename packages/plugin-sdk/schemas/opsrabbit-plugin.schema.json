@@ -282,6 +282,28 @@
         "catalogRoute": {
           "type": "string",
           "pattern": "^/(?!.*(?:^|/)\\.\\.?/)[A-Za-z0-9._/-]+$"
+        },
+        "templatesRoute": {
+          "type": "string",
+          "pattern": "^/(?!.*(?:^|/)\\.\\.?/)[A-Za-z0-9._/-]+$"
+        },
+        "workspace": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["placement", "defaultTemplateId"],
+          "properties": {
+            "enabledSetting": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,79}$"
+            },
+            "placement": { "const": "tab" },
+            "defaultTemplateId": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]{0,79}$"
+            },
+            "defaultTab": { "enum": ["records", "insights"] },
+            "allowUserDefault": { "type": "boolean" }
+          }
         }
       }
     },

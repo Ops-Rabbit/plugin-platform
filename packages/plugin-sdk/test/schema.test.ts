@@ -100,4 +100,45 @@ describe("published manifest schema", () => {
     expect(validateSchema(pack)).toBe(true);
     expect(validateSchema({ ...pack, executable: "./script.js" })).toBe(false);
   });
+
+  it("publishes the bounded Data Insight workspace shape", async () => {
+    const schema = JSON.parse(
+      await readFile(
+        resolve(import.meta.dirname, "../schemas/opsrabbit-plugin.schema.json"),
+        "utf8",
+      ),
+    );
+    const validateSchema = new Ajv2020({
+      allErrors: true,
+      strict: true,
+    }).compile(schema);
+    expect(
+      validateSchema({
+        ...valid,
+        dataInsight: {
+          catalogRoute: "/analytics-catalog",
+          templatesRoute: "/analytics-templates",
+          workspace: {
+            placement: "tab",
+            defaultTemplateId: "quality-overview",
+            defaultTab: "records",
+            allowUserDefault: true,
+          },
+        },
+      }),
+    ).toBe(true);
+    expect(
+      validateSchema({
+        ...valid,
+        dataInsight: {
+          catalogRoute: "/analytics-catalog",
+          templatesRoute: "/analytics-templates",
+          workspace: {
+            placement: "panel",
+            defaultTemplateId: "quality-overview",
+          },
+        },
+      }),
+    ).toBe(false);
+  });
 });

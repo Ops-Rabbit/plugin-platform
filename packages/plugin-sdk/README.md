@@ -72,6 +72,15 @@ host, not plugin code, owns root and follow-up persistence, transitions,
 authorization, concurrency, numbering, and audit. See Plugin Contract 0.5 and
 the generated `forms-workflow` starter.
 
+A Forms-backed plugin may declare `dataInsight.templatesRoute` and a tab-based
+`dataInsight.workspace`. The templates route returns the exported
+`DataInsightDashboardTemplateCatalog` wire shape: bounded semantic query JSON,
+widget references, layout hints, and suggested questions, never SQL. The host
+validates the route and configured default template, executes queries through
+the caller-scoped Forms analytics boundary, and owns any per-user default-tab
+preference. A referenced `enabledSetting` must be a declared boolean setting.
+See Plugin Contract 0.7.
+
 Plugins may declare `requiredEntitlements` as a bounded list of host-defined
 license keys. The host requires every key before exposing or activating the
 plugin and continues to enforce entitlement state on backend invocation paths;

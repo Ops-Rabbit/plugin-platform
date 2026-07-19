@@ -101,7 +101,13 @@ export function validateManifest(
   validatePublisher(input.publisher, issues);
   validateRequiredEntitlements(input.requiredEntitlements, issues);
   validateDatabase(input.database, input.capabilities, issues);
-  validateDataInsight(input.dataInsight, input.capabilities, issues);
+  validateDataInsight(
+    input.dataInsight,
+    input.capabilities,
+    input.settings,
+    input.navigation,
+    issues,
+  );
   if (
     input.database === undefined &&
     record(input.capabilities) &&
@@ -150,6 +156,8 @@ export function validateManifest(
 function validateDataInsight(
   value: unknown,
   capabilitiesValue: unknown,
+  settingsValue: unknown,
+  navigationValue: unknown,
   issues: ValidationIssue[],
 ): void {
   if (value === undefined) return;
@@ -163,7 +171,12 @@ function validateDataInsight(
     );
     return;
   }
-  unknownKeys(value, new Set(["catalogRoute"]), "$.dataInsight", issues);
+  unknownKeys(
+    value,
+    new Set(["catalogRoute", "templatesRoute", "workspace"]),
+    "$.dataInsight",
+    issues,
+  );
   string(
     value.catalogRoute,
     "$.dataInsight.catalogRoute",
@@ -175,9 +188,7 @@ function validateDataInsight(
     record(capabilitiesValue) && Array.isArray(capabilitiesValue.routes)
       ? capabilitiesValue.routes
       : [];
-  if (
-    !routes.some((route) => record(route) && route.path === value.catalogRoute)
-  )
+  if (!hasViewerRoute(routes, value.catalogRoute))
     issues.push(
       issue(
         "$.dataInsight.catalogRoute",
@@ -185,6 +196,151 @@ function validateDataInsight(
         "Data Insight catalog route must be declared as a read route capability.",
       ),
     );
+  if (value.templatesRoute !== undefined) {
+    string(
+      value.templatesRoute,
+      "$.dataInsight.templatesRoute",
+      issues,
+      safeRoute,
+      "Use a safe absolute route path.",
+    );
+    if (!hasViewerRoute(routes, value.templatesRoute)) {
+      issues.push(
+        issue(
+          "$.dataInsight.templatesRoute",
+          "invalid",
+          "Data Insight templates route must be declared as a read route capability.",
+        ),
+      );
+    }
+  }
+  validateDataInsightWorkspace(
+    value.workspace,
+    value.templatesRoute,
+    settingsValue,
+    navigationValue,
+    issues,
+  );
+}
+
+function hasViewerRoute(routes: unknown[], path: unknown): boolean {
+  return routes.some(
+    (route) =>
+      record(route) && route.path === path && route.requiredRole === "viewer",
+  );
+}
+
+function validateDataInsightWorkspace(
+  value: unknown,
+  templatesRoute: unknown,
+  settingsValue: unknown,
+  navigationValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (value === undefined) return;
+  if (!record(value)) {
+    issues.push(
+      issue(
+        "$.dataInsight.workspace",
+        "type",
+        "Workspace declaration must be an object.",
+      ),
+    );
+    return;
+  }
+  unknownKeys(
+    value,
+    new Set([
+      "enabledSetting",
+      "placement",
+      "defaultTemplateId",
+      "defaultTab",
+      "allowUserDefault",
+    ]),
+    "$.dataInsight.workspace",
+    issues,
+  );
+  if (templatesRoute === undefined) {
+    issues.push(
+      issue(
+        "$.dataInsight.workspace",
+        "invalid",
+        "Workspace Insights requires a templates route.",
+      ),
+    );
+  }
+  if (!record(navigationValue) || navigationValue.kind !== "forms_workspace") {
+    issues.push(
+      issue(
+        "$.dataInsight.workspace",
+        "invalid",
+        "Workspace Insights requires Forms workspace navigation.",
+      ),
+    );
+  }
+  if (value.placement !== "tab") {
+    issues.push(
+      issue(
+        "$.dataInsight.workspace.placement",
+        "invalid",
+        "Only tab placement is supported.",
+      ),
+    );
+  }
+  string(
+    value.defaultTemplateId,
+    "$.dataInsight.workspace.defaultTemplateId",
+    issues,
+    (item) => ID.test(item),
+    "Use a safe template id.",
+  );
+  if (
+    value.defaultTab !== undefined &&
+    value.defaultTab !== "records" &&
+    value.defaultTab !== "insights"
+  ) {
+    issues.push(
+      issue(
+        "$.dataInsight.workspace.defaultTab",
+        "invalid",
+        "Default tab must be records or insights.",
+      ),
+    );
+  }
+  if (
+    value.allowUserDefault !== undefined &&
+    typeof value.allowUserDefault !== "boolean"
+  ) {
+    issues.push(
+      issue(
+        "$.dataInsight.workspace.allowUserDefault",
+        "type",
+        "allowUserDefault must be boolean.",
+      ),
+    );
+  }
+  if (value.enabledSetting !== undefined) {
+    string(
+      value.enabledSetting,
+      "$.dataInsight.workspace.enabledSetting",
+      issues,
+      (item) => ID.test(item),
+      "Use a safe setting key.",
+    );
+    const settings = Array.isArray(settingsValue) ? settingsValue : [];
+    const setting = settings.find(
+      (item) => record(item) && item.key === value.enabledSetting,
+    );
+    if (!record(setting) || setting.type !== "boolean") {
+      issues.push(
+        issue(
+          "$.dataInsight.workspace.enabledSetting",
+          "invalid",
+          "Enabled setting must reference a declared boolean setting.",
+        ),
+      );
+    }
+  }
 }
 
 function validateDatabase(

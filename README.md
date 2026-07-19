@@ -55,8 +55,9 @@ pnpm quality
 
 See [contributing](./CONTRIBUTING.md), [security](./SECURITY.md), and
 [release operations](./docs/releasing.md). The [starter reference](./docs/starter-reference.md),
-[Forms workspace navigation](./docs/plugin-contract-v0.3.md), and
-[Forms starter-pack](./docs/plugin-contract-v0.4.md), and
-[Forms workflow](./docs/plugin-contract-v0.5.md), and
+[Forms workspace navigation](./docs/plugin-contract-v0.3.md),
+[Forms starter-pack](./docs/plugin-contract-v0.4.md),
+[Forms workflow](./docs/plugin-contract-v0.5.md),
+[plugin Insights workspace](./docs/plugin-contract-v0.7.md), and
 [required entitlements](./docs/plugin-contract-v0.6.md) guides explain the contract
 and expected tests for each plugin shape.

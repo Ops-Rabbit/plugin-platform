@@ -45,6 +45,25 @@
             }
           }
         },
+        "optionSource": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "route"],
+          "properties": {
+            "kind": { "const": "plugin_route" },
+            "route": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^/?[-/a-z0-9_]+$"
+            },
+            "dependsOn": {
+              "type": "array",
+              "maxItems": 10,
+              "items": { "$ref": "#/$defs/key" }
+            }
+          }
+        },
         "listColumn": { "type": "boolean" },
         "summaryField": { "type": "boolean" },
         "attachmentMultiple": { "type": "boolean" }
@@ -56,14 +75,32 @@
             "required": ["type"]
           },
           "then": {
-            "properties": { "options": {} },
-            "required": ["options"]
+            "anyOf": [
+              {
+                "properties": { "options": {} },
+                "required": ["options"]
+              },
+              {
+                "properties": { "optionSource": {} },
+                "required": ["optionSource"]
+              }
+            ]
           },
           "else": {
-            "not": {
-              "properties": { "options": {} },
-              "required": ["options"]
-            }
+            "allOf": [
+              {
+                "not": {
+                  "properties": { "options": {} },
+                  "required": ["options"]
+                }
+              },
+              {
+                "not": {
+                  "properties": { "optionSource": {} },
+                  "required": ["optionSource"]
+                }
+              }
+            ]
           }
         },
         {

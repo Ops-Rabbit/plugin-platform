@@ -32,6 +32,12 @@ export interface FormFieldOption {
   label: string;
 }
 
+export interface FormFieldOptionSource {
+  kind: "plugin_route";
+  route: string;
+  dependsOn?: string[];
+}
+
 export interface FormFieldDefinition {
   key: string;
   label: string;
@@ -40,6 +46,7 @@ export interface FormFieldDefinition {
   placeholder?: string;
   helpText?: string;
   options?: FormFieldOption[];
+  optionSource?: FormFieldOptionSource;
   listColumn?: boolean;
   summaryField?: boolean;
   attachmentMultiple?: boolean;

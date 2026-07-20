@@ -178,6 +178,7 @@ function validateField(
       "placeholder",
       "helpText",
       "options",
+      "optionSource",
       "listColumn",
       "summaryField",
       "attachmentMultiple",
@@ -197,11 +198,25 @@ function validateField(
   optionalBoundedString(value.placeholder, `${path}.placeholder`, 300, issues);
   optionalBoundedString(value.helpText, `${path}.helpText`, 500, issues);
   if (value.type === "select") {
+    const staticOptions = Array.isArray(value.options) ? value.options : null;
+    const hasOptions = staticOptions !== null;
+    const hasOptionSource = value.optionSource !== undefined;
     if (
-      !Array.isArray(value.options) ||
-      value.options.length === 0 ||
-      value.options.length > 100
+      !hasOptions &&
+      !hasOptionSource
     ) {
+      issues.push(
+        issue(
+          `${path}.options`,
+          "required",
+          "Select fields require static options or an optionSource.",
+        ),
+      );
+    }
+    if (hasOptions && (
+      staticOptions.length === 0 ||
+      staticOptions.length > 100
+    )) {
       issues.push(
         issue(
           `${path}.options`,
@@ -209,9 +224,9 @@ function validateField(
           "Select fields require between 1 and 100 options.",
         ),
       );
-    } else {
+    } else if (hasOptions) {
       const optionValues = new Set<string>();
-      value.options.forEach((option, index) => {
+      staticOptions.forEach((option, index) => {
         const optionPath = `${path}.options[${index}]`;
         if (!record(option))
           return issues.push(
@@ -222,12 +237,24 @@ function validateField(
         boundedString(option.label, `${optionPath}.label`, 120, issues);
       });
     }
+    if (hasOptionSource) {
+      validateOptionSource(value.optionSource, `${path}.optionSource`, issues);
+    }
   } else if (value.options !== undefined) {
     issues.push(
       issue(
         `${path}.options`,
         "forbidden",
         "Only select fields may declare options.",
+      ),
+    );
+  }
+  if (value.optionSource !== undefined && value.type !== "select") {
+    issues.push(
+      issue(
+        `${path}.optionSource`,
+        "forbidden",
+        "Only select fields may declare an optionSource.",
       ),
     );
   }
@@ -239,6 +266,35 @@ function validateField(
         "attachmentMultiple is valid only for attachment fields.",
       ),
     );
+  }
+}
+
+function validateOptionSource(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+) {
+  if (!record(value)) {
+    issues.push(issue(path, "type", "optionSource must be an object."));
+    return;
+  }
+  unknownKeys(value, ["kind", "route", "dependsOn"], path, issues);
+  if (value.kind !== "plugin_route") {
+    issues.push(
+      issue(`${path}.kind`, "unsupported", "optionSource kind must be plugin_route."),
+    );
+  }
+  if (typeof value.route !== "string" || !/^\/?[-/a-z0-9_]+$/u.test(value.route) || value.route.includes("..")) {
+    issues.push(
+      issue(`${path}.route`, "invalid", "optionSource route must be a safe plugin route path."),
+    );
+  }
+  if (value.dependsOn !== undefined) {
+    if (!Array.isArray(value.dependsOn) || value.dependsOn.some((entry) => typeof entry !== "string" || !/^[a-z][a-z0-9_]*$/u.test(entry))) {
+      issues.push(
+        issue(`${path}.dependsOn`, "invalid", "optionSource dependsOn must list form field keys."),
+      );
+    }
   }
 }
 

@@ -59,6 +59,25 @@ describe("validateFormStarterPack", () => {
     });
   });
 
+  it("accepts select fields backed by a plugin option source", () => {
+    const starter = structuredClone(valid.starters[0]!);
+    starter.schema.fields[1] = {
+      key: "result",
+      label: "Result",
+      type: "select",
+      optionSource: {
+        kind: "plugin_route",
+        route: "/form-options/results",
+        dependsOn: ["batch_id"],
+      },
+    };
+    expect(validateFormStarterPack({ ...valid, starters: [starter] })).toEqual({
+      ok: true,
+      value: { ...valid, starters: [starter] },
+      issues: [],
+    });
+  });
+
   it("rejects unknown properties, duplicate keys, and broken references", () => {
     const starter = structuredClone(valid.starters[0]!);
     starter.schema.fields.push({
@@ -86,8 +105,20 @@ describe("validateFormStarterPack", () => {
         type: "select",
         attachmentMultiple: true,
       },
+      {
+        key: "dynamic_text",
+        label: "Dynamic Text",
+        type: "text",
+        optionSource: { kind: "plugin_route", route: "/form-options/plain" },
+      },
+      {
+        key: "bad_dynamic",
+        label: "Bad Dynamic",
+        type: "select",
+        optionSource: { kind: "plugin_route", route: "../unsafe" },
+      },
     ];
-    starter.schema.sections[0]!.fieldKeys = ["plain", "select_value"];
+    starter.schema.sections[0]!.fieldKeys = ["plain", "select_value", "dynamic_text", "bad_dynamic"];
     starter.listConfig.columns = [{ fieldKey: "unknown", label: "Unknown" }];
     starter.listConfig.workspace = {
       showOnLanding: false,
@@ -102,6 +133,8 @@ describe("validateFormStarterPack", () => {
         "$.starters[0].schema.fields[0].options",
         "$.starters[0].schema.fields[1].options",
         "$.starters[0].schema.fields[1].attachmentMultiple",
+        "$.starters[0].schema.fields[2].optionSource",
+        "$.starters[0].schema.fields[3].optionSource.route",
         "$.starters[0].listConfig.columns[0].fieldKey",
         "$.starters[0].listConfig.workspace.defaultOnLanding",
       ]),

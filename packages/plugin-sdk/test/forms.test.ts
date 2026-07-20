@@ -118,7 +118,12 @@ describe("validateFormStarterPack", () => {
         optionSource: { kind: "plugin_route", route: "../unsafe" },
       },
     ];
-    starter.schema.sections[0]!.fieldKeys = ["plain", "select_value", "dynamic_text", "bad_dynamic"];
+    starter.schema.sections[0]!.fieldKeys = [
+      "plain",
+      "select_value",
+      "dynamic_text",
+      "bad_dynamic",
+    ];
     starter.listConfig.columns = [{ fieldKey: "unknown", label: "Unknown" }];
     starter.listConfig.workspace = {
       showOnLanding: false,

@@ -201,10 +201,7 @@ function validateField(
     const staticOptions = Array.isArray(value.options) ? value.options : null;
     const hasOptions = staticOptions !== null;
     const hasOptionSource = value.optionSource !== undefined;
-    if (
-      !hasOptions &&
-      !hasOptionSource
-    ) {
+    if (!hasOptions && !hasOptionSource) {
       issues.push(
         issue(
           `${path}.options`,
@@ -213,10 +210,10 @@ function validateField(
         ),
       );
     }
-    if (hasOptions && (
-      staticOptions.length === 0 ||
-      staticOptions.length > 100
-    )) {
+    if (
+      hasOptions &&
+      (staticOptions.length === 0 || staticOptions.length > 100)
+    ) {
       issues.push(
         issue(
           `${path}.options`,
@@ -281,18 +278,40 @@ function validateOptionSource(
   unknownKeys(value, ["kind", "route", "dependsOn"], path, issues);
   if (value.kind !== "plugin_route") {
     issues.push(
-      issue(`${path}.kind`, "unsupported", "optionSource kind must be plugin_route."),
+      issue(
+        `${path}.kind`,
+        "unsupported",
+        "optionSource kind must be plugin_route.",
+      ),
     );
   }
-  if (typeof value.route !== "string" || !/^\/?[-/a-z0-9_]+$/u.test(value.route) || value.route.includes("..")) {
+  if (
+    typeof value.route !== "string" ||
+    !/^\/?[-/a-z0-9_]+$/u.test(value.route) ||
+    value.route.includes("..")
+  ) {
     issues.push(
-      issue(`${path}.route`, "invalid", "optionSource route must be a safe plugin route path."),
+      issue(
+        `${path}.route`,
+        "invalid",
+        "optionSource route must be a safe plugin route path.",
+      ),
     );
   }
   if (value.dependsOn !== undefined) {
-    if (!Array.isArray(value.dependsOn) || value.dependsOn.some((entry) => typeof entry !== "string" || !/^[a-z][a-z0-9_]*$/u.test(entry))) {
+    if (
+      !Array.isArray(value.dependsOn) ||
+      value.dependsOn.some(
+        (entry) =>
+          typeof entry !== "string" || !/^[a-z][a-z0-9_]*$/u.test(entry),
+      )
+    ) {
       issues.push(
-        issue(`${path}.dependsOn`, "invalid", "optionSource dependsOn must list form field keys."),
+        issue(
+          `${path}.dependsOn`,
+          "invalid",
+          "optionSource dependsOn must list form field keys.",
+        ),
       );
     }
   }

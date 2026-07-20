@@ -1,6 +1,6 @@
 {
   "name": "@opsrabbit/create-plugin",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "CLI for creating, validating, testing, and packaging OpsRabbit plugins",
   "type": "module",
   "license": "Apache-2.0",

@@ -28,6 +28,16 @@ and stage transitions), and executable plugin actions as separate concepts. The
 host owns tenant enablement, authorization, grants, validation, persistence,
 attachments, lineage, transition concurrency, record numbering, and audit.
 
+Treat Forms starter assets as versioned product configuration. When changing
+fields, sections, actions, dynamic option sources, workflow placement, analytics
+field references, or default list configuration, keep stable keys where existing
+records should survive and document that tenant admins must republish the starter
+pack after upgrading. The host-owned publish flow refreshes existing
+starter-backed definitions while preserving definition ids, form keys,
+title/description customizations, submissions, and historical schema snapshots;
+plugin code must not require manual SQL updates or write ordinary Forms
+definitions directly.
+
 ## Runtime
 
 Use the repository Node version through `nvm use`. Run test suites sequentially.

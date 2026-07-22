@@ -34,6 +34,12 @@ CLI version `{{cliVersion}}` and SDK range `{{sdkVersion}}`.
   (root creation, follow-ups, and stage transitions), and executable plugin
   actions are distinct. The host owns Forms authorization, persistence,
   attachments, lineage, transition concurrency, numbering, and audit.
+- Treat Forms starter assets as versioned product configuration. When changing
+  fields, sections, actions, dynamic option sources, workflow placement, analytics
+  references, or default list configuration, keep stable keys where existing
+  records should survive and instruct admins to republish the starter pack after
+  installing the plugin upgrade. Do not require manual SQL updates or write
+  ordinary Forms definitions directly from plugin code.
 
 ## Quality gates
 

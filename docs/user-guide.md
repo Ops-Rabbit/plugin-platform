@@ -343,4 +343,3 @@ For production usage:
 - use OpsRabbit agents with bounded Data Insight tools for questions over
   plugin data;
 - document plugin-specific operator steps in the customer runbook.
-

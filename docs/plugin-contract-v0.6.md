@@ -46,6 +46,13 @@ then supplies an immutable ingress principal and system actor to the plugin.
 Reverse-proxy network restrictions on `/api/plugins/` are recommended
 defence-in-depth, not a replacement for host authentication.
 
+Admins create, rotate, and revoke these tokens from the OpsRabbit plugin
+settings UI for the selected tenant. The token panel is shown only for plugins
+that declare ingress scopes and only when the plugin is effectively enabled for
+that tenant. Installers should ask for the generated token, subject/device id,
+and host URL; they should not ask for database credentials or long-lived object
+store credentials.
+
 Ingress is JSON control and event traffic. Plugins must not proxy images or
 videos through these handlers.
 

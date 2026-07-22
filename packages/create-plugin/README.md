@@ -49,8 +49,20 @@ For a Forms-backed plugin, place the versioned starter JSON under `forms/` and
 reference it with `formStarterPack` in `opsrabbit.plugin.json`. `validate` and
 `check` validate that asset and its module ownership; a declared Forms workflow
 also verifies its settings and root starter. `pack` includes it in the
-release ZIP. A repository can contain multiple plugin directories as long as
-each plugin runs these commands from its own package directory.
+release ZIP. Treat that starter asset as versioned product configuration:
+changing fields, sections, actions, dynamic option sources, workflow placement,
+or default list configuration requires tenants to republish the starter pack
+after installing the plugin upgrade. The host refreshes installed
+starter-backed definitions during publish while preserving definition ids, form
+keys, local title/description customizations, submissions, and historical schema
+snapshots. A repository can contain multiple plugin directories as long as each
+plugin runs these commands from its own package directory.
+
+Operationally, a plugin upgrade has two steps: upload/deploy the new package,
+then republish the starter pack for tenants that should receive the updated
+Forms definition. If an upgraded plugin appears to run but users do not see new
+fields, dynamic dropdowns, workflow actions, list columns, or Insights mappings,
+confirm the starter pack was republished.
 
 The generated Forms-workflow reference also demonstrates
 `requiredEntitlements`. These are host-defined license requirements, not
@@ -74,3 +86,7 @@ Use `service-ingress` as the reference for scoped API-token ingress,
 journaled plugin-schema Drizzle migrations, and direct evidence-upload
 preparation. Validation requires `meta/_journal.json` and rejects journal
 entries that do not exactly match the packaged SQL migration files.
+After deploying a service-ingress plugin, create the tenant-scoped API token in
+the host plugin settings UI and pass that token to the edge/agent installer.
+Agents should send JSON control events to ingress and upload large binary
+evidence through host-issued object-store instructions.

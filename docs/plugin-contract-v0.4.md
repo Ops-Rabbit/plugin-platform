@@ -68,3 +68,22 @@ The OpsRabbit host remains responsible for tenant plugin enablement, schema
 installation and publication, Forms record authorization, validation,
 persistence, attachments, and audit. Declaring a starter pack does not install
 forms or grant access merely because its navigation is visible.
+
+Republishing a starter pack is the host-supported upgrade path for installed
+starter-backed definitions. When a plugin version changes starter fields,
+sections, actions, dynamic option sources, or list configuration, tenant admins
+republish the pack after installing the new package. The host refreshes each
+existing starter-backed definition's schema and default list configuration,
+increments the definition version when the schema changes, and preserves the
+definition id, form key, local title/description customizations, submitted
+records, and historical schema snapshots. Plugin authors should keep stable
+starter, record-type, field, section, and action keys whenever existing data
+should continue to map cleanly across upgrades.
+
+In the OpsRabbit UI this is an administrator operation on the plugin's published
+starter-pack entry. It is intentionally separate from package upload/deploy so
+admins can review the new package before refreshing tenant Forms definitions.
+If users do not see new fields, dynamic dropdown sources, actions, workflow
+placements, list columns, or Insights field mappings after a plugin upgrade,
+the first thing to check is whether the starter pack has been republished for
+that tenant.

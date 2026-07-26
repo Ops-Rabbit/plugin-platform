@@ -128,7 +128,24 @@
           "type": "string",
           "pattern": "^/apps/[a-z][a-z0-9_-]*$"
         },
-        "icon": { "enum": ["headset", "building", "shield_check"] },
+        "icon": {
+          "enum": [
+            "activity",
+            "alert_triangle",
+            "bar_chart",
+            "book_open",
+            "building",
+            "check",
+            "headset",
+            "mail",
+            "message_square",
+            "receipt",
+            "search",
+            "shield_check",
+            "variable",
+            "waves"
+          ]
+        },
         "fallbackTitle": { "type": "string", "minLength": 1, "maxLength": 100 },
         "titleSetting": {
           "type": "string",

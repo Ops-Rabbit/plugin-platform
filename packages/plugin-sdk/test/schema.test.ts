@@ -50,6 +50,18 @@ describe("published manifest schema", () => {
     }).compile(schema);
     expect(validateSchema(valid)).toBe(true);
     expect(validateManifest(valid).ok).toBe(true);
+    const quotationNavigation = {
+      ...valid,
+      navigation: {
+        kind: "forms_workspace",
+        moduleKey: "quotations",
+        path: "/apps/quotations",
+        icon: "receipt",
+        fallbackTitle: "Quotations",
+      },
+    };
+    expect(validateSchema(quotationNavigation)).toBe(true);
+    expect(validateManifest(quotationNavigation).ok).toBe(true);
 
     const invalid = {
       ...valid,

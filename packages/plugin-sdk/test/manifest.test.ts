@@ -418,6 +418,30 @@ describe("validateManifest", () => {
     );
   });
 
+  it.each([
+    "activity",
+    "alert_triangle",
+    "bar_chart",
+    "book_open",
+    "building",
+    "check",
+    "headset",
+    "mail",
+    "message_square",
+    "receipt",
+    "search",
+    "shield_check",
+    "variable",
+    "waves",
+  ])("accepts the plugin-selected navigation icon %s", (icon) => {
+    expect(
+      validateManifest({
+        ...valid,
+        navigation: { ...valid.navigation, icon },
+      }),
+    ).toMatchObject({ ok: true, issues: [] });
+  });
+
   it("requires starter packs to use safe paths and the navigation module", () => {
     const unsafe = validateManifest({
       ...valid,

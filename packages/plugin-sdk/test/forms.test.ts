@@ -78,6 +78,65 @@ describe("validateFormStarterPack", () => {
     });
   });
 
+  it("accepts read-only fields backed by a plugin value source", () => {
+    const starter = structuredClone(valid.starters[0]!);
+    starter.schema.fields.push({
+      key: "derived_weight",
+      label: "Derived weight",
+      type: "number",
+      readOnly: true,
+      valueSource: {
+        kind: "plugin_route",
+        route: "/form-values/derived-weight",
+        dependsOn: ["batch_id", "result"],
+      },
+    });
+    starter.schema.sections[0]!.fieldKeys.push("derived_weight");
+    expect(validateFormStarterPack({ ...valid, starters: [starter] })).toEqual({
+      ok: true,
+      value: { ...valid, starters: [starter] },
+      issues: [],
+    });
+  });
+
+  it("rejects writable, unsafe, and attachment value sources", () => {
+    const starter = structuredClone(valid.starters[0]!);
+    starter.schema.fields = [
+      {
+        key: "writable",
+        label: "Writable",
+        type: "number",
+        valueSource: { kind: "plugin_route", route: "/values/writable" },
+      },
+      {
+        key: "unsafe",
+        label: "Unsafe",
+        type: "text",
+        readOnly: true,
+        valueSource: { kind: "plugin_route", route: "../unsafe" },
+      },
+      {
+        key: "file",
+        label: "File",
+        type: "attachment",
+        readOnly: true,
+        valueSource: { kind: "plugin_route", route: "/values/file" },
+      },
+    ];
+    starter.schema.sections[0]!.fieldKeys = ["writable", "unsafe", "file"];
+    const paths = validateFormStarterPack({
+      ...valid,
+      starters: [starter],
+    }).issues.map(({ path }) => path);
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        "$.starters[0].schema.fields[0].readOnly",
+        "$.starters[0].schema.fields[1].valueSource.route",
+        "$.starters[0].schema.fields[2].valueSource",
+      ]),
+    );
+  });
+
   it("rejects unknown properties, duplicate keys, and broken references", () => {
     const starter = structuredClone(valid.starters[0]!);
     starter.schema.fields.push({

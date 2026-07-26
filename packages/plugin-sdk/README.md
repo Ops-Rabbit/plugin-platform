@@ -65,6 +65,10 @@ published `@opsrabbit/plugin-sdk/form-starter-pack-schema` in editors or other
 tooling. Starter assets contain host-rendered form and list definitions only;
 they cannot contain executable code, SQL, migrations, tenant data, or access
 policy. See the repository's Plugin Contract 0.4 guide for the complete shape.
+Fields may declare `readOnly: true`; a read-only non-attachment field may also
+declare a bounded plugin-route `valueSource` with explicit dependencies so the
+host can refresh a derived display value without allowing user edits. The host
+continues to authorize the route and validate persisted values.
 
 A Forms workspace may declare `navigation.workflow` to identify its root starter,
 JSON stage-model setting, and optional string/number record-number settings. The

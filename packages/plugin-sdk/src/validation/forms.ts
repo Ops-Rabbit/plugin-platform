@@ -179,6 +179,8 @@ function validateField(
       "helpText",
       "options",
       "optionSource",
+      "readOnly",
+      "valueSource",
       "listColumn",
       "summaryField",
       "attachmentMultiple",
@@ -191,7 +193,13 @@ function validateField(
   member(value.type, FORM_FIELD_TYPES, `${path}.type`, issues);
   optionalBooleanFields(
     value,
-    ["required", "listColumn", "summaryField", "attachmentMultiple"],
+    [
+      "required",
+      "readOnly",
+      "listColumn",
+      "summaryField",
+      "attachmentMultiple",
+    ],
     path,
     issues,
   );
@@ -255,12 +263,84 @@ function validateField(
       ),
     );
   }
+  if (value.valueSource !== undefined) {
+    validateValueSource(value.valueSource, `${path}.valueSource`, issues);
+    if (value.readOnly !== true) {
+      issues.push(
+        issue(
+          `${path}.readOnly`,
+          "required",
+          "Fields with a valueSource must be readOnly.",
+        ),
+      );
+    }
+    if (value.type === "attachment") {
+      issues.push(
+        issue(
+          `${path}.valueSource`,
+          "forbidden",
+          "Attachment fields may not declare a valueSource.",
+        ),
+      );
+    }
+  }
   if (value.attachmentMultiple !== undefined && value.type !== "attachment") {
     issues.push(
       issue(
         `${path}.attachmentMultiple`,
         "forbidden",
         "attachmentMultiple is valid only for attachment fields.",
+      ),
+    );
+  }
+}
+
+function validateValueSource(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+) {
+  if (!record(value)) {
+    issues.push(issue(path, "type", "valueSource must be an object."));
+    return;
+  }
+  unknownKeys(value, ["kind", "route", "dependsOn"], path, issues);
+  if (value.kind !== "plugin_route") {
+    issues.push(
+      issue(
+        `${path}.kind`,
+        "unsupported",
+        "valueSource kind must be plugin_route.",
+      ),
+    );
+  }
+  if (
+    typeof value.route !== "string" ||
+    !/^\/?[-/a-z0-9_]+$/u.test(value.route) ||
+    value.route.includes("..")
+  ) {
+    issues.push(
+      issue(
+        `${path}.route`,
+        "invalid",
+        "valueSource route must be a safe plugin route path.",
+      ),
+    );
+  }
+  if (
+    value.dependsOn !== undefined &&
+    (!Array.isArray(value.dependsOn) ||
+      value.dependsOn.length > 20 ||
+      value.dependsOn.some(
+        (entry) =>
+          typeof entry !== "string" || !/^[a-z][a-z0-9_]*$/u.test(entry),
+      ))
+  ) {
+    issues.push(
+      issue(
+        `${path}.dependsOn`,
+        "invalid",
+        "valueSource dependsOn must list at most 20 form field keys.",
       ),
     );
   }

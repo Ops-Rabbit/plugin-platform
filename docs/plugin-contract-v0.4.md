@@ -63,6 +63,10 @@ The asset can describe Forms fields, sections, actions, list columns, search and
 filter fields, landing-workspace hints, page size, and the supported default
 sort. It cannot contain SQL, migrations, executable code, tenant data,
 authorization policy, arbitrary routes, or private host configuration.
+Fields can be marked `readOnly`. Read-only non-attachment fields can additionally
+declare a plugin-route `valueSource` and dependency field keys. The host invokes
+that route only for an authorized Forms user, renders the returned scalar value,
+and still validates the value during persistence; this metadata grants no access.
 
 The OpsRabbit host remains responsible for tenant plugin enablement, schema
 installation and publication, Forms record authorization, validation,

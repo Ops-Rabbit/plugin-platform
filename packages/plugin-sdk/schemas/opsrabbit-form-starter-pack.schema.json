@@ -64,11 +64,45 @@
             }
           }
         },
+        "readOnly": { "type": "boolean" },
+        "valueSource": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "route"],
+          "properties": {
+            "kind": { "const": "plugin_route" },
+            "route": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^/?[-/a-z0-9_]+$"
+            },
+            "dependsOn": {
+              "type": "array",
+              "maxItems": 20,
+              "items": { "$ref": "#/$defs/key" }
+            }
+          }
+        },
         "listColumn": { "type": "boolean" },
         "summaryField": { "type": "boolean" },
         "attachmentMultiple": { "type": "boolean" }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": { "valueSource": {} },
+            "required": ["valueSource"]
+          },
+          "then": {
+            "properties": { "readOnly": { "const": true } },
+            "required": ["readOnly"],
+            "not": {
+              "properties": { "type": { "const": "attachment" } },
+              "required": ["type"]
+            }
+          }
+        },
         {
           "if": {
             "properties": { "type": { "const": "select" } },

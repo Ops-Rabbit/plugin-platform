@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1 - 2026-07-26
+
+- Add declarative read-only Forms fields and plugin-route computed value sources.
+
 All notable public package changes are documented here. This project follows
 semantic versioning for the SDK contract and CLI.
 

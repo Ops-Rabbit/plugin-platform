@@ -3,6 +3,14 @@
 All notable public package changes are documented here. This project follows
 semantic versioning for the SDK contract and CLI.
 
+## 0.8.0 - 2026-07-26
+
+- Expand the trusted Forms-workspace navigation icon catalog so plugins can
+  choose a semantic icon directly, including `receipt` for quotation and
+  billing workspaces.
+- Keep navigation icons as validated keys rather than accepting arbitrary
+  markup or asset paths that the host cannot safely render.
+
 ## 0.7.1 - 2026-07-19
 
 - Add the generated `forms-insights` reference with Forms metadata, analytics

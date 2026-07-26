@@ -23,7 +23,12 @@ The SDK validator and JSON Schema require a safe `/apps/<module>` path, a
 lowercase module key, a supported host icon, a bounded fallback title, and a
 finite optional order. `titleSetting` must reference a declared string setting.
 `iconSetting` must reference a declared select setting whose choices are all
-supported navigation icons.
+supported navigation icons. Plugins should normally declare the semantic icon
+that best represents their workspace directly. Supported keys are `activity`,
+`alert_triangle`, `bar_chart`, `book_open`, `building`, `check`, `headset`,
+`mail`, `message_square`, `receipt`, `search`, `shield_check`, `variable`, and
+`waves`. Use `iconSetting` only when tenant administrators genuinely need to
+override that plugin-owned choice.
 
 The host treats navigation as discoverability metadata. Tenant plugin
 enablement and Forms API authorization remain backend-enforced. The plugin does

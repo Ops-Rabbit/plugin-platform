@@ -29,9 +29,20 @@ export type PluginSetting = {
 };
 
 export const PLUGIN_NAVIGATION_ICONS = [
+  "activity",
+  "alert_triangle",
+  "bar_chart",
+  "book_open",
+  "check",
   "headset",
   "building",
+  "mail",
+  "message_square",
+  "receipt",
+  "search",
   "shield_check",
+  "variable",
+  "waves",
 ] as const;
 export type PluginNavigationIcon = (typeof PLUGIN_NAVIGATION_ICONS)[number];
 

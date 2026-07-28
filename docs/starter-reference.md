@@ -17,6 +17,6 @@ needed. Run `opsrabbit-plugin examples list` to see the ids and generate one wit
 
 Each generated repository includes unit tests, coverage enforcement, TypeScript
 checks, a pinned GitHub Actions workflow, README, `AGENTS.md`, manifest, and
-deterministic package command. The platform CI regenerates all six from the
+deterministic package command. The platform CI regenerates all seven from the
 packed npm candidates, installs them outside the workspace, and runs every
 documented quality command before either public package can be released.

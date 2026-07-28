@@ -56,6 +56,8 @@ pnpm quality
 
 See the [user guide](./docs/user-guide.md), [contributing](./CONTRIBUTING.md),
 [security](./SECURITY.md), and [release operations](./docs/releasing.md).
+The [source-backed training course](./docs/training-course.md) provides a
+module-by-module curriculum and an integrated Field Inspection Hub capstone.
 The [starter reference](./docs/starter-reference.md),
 [Forms workspace navigation](./docs/plugin-contract-v0.3.md),
 [Forms starter-pack](./docs/plugin-contract-v0.4.md),

@@ -668,6 +668,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     return;
   }
   const allowed = new Set([
+    "dataInsightProvider",
     "tools",
     "actions",
     "scheduledJobs",

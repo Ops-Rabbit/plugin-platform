@@ -69,6 +69,7 @@ export interface PluginWidgetCapability {
 }
 
 export interface PluginDeclaredCapabilities {
+  dataInsightProvider?: boolean;
   tools?: PluginToolCapability[];
   actions?: PluginActionCapability[];
   scheduledJobs?: PluginScheduledJobCapability[];

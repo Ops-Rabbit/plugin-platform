@@ -1,5 +1,13 @@
 # Plugin Platform Development Rules
 
+## Training course maintenance
+
+For every new pull request, review `docs/training-course.md` against the changes
+and additions in the PR. Update the course wherever necessary so its guidance,
+examples, and workflows remain aligned with the current product and public plugin
+surface. If the review determines that no course changes are needed, explicitly
+record that outcome in the PR description; do not skip the review.
+
 ## Public core-capability completeness
 
 When OpsRabbit exposes a new core capability to plugins, the public surface is

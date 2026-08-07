@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 - 2026-08-06
+
+- Add a declared, host-managed Knowledge write broker for plugin-owned sources,
+  bounded text-document upserts, and explicit index publication.
+- Add the executable `knowledge-publisher` starter and test-harness support.
+
 ## 0.8.1 - 2026-07-26
 
 - Add declarative read-only Forms fields and plugin-route computed value sources.

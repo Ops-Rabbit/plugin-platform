@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
 An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` and
-`@opsrabbit/create-plugin` 0.8.1.
+`@opsrabbit/create-plugin` 0.9.0.
 
 ## Course promise
 
@@ -54,15 +54,15 @@ alone:
 - `packages/plugin-sdk/src/validation/`: runtime and cross-reference checks;
 - `packages/plugin-sdk/schemas/`: published JSON Schemas;
 - `packages/plugin-sdk/src/testing/`: test context and parity assertions;
-- `packages/create-plugin/assets/starters/`: seven executable references;
+- `packages/create-plugin/assets/starters/`: eight executable references;
 - `packages/create-plugin/src/constants.ts`: authoritative CLI starter list;
 - `scripts/verify-generated-starters.mjs`: isolated consumer verification;
-- `docs/plugin-contract-v0.2.md` through `v0.7.md`: capability history and host
+- `docs/plugin-contract-v0.2.md` through `v0.9.md`: capability history and host
   compatibility expectations.
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public packages are version 0.8.1 and the manifest `apiVersion` is
+here. The public packages are version 0.9.0 and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -126,7 +126,7 @@ commands, and produce a reviewable ZIP.
 npx opsrabbit-plugin examples list --verbose
 ```
 
-The seven current starter ids are:
+The eight current starter ids are:
 
 - `basic-readonly`
 - `operational-action`
@@ -135,6 +135,7 @@ The seven current starter ids are:
 - `forms-workflow`
 - `forms-insights`
 - `service-ingress`
+- `knowledge-publisher`
 
 ### Lab: read-only tenant status
 
@@ -293,6 +294,7 @@ interface PluginInvocationContext {
   readonly tenantRecords?: TenantRecordStore;
   readonly database?: PluginDatabase;
   readonly objectStore?: PluginObjectStore;
+  readonly knowledge?: PluginKnowledgeService;
   readonly forms?: PluginFormsService;
 }
 ```
@@ -652,6 +654,25 @@ Publish template `inspection-overview` with:
 All queries are bounded semantic JSON. No SQL appears in a tool, catalog, or
 template.
 
+## Publishing plugin-owned Knowledge
+
+Use the `knowledge-publisher` starter when a trusted plugin needs to contribute
+reference content to native OpsRabbit Knowledge. The manifest must declare
+`capabilities.knowledge.write: true`, and runtime code must still treat
+`context.knowledge` as optional because the host may withhold it when the actor,
+tenant, plugin state, or invocation surface is not authorized.
+
+The safe batch is explicit: create or reuse one plugin-owned source by stable
+key, upsert bounded text documents by stable document keys, and call `publish`
+once after the batch. Never accept a tenant id, host source id, database key, or
+storage path from request input. The host owns source isolation, extraction,
+indexing, audit, retention, and agent assignment; declaring the broker does not
+grant search access to any user or agent.
+
+Tests should prove the complete broker call order and fail closed when the
+broker is absent. Production actions that publish Knowledge should require an
+administrator because Knowledge remains a tenant control-plane resource.
+
 ## Required tests
 
 ### Positive tests
@@ -667,6 +688,7 @@ template.
 ### Negative and fail-closed tests
 
 - missing optional broker produces a clear error;
+- missing Knowledge broker prevents source or document publication;
 - blank ids and non-object ingress input are rejected;
 - aborted scheduled invocation does no work;
 - runtime/manifest method, scope, risk, role, and id mismatches fail parity;
@@ -723,6 +745,7 @@ Ask the learner to demonstrate this sequence:
 8. Explain what happens when an entitlement is missing.
 9. Explain why an admin must republish the starter pack after an upgrade.
 10. Inspect the clean ZIP inventory.
+11. Explain why Knowledge publication is plugin-owned and does not assign the source to an agent.
 
 ## Expected architecture explanation
 
@@ -747,4 +770,5 @@ A successful learner should be able to say:
 - `docs/plugin-contract-v0.5.md`: Forms workflows;
 - `docs/plugin-contract-v0.6.md`: entitlements and governed services;
 - `docs/plugin-contract-v0.7.md`: Forms Insights workspace;
+- `docs/plugin-contract-v0.9.md`: plugin-owned Knowledge publication;
 - generated starter source and tests: executable source of truth.

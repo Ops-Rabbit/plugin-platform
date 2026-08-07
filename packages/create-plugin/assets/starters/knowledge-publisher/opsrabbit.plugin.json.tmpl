@@ -1,0 +1,8 @@
+{
+  "id": "{{id}}", "name": "{{displayName}}", "version": "0.1.0",
+  "description": "{{displayName}} Knowledge publisher", "apiVersion": "1.0", "main": "./dist/index.js",
+  "capabilities": {
+    "actions": [{ "id": "publish-document", "risk": "write", "requiredRole": "admin" }],
+    "knowledge": { "write": true }
+  }
+}

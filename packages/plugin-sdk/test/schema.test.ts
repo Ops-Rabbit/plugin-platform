@@ -32,6 +32,7 @@ const valid = {
     ],
     database: { mode: "plugin_schema" },
     objectStore: { write: true },
+    knowledge: { write: true },
   },
   database: { migrationsPath: "./migrations/sql" },
 };
@@ -111,6 +112,31 @@ describe("published manifest schema", () => {
     };
     expect(validateSchema(pack)).toBe(true);
     expect(validateSchema({ ...pack, executable: "./script.js" })).toBe(false);
+  });
+
+  it("keeps Knowledge capability schema and runtime validation in parity", async () => {
+    const schema = JSON.parse(
+      await readFile(
+        resolve(import.meta.dirname, "../schemas/opsrabbit-plugin.schema.json"),
+        "utf8",
+      ),
+    );
+    const validateSchema = new Ajv2020({
+      allErrors: true,
+      strict: true,
+    }).compile(schema);
+    for (const [knowledge, expected] of [
+      [{ write: true }, true],
+      [{ write: false }, false],
+      [{}, false],
+      [{ write: true, read: true }, false],
+    ] as const) {
+      const manifest: Record<string, unknown> = structuredClone(valid);
+      delete manifest.database;
+      manifest.capabilities = { knowledge };
+      expect(validateSchema(manifest)).toBe(expected);
+      expect(validateManifest(manifest).ok).toBe(expected);
+    }
   });
 
   it("publishes the bounded Data Insight workspace shape", async () => {

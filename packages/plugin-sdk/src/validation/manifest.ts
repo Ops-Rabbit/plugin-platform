@@ -678,6 +678,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "tenantRecords",
     "database",
     "objectStore",
+    "knowledge",
   ]);
   unknownKeys(value, allowed, "$.capabilities", issues);
   const capabilities = value as PluginDeclaredCapabilities;
@@ -926,6 +927,22 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
         );
     },
   );
+  validateSingletonCapability(
+    capabilities.knowledge,
+    "knowledge",
+    ["write"],
+    issues,
+    (entry) => {
+      if (entry.write !== true)
+        issues.push(
+          issue(
+            "$.capabilities.knowledge.write",
+            "invalid",
+            "Knowledge write access must be explicitly enabled.",
+          ),
+        );
+    },
+  );
   const surfaceCount = [
     capabilities.tools,
     capabilities.actions,
@@ -938,7 +955,8 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     surfaceCount === 0 &&
     !capabilities.tenantRecords &&
     !capabilities.database &&
-    !capabilities.objectStore
+    !capabilities.objectStore &&
+    !capabilities.knowledge
   )
     issues.push(
       issue("$.capabilities", "required", "Declare at least one capability."),

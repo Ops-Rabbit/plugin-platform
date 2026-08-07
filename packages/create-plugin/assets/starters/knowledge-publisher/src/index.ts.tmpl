@@ -1,0 +1,20 @@
+import { definePlugin } from '@opsrabbit/plugin-sdk';
+
+export const plugin = definePlugin({
+  actions: [{
+    id: 'publish-document',
+    title: 'Publish Knowledge document',
+    description: 'Upserts one document and publishes its plugin-owned Knowledge Source.',
+    risk: 'write',
+    requiredRole: 'admin',
+    async run(input: { sourceKey: string; sourceName: string; documentKey: string; title: string; content: string }, context) {
+      if (!context.knowledge) throw new Error('Knowledge write capability is unavailable.');
+      const source = await context.knowledge.createSource({ key: input.sourceKey, name: input.sourceName });
+      const document = await context.knowledge.upsertDocument({ sourceKey: source.key, key: input.documentKey, title: input.title, content: input.content, contentType: 'text/markdown' });
+      const publication = await context.knowledge.publish(source.key);
+      return { source, document, publication };
+    },
+  }],
+});
+
+export default plugin;

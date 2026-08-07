@@ -104,6 +104,7 @@ const valid = {
     tenantRecords: { collections: ["notes"] },
     database: { mode: "plugin_schema" },
     objectStore: { read: true, write: true },
+    knowledge: { write: true },
   },
 };
 
@@ -143,6 +144,15 @@ describe("validateManifest", () => {
       }).issues,
     ).toContainEqual(
       expect.objectContaining({ path: "$.requiredEntitlements" }),
+    );
+  });
+  it("requires explicit Knowledge write access", () => {
+    const result = validateManifest({
+      ...valid,
+      capabilities: { ...valid.capabilities, knowledge: { write: false } },
+    });
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({ path: "$.capabilities.knowledge.write" }),
     );
   });
   it("rejects unsafe ingress, unrequested migrations, and empty object-store access", () => {

@@ -23,6 +23,7 @@ describe("CLI", () => {
         "forms-workflow",
         "forms-insights",
         "service-ingress",
+        "knowledge-publisher",
       ].join("\n")}\n`,
     );
     expect(await main(["examples", "list", "--verbose"])).toBe(0);

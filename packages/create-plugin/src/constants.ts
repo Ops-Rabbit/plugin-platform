@@ -1,5 +1,5 @@
-export const CLI_VERSION = "0.8.2";
-export const SDK_VERSION = "^0.8.2";
+export const CLI_VERSION = "0.9.0";
+export const SDK_VERSION = "^0.9.0";
 export const STARTER_IDS = [
   "basic-readonly",
   "operational-action",
@@ -8,6 +8,7 @@ export const STARTER_IDS = [
   "forms-workflow",
   "forms-insights",
   "service-ingress",
+  "knowledge-publisher",
 ] as const;
 
 export type StarterId = (typeof STARTER_IDS)[number];
@@ -25,6 +26,8 @@ export const STARTER_DESCRIPTIONS: Record<StarterId, string> = {
     "Forms analytics catalog, editable Insights dashboard, and Records drill-through.",
   "service-ingress":
     "API-token ingress, plugin-schema migrations, and governed evidence uploads.",
+  "knowledge-publisher":
+    "Admin action that publishes tenant-scoped documents through the Knowledge broker.",
 };
 
 export function isStarterId(value: string): value is StarterId {

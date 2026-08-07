@@ -396,6 +396,12 @@
             "read": { "type": "boolean" },
             "write": { "type": "boolean" }
           }
+        },
+        "knowledge": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["write"],
+          "properties": { "write": { "const": true } }
         }
       }
     }

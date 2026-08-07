@@ -79,4 +79,5 @@ export interface PluginDeclaredCapabilities {
   tenantRecords?: { collections: string[] };
   database?: { mode: "plugin_schema" };
   objectStore?: { read?: boolean; write?: boolean };
+  knowledge?: { write: true };
 }

@@ -16,6 +16,46 @@ export interface PluginInvocationContext {
   readonly database?: PluginDatabase;
   readonly objectStore?: PluginObjectStore;
   readonly forms?: PluginFormsService;
+  readonly knowledge?: PluginKnowledgeService;
+}
+
+export type PluginKnowledgeSource = Readonly<Record<string, JsonValue>> & {
+  readonly id: string;
+  readonly key: string;
+  readonly name: string;
+};
+
+export type PluginKnowledgeDocument = Readonly<Record<string, JsonValue>> & {
+  readonly id: string;
+  readonly key: string;
+  readonly title: string;
+  readonly contentHash: string;
+};
+
+export type PluginKnowledgePublication = Readonly<Record<string, JsonValue>> & {
+  readonly generationId: string;
+  readonly documentCount: number;
+  readonly chunkCount: number;
+};
+
+/** Host-managed ingestion into a source owned by the invoking plugin. */
+export interface PluginKnowledgeService {
+  createSource(input: {
+    key: string;
+    name: string;
+    description?: string;
+  }): Promise<PluginKnowledgeSource>;
+  upsertDocument(input: {
+    sourceKey: string;
+    key: string;
+    title: string;
+    content: string;
+    contentType?: "text/plain" | "text/markdown" | "text/html";
+    sourceUri?: string;
+    revision?: string;
+    metadata?: Readonly<Record<string, JsonValue>>;
+  }): Promise<PluginKnowledgeDocument>;
+  publish(sourceKey: string): Promise<PluginKnowledgePublication>;
 }
 
 export interface PluginRouteContext extends PluginInvocationContext {

@@ -8,7 +8,7 @@ This repository publishes:
 - [`@opsrabbit/plugin-sdk`](./packages/plugin-sdk): contracts, manifest schema,
   validation, compatibility checks, governed service-plugin contracts, package
   inventory, and an isolated test harness.
-- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, seven starters,
+- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, eight starters,
   reference implementations, generated tests, CI, README, and `AGENTS.md`.
 
 ## Create a plugin
@@ -26,8 +26,8 @@ npm run plugin:pack
 
 Starters are executable reference plugins covering a read-only tool, controlled
 operational action, tenant-scoped scheduled job, host-brokered tenant records,
-a host-rendered Forms workflow, a Forms Insights workspace, and authenticated
-service ingress with plugin-owned storage. Run `opsrabbit-plugin examples list`
+a host-rendered Forms workflow, a Forms Insights workspace, authenticated
+service ingress with plugin-owned storage, and Knowledge publication. Run `opsrabbit-plugin examples list`
 to enumerate them. The generated ZIP is intended
 for quarantine and administrator review in the OpsRabbit Plugins UI.
 
@@ -40,6 +40,8 @@ runner broker implementation, deployment topology, or capability-token secrets.
 The SDK describes requests and public contracts. It does not grant authority.
 The OpsRabbit host remains responsible for role and resource authorization,
 tenant isolation, capability enforcement, audit, approval, and isolated execution.
+Declared Knowledge access supplies only a tenant-scoped broker for plugin-owned
+sources; it does not expose Knowledge tables, storage paths, or credentials.
 
 `opsrabbit.plugin.json` is authoritative. The compiled entry registers behavior
 only, and the host rejects identifiers or security metadata that do not exactly
@@ -65,3 +67,5 @@ The [starter reference](./docs/starter-reference.md),
 [plugin Insights workspace](./docs/plugin-contract-v0.7.md), and
 [required entitlements](./docs/plugin-contract-v0.6.md) guides explain the contract
 and expected tests for each plugin shape.
+The [Knowledge broker contract](./docs/plugin-contract-v0.9.md) documents
+plugin-owned source publication.

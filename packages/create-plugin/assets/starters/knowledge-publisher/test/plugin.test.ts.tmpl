@@ -1,0 +1,22 @@
+import type { PluginKnowledgeService } from '@opsrabbit/plugin-sdk';
+import { createTestContext } from '@opsrabbit/plugin-sdk/testing';
+import { describe, expect, it, vi } from 'vitest';
+import { plugin } from '../src/index.js';
+
+describe('{{id}}', () => {
+  it('creates, upserts, and publishes through the host broker', async () => {
+    const knowledge: PluginKnowledgeService = {
+      createSource: vi.fn().mockResolvedValue({ id: 'source-1', key: 'runbooks', name: 'Runbooks' }),
+      upsertDocument: vi.fn().mockResolvedValue({ id: 'document-1', key: 'restart', title: 'Restart', contentHash: 'sha256' }),
+      publish: vi.fn().mockResolvedValue({ generationId: 'generation-1', documentCount: 1, chunkCount: 2 }),
+    };
+    const result = await plugin.actions?.[0]?.run({ sourceKey: 'runbooks', sourceName: 'Runbooks', documentKey: 'restart', title: 'Restart', content: '# Restart' }, createTestContext({ tenantId: 'tenant-a', knowledge }));
+    expect(knowledge.createSource).toHaveBeenCalledWith({ key: 'runbooks', name: 'Runbooks' });
+    expect(knowledge.publish).toHaveBeenCalledWith('runbooks');
+    expect(result).toEqual(expect.objectContaining({ publication: expect.objectContaining({ chunkCount: 2 }) }));
+  });
+
+  it('fails closed when the host does not supply the declared broker', async () => {
+    await expect(plugin.actions?.[0]?.run({ sourceKey: 'runbooks', sourceName: 'Runbooks', documentKey: 'restart', title: 'Restart', content: '# Restart' }, createTestContext())).rejects.toThrow('Knowledge write capability is unavailable.');
+  });
+});

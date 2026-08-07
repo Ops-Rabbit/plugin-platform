@@ -3,6 +3,7 @@ import type {
   PluginInvocationContext,
   PluginLogger,
   TenantRecordStore,
+  PluginKnowledgeService,
 } from "../contracts/contexts.js";
 import type { JsonValue } from "../contracts/manifest.js";
 
@@ -22,6 +23,7 @@ export function createTestContext(
     actor?: PluginActor;
     signal?: AbortSignal;
     tenantRecords?: TenantRecordStore;
+    knowledge?: PluginKnowledgeService;
     settings?: Readonly<Record<string, JsonValue>>;
   } = {},
 ): TestContext {
@@ -37,6 +39,9 @@ export function createTestContext(
     ...(options.tenantRecords === undefined
       ? {}
       : { tenantRecords: options.tenantRecords }),
+    ...(options.knowledge === undefined
+      ? {}
+      : { knowledge: options.knowledge }),
   };
 }
 

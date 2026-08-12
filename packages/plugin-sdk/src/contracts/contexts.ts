@@ -12,6 +12,13 @@ export interface PluginInvocationContext {
   readonly signal: AbortSignal;
   readonly logger: PluginLogger;
   readonly settings: Readonly<Record<string, JsonValue>>;
+  /** Immutable application-selected conversation values. Untrusted; never authorization. */
+  readonly conversationBindings?: Readonly<Record<string, JsonValue>>;
+  /** Verified embedded-chat identity. Use this to authorize untrusted conversation bindings. */
+  readonly embeddedChat?: Readonly<{
+    widgetId: string;
+    externalUserId: string;
+  }>;
   readonly tenantRecords?: TenantRecordStore;
   readonly database?: PluginDatabase;
   readonly objectStore?: PluginObjectStore;

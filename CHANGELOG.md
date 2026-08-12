@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0 - 2026-08-12
+
+- Add optional immutable `conversationBindings` and separately verified `embeddedChat` identity to plugin invocation context for deterministic, authorizable Embedded Chat tool calls.
+- Bindings remain untrusted input; hosts and plugins continue to enforce tenant and resource authorization independently.
+
 ## 0.9.0 - 2026-08-06
 
 - Add a declared, host-managed Knowledge write broker for plugin-owned sources,

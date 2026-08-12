@@ -54,6 +54,16 @@ The SDK intentionally contains no OpsRabbit backend, authentication, database,
 runner, licensing, or deployment implementation. Capability declarations are
 requests reviewed and enforced by the host; they never grant access by themselves.
 
+Chat tool invocations may include `context.conversationBindings`, an immutable
+JSON object selected when an Embedded Chat conversation starts. Use it for
+deterministic routing hints such as `workspaceId` without relying on the model to
+copy a prompt value into tool arguments. Bindings are untrusted browser input,
+may be absent, and never grant access. For Embedded Chat, the separately verified
+`context.embeddedChat.externalUserId` and `widgetId` identify the token subject;
+validate the requested binding against that identity, `context.tenantId`, and the
+plugin's authorization source before selecting data.
+Never place credentials or secrets in bindings.
+
 Forms-backed plugins may declare a host-rendered workspace through the optional
 `navigation` manifest field. The host validates the `/apps/<module>` path,
 supported icon, module key, and referenced title/icon settings. Navigation is

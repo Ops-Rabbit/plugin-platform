@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
 An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` and
-`@opsrabbit/create-plugin` 0.9.0.
+`@opsrabbit/create-plugin` 0.10.0.
 
 ## Course promise
 
@@ -62,7 +62,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public packages are version 0.9.0 and the manifest `apiVersion` is
+here. The public packages are version 0.10.0 and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -291,6 +291,11 @@ interface PluginInvocationContext {
   readonly signal: AbortSignal;
   readonly logger: PluginLogger;
   readonly settings: Readonly<Record<string, JsonValue>>;
+  readonly conversationBindings?: Readonly<Record<string, JsonValue>>;
+  readonly embeddedChat?: Readonly<{
+    widgetId: string;
+    externalUserId: string;
+  }>;
   readonly tenantRecords?: TenantRecordStore;
   readonly database?: PluginDatabase;
   readonly objectStore?: PluginObjectStore;
@@ -300,6 +305,8 @@ interface PluginInvocationContext {
 ```
 
 Optional brokers must be checked and code must fail closed when one is absent.
+
+For chat tool invocations, `conversationBindings` can carry deterministic values selected when an Embedded Chat conversation starts, such as a workspace id. They bypass model argument copying but remain untrusted browser-supplied data. `embeddedChat` is different: it contains the external user and widget identity verified from the signed token. A plugin must validate each requested binding against that verified identity, `tenantId`, and its own authorization source before using it to select customer data. Bindings are absent on other invocation surfaces and must never contain secrets.
 
 ### Lab A: tenant records
 

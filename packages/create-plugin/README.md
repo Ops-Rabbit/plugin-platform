@@ -25,6 +25,7 @@ Available starters:
 - `forms-workflow`
 - `forms-insights`
 - `service-ingress`
+- `knowledge-publisher`
 
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.
@@ -90,3 +91,8 @@ After deploying a service-ingress plugin, create the tenant-scoped API token in
 the host plugin settings UI and pass that token to the edge/agent installer.
 Agents should send JSON control events to ingress and upload large binary
 evidence through host-issued object-store instructions.
+
+Use `knowledge-publisher` as the reference for an administrator-controlled
+action that creates or reuses a plugin-owned Knowledge source, upserts bounded
+documents by stable key, and publishes the batch explicitly. The host retains
+tenant and source isolation, authorization, indexing, retention, and audit.

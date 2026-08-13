@@ -246,9 +246,10 @@ import {
 ```
 
 The manifest may declare tools, actions, scheduled jobs, read routes, ingress
-routes, widgets, tenant-record collections, a plugin database, and an object
-store. Registrations exist for the executable sections; broker declarations
-request bounded context services.
+routes, widgets, tenant-record collections, a plugin database, an object store,
+and Knowledge write access. Registrations exist for the executable sections;
+broker declarations request bounded context services and remain optional at
+invocation time.
 
 ### Lab: controlled action
 

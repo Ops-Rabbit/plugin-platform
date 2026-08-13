@@ -12,7 +12,8 @@ low-level SDK contract.
 
 ## What a plugin can add
 
-A plugin can provide one or more of these capabilities:
+A plugin can provide one or more of these user-facing features and host-brokered
+capabilities:
 
 - **Navigation/workspace**: a menu entry or app workspace inside OpsRabbit.
 - **Forms-backed records**: configured records such as inspections, tickets,
@@ -23,19 +24,35 @@ A plugin can provide one or more of these capabilities:
   and optional availability rules.
 - **Agent tools**: safe tools that OpsRabbit agents can use to answer questions
   or operate on allowed plugin data.
+- **Embedded Chat routing**: agent tools can receive conversation bindings such
+  as a selected workspace id, together with separately verified embedded-user
+  identity. Bindings are routing hints, not authorization, and plugins must
+  validate them before selecting customer data.
 - **Insights**: dashboards and saved queries based on plugin-owned Forms data.
+- **Read routes and widgets**: role-gated JSON data routes and host-rendered
+  widgets for supported plugin surfaces.
 - **Service ingress**: authenticated internal APIs for edge agents or services.
 - **Object evidence**: direct upload of images, videos, PDFs, logs, or other
   evidence to S3-compatible storage, with governed references attached to
   records.
 - **Plugin database tables**: plugin-owned tenant-scoped tables for specialist
   state that does not belong in ordinary Forms submissions.
+- **Tenant-record collections**: simple host-brokered plugin records when a
+  plugin needs governed key/value persistence without its own SQL schema.
 - **Scheduled jobs**: background tasks for refresh, retention, sync, or
   projection work.
+- **Knowledge publication**: administrator-controlled publication of bounded
+  plugin-owned reference documents to native OpsRabbit Knowledge.
+
+Some items above are declared directly under manifest `capabilities`, while
+navigation, Forms starter packs, workflow, and Insights workspace metadata use
+their own manifest sections. In both cases, a declaration only asks the host to
+make the surface or broker available; it does not grant access by itself.
 
 The OpsRabbit host remains responsible for authentication, tenant enablement,
 license checks, authorization, resource grants, audit, Forms persistence, object
-access, dashboard storage, and runtime isolation.
+access, dashboard storage, Knowledge source isolation and indexing, and runtime
+isolation.
 
 ## Typical lifecycle
 
@@ -182,6 +199,18 @@ Depending on permissions, users can:
 Agents can use host-provided Data Insight tools to discover plugin datasets and
 run bounded semantic queries. Plugins expose catalog metadata; they should not
 expose raw SQL tools to ordinary users or agents.
+
+## Knowledge publication
+
+A trusted plugin can publish reference content such as runbooks, product
+guidance, or operating procedures to a plugin-owned source in native OpsRabbit
+Knowledge. The plugin creates or reuses its source by stable key, upserts bounded
+text documents, and explicitly publishes the completed batch.
+
+Knowledge publication is not general access to every Knowledge source. The host
+continues to enforce tenant and plugin ownership, administrator authority,
+content bounds, indexing, retention, and audit. Search access and agent-source
+assignment remain separate host-authorized operations.
 
 ## Service ingress and API tokens
 

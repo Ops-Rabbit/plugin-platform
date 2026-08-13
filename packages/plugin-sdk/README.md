@@ -117,3 +117,10 @@ schema-confined `database`, and a tenant-scoped `objectStore`. The host supplies
 opaque token principals, broker objects, and short-lived direct-upload URLs; it
 does not expose database or object-store credentials. See Plugin Contract 0.6
 for the mandatory authorization and confinement boundary.
+
+Trusted plugins may declare `capabilities.knowledge.write: true` to request the
+optional `context.knowledge` broker for plugin-owned source and document
+publication. The host retains tenant and source isolation, administrator
+authorization, indexing, retention, and audit; search access and agent-source
+assignment are separate grants. See Plugin Contract 0.9 and the generated
+`knowledge-publisher` starter.

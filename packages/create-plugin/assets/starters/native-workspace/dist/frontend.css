@@ -1,0 +1,5 @@
+:host {
+  display: block;
+  color: var(--opsrabbit-text, inherit);
+  background: var(--opsrabbit-surface, transparent);
+}

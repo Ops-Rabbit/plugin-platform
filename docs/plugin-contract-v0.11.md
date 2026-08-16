@@ -78,6 +78,11 @@ icon, or animation packages. Emit CSS under `dist/`, static files under
 `dist/assets/`, and disable production source maps. Do not load code or styles
 from a CDN.
 
+Keep the declared backend entry at `dist/index.js`. If it imports compiled
+backend support modules, place those modules under `runtime/`; the packer
+includes that directory while the host continues to reserve other
+`dist/*.js` files for explicitly declared frontend entry points.
+
 The `native-workspace` starter is framework-light so the ABI is visible.
 Replace its DOM rendering with a compiled Svelte component while retaining the
 same `mount` export and cleanup behavior.

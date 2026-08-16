@@ -86,7 +86,7 @@ export interface PluginManifest {
     templatesRoute?: `/${string}`;
     workspace?: {
       enabledSetting?: string;
-      placement: "tab";
+      placement: "tab" | "menu";
       defaultTemplateId: string;
       defaultTab?: "records" | "insights";
       allowUserDefault?: boolean;

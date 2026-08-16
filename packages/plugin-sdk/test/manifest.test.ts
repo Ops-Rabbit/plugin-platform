@@ -303,6 +303,46 @@ describe("validateManifest", () => {
       ]),
     );
   });
+  it("accepts separate-menu Insights workspaces without tab preferences", () => {
+    expect(
+      validateManifest({
+        ...valid,
+        dataInsight: {
+          catalogRoute: "/status",
+          templatesRoute: "/insights-templates",
+          workspace: {
+            placement: "menu",
+            defaultTemplateId: "quality-overview",
+          },
+        },
+      }).issues,
+    ).toEqual([]);
+  });
+  it("rejects tab defaults for separate-menu Insights workspaces", () => {
+    const result = validateManifest({
+      ...valid,
+      dataInsight: {
+        catalogRoute: "/status",
+        templatesRoute: "/insights-templates",
+        workspace: {
+          placement: "menu",
+          defaultTemplateId: "quality-overview",
+          defaultTab: "insights",
+          allowUserDefault: true,
+        },
+      },
+    });
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        path: "$.dataInsight.workspace.defaultTab",
+      }),
+    );
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        path: "$.dataInsight.workspace.allowUserDefault",
+      }),
+    );
+  });
   it("requires Data Insight routes to be viewer-readable", () => {
     const result = validateManifest({
       ...valid,

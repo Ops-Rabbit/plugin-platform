@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.1 - 2026-08-16
+
+- Add `menu` placement for host-rendered plugin Data Insights dashboards.
+- Keep menu dashboards separate from application records and reject tab-only
+  default/preference fields for menu placement.
+
 ## 0.11.0 - 2026-08-16
 
 - Add the versioned, framework-neutral native workspace manifest and browser ABI.

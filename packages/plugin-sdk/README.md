@@ -91,8 +91,9 @@ host, not plugin code, owns root and follow-up persistence, transitions,
 authorization, concurrency, numbering, and audit. See Plugin Contract 0.5 and
 the generated `forms-workflow` starter.
 
-A Forms-backed plugin may declare `dataInsight.templatesRoute` and a tab-based
-`dataInsight.workspace`. The templates route returns the exported
+A Forms-backed plugin may declare `dataInsight.templatesRoute` and a tab- or
+menu-based `dataInsight.workspace`. Menu placement gives Insights a separate
+navigation entry immediately before the plugin workspace. The templates route returns the exported
 `DataInsightDashboardTemplateCatalog` wire shape: bounded semantic query JSON,
 widget references, layout hints, and suggested questions, never SQL. The host
 validates the route and configured default template, executes queries through

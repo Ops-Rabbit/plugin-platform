@@ -195,6 +195,33 @@ describe("published manifest schema", () => {
           catalogRoute: "/analytics-catalog",
           templatesRoute: "/analytics-templates",
           workspace: {
+            placement: "menu",
+            defaultTemplateId: "quality-overview",
+            defaultTab: "insights",
+          },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      validateSchema({
+        ...valid,
+        dataInsight: {
+          catalogRoute: "/analytics-catalog",
+          templatesRoute: "/analytics-templates",
+          workspace: {
+            placement: "menu",
+            defaultTemplateId: "quality-overview",
+          },
+        },
+      }),
+    ).toBe(true);
+    expect(
+      validateSchema({
+        ...valid,
+        dataInsight: {
+          catalogRoute: "/analytics-catalog",
+          templatesRoute: "/analytics-templates",
+          workspace: {
             placement: "panel",
             defaultTemplateId: "quality-overview",
           },

@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` and
-`@opsrabbit/create-plugin` 0.11.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.11.1
+and `@opsrabbit/create-plugin` 0.11.0.
 
 ## Course promise
 
@@ -62,7 +62,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public packages are version 0.11.0 and the manifest `apiVersion` is
+here. The public SDK is version 0.11.1, the create-plugin CLI is 0.11.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---

@@ -445,12 +445,12 @@ function validateDataInsightWorkspace(
       ),
     );
   }
-  if (value.placement !== "tab") {
+  if (value.placement !== "tab" && value.placement !== "menu") {
     issues.push(
       issue(
         "$.dataInsight.workspace.placement",
         "invalid",
-        "Only tab placement is supported.",
+        "Placement must be tab or menu.",
       ),
     );
   }
@@ -471,6 +471,24 @@ function validateDataInsightWorkspace(
         "$.dataInsight.workspace.defaultTab",
         "invalid",
         "Default tab must be records or insights.",
+      ),
+    );
+  }
+  if (value.placement === "menu" && value.defaultTab !== undefined) {
+    issues.push(
+      issue(
+        "$.dataInsight.workspace.defaultTab",
+        "invalid",
+        "Menu placement does not use a default tab.",
+      ),
+    );
+  }
+  if (value.placement === "menu" && value.allowUserDefault !== undefined) {
+    issues.push(
+      issue(
+        "$.dataInsight.workspace.allowUserDefault",
+        "invalid",
+        "Menu placement does not use a default-tab preference.",
       ),
     );
   }

@@ -58,11 +58,18 @@ export const mount: OpsRabbitWorkspaceModule["mount"] = (target, context) => {
 
 The context exposes display-safe identity; locale and theme subscriptions; safe
 same-origin navigation; host notifications and confirmation; an overlay root;
-declared asset URLs; lifecycle cancellation; and Forms clients, including
+an asynchronous `context.assets.url(path)` resolver for declared assets;
+lifecycle cancellation; and Forms clients, including
 authorized existing-attachment content/text reads when `forms.attachments` is
 declared. It never
 exposes cookies, tokens, host stores, database connections, private frontend
 imports, or backend service objects.
+
+Asset resolution is asynchronous because the host fetches each declared file
+with the active tenant context only when the workspace requests it. The
+returned object URL is bound to the workspace lifecycle and is revoked on
+unmount. Plugins must `await context.assets.url("image.svg")`; they must not
+fetch package endpoints directly or retain resolved URLs after cleanup.
 
 Every Forms call is checked twice: the client rejects undeclared frontend
 capabilities, and the host rechecks the active package generation, enablement,

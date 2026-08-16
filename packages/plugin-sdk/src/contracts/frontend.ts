@@ -55,7 +55,8 @@ export interface OpsRabbitWorkspaceContext {
     onCleanup(callback: () => void): void;
   };
   overlayRoot: HTMLElement;
-  assets: { url(path: string): string };
+  /** Resolve a declared asset to an authenticated, lifecycle-bound object URL. */
+  assets: { url(path: string): Promise<string> };
   forms: {
     catalog(): Promise<unknown>;
     definition(id: string): Promise<unknown>;

@@ -1,0 +1,76 @@
+// @vitest-environment happy-dom
+import { describe, expect, it, vi } from "vitest";
+import { createTestContext } from "@opsrabbit/plugin-sdk/testing";
+import plugin from "../src/index.js";
+import { mount } from "../src/frontend.js";
+
+describe("{{displayName}}", () => {
+  it("publishes its native workspace status tool", async () => {
+    const result = await plugin.tools?.[0]?.run(
+      {},
+      createTestContext({ tenantId: "tenant-a" }),
+    );
+    expect(result).toEqual({
+      moduleKey: "workspace_records",
+      frontendSdkVersion: "1",
+    });
+  });
+
+  it("mounts and cleans up through the public browser ABI", async () => {
+    const target = document.createElement("div");
+    const stopLocale = vi.fn();
+    const stopTheme = vi.fn();
+    const catalog = vi.fn().mockResolvedValue({ definitions: [] });
+    const mounted = mount(target, {
+      sdkVersion: "1",
+      plugin: { id: "{{id}}", moduleKey: "workspace_records", generation: "generation" },
+      tenant: { id: "tenant-a" },
+      actor: { id: "actor-a", displayName: "Operator", role: "operator", access: {} },
+      locale: { current: "en", subscribe(listener) { listener("en"); return stopLocale; } },
+      theme: { current: "light", subscribe(listener) { listener("light"); return stopTheme; } },
+      navigation: { async go() {} },
+      notifications: { show: vi.fn() },
+      confirmation: { async confirm() { return true; } },
+      lifecycle: { signal: new AbortController().signal, onCleanup() {} },
+      overlayRoot: document.createElement("div"),
+      assets: { url(path) { return path; } },
+      forms: {
+        catalog,
+        async definition() {}, async list() {}, async get() {}, async create() {}, async update() {},
+        workflow: { async get() {}, async record() {}, async transition() {} },
+        actions: { async list() {}, async execute() {} },
+      },
+    });
+    expect(target.textContent).toContain("{{displayName}}");
+    expect(target.textContent).toContain("en · light");
+    await vi.waitFor(() => expect(catalog).toHaveBeenCalled());
+    mounted?.destroy();
+    expect(target.childElementCount).toBe(0);
+    expect(stopLocale).toHaveBeenCalled();
+    expect(stopTheme).toHaveBeenCalled();
+  });
+
+  it("reports catalog failures through host notifications", async () => {
+    const target = document.createElement("div");
+    const show = vi.fn();
+    mount(target, {
+      sdkVersion: "1",
+      plugin: { id: "{{id}}", moduleKey: "workspace_records", generation: "generation" },
+      tenant: { id: "tenant-a" },
+      actor: { id: "actor-a", displayName: "Operator", role: "operator", access: {} },
+      locale: { current: "en", subscribe() { return () => undefined; } },
+      theme: { current: "light", subscribe() { return () => undefined; } },
+      navigation: { async go() {} }, notifications: { show },
+      confirmation: { async confirm() { return true; } },
+      lifecycle: { signal: new AbortController().signal, onCleanup() {} },
+      overlayRoot: document.createElement("div"), assets: { url(path) { return path; } },
+      forms: {
+        async catalog() { throw new Error("Catalog denied"); },
+        async definition() {}, async list() {}, async get() {}, async create() {}, async update() {},
+        workflow: { async get() {}, async record() {}, async transition() {} },
+        actions: { async list() {}, async execute() {} },
+      },
+    });
+    await vi.waitFor(() => expect(show).toHaveBeenCalledWith({ type: "error", message: "Error: Catalog denied" }));
+  });
+});

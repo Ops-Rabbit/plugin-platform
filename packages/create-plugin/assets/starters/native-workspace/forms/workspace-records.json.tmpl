@@ -1,0 +1,23 @@
+{
+  "formatVersion": 1,
+  "moduleKey": "workspace_records",
+  "starters": [
+    {
+      "starterKey": "workspace_record",
+      "title": "Workspace record",
+      "description": "A record rendered by the native workspace reference.",
+      "recordType": "workspace_record",
+      "badge": "Workspace",
+      "icon": "building",
+      "schema": {
+        "fields": [{ "key": "name", "label": "Name", "type": "text", "required": true }],
+        "sections": [{ "key": "main", "label": "Details", "fieldKeys": ["name"] }],
+        "actions": [{ "key": "submit", "label": "Submit", "kind": "submit" }]
+      },
+      "listConfig": {
+        "columns": [{ "fieldKey": "name", "label": "Name" }],
+        "defaultSort": "updated_at_desc"
+      }
+    }
+  ]
+}

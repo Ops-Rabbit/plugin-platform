@@ -1,5 +1,10 @@
 # `@opsrabbit/plugin-sdk`
 
+The SDK includes the `frontend.native_workspace` manifest contract and the
+framework-neutral `OpsRabbitWorkspaceModule` browser ABI. See
+[`plugin-contract-v0.11.md`](../../docs/plugin-contract-v0.11.md) and the
+generated `native-workspace` starter for build and trust-boundary guidance.
+
 The stable public contract for building and testing OpsRabbit plugins without
 checking out the OpsRabbit product source.
 

@@ -63,6 +63,29 @@ describe("published manifest schema", () => {
     };
     expect(validateSchema(quotationNavigation)).toBe(true);
     expect(validateManifest(quotationNavigation).ok).toBe(true);
+    const nativeWorkspace = {
+      ...quotationNavigation,
+      frontend: {
+        kind: "native_workspace",
+        entry: "./dist/frontend.js",
+        styles: ["./dist/frontend.css"],
+        assets: ["./dist/assets/**"],
+        sdkVersion: "1",
+        mountIsolation: "shadow_dom",
+        capabilities: ["forms.catalog.read", "forms.submissions.read"],
+      },
+    };
+    expect(validateSchema(nativeWorkspace)).toBe(true);
+    expect(validateManifest(nativeWorkspace).ok).toBe(true);
+    const invalidWorkspace = {
+      ...nativeWorkspace,
+      frontend: {
+        ...nativeWorkspace.frontend,
+        entry: "https://cdn.example/app.js",
+      },
+    };
+    expect(validateSchema(invalidWorkspace)).toBe(false);
+    expect(validateManifest(invalidWorkspace).ok).toBe(false);
 
     const invalid = {
       ...valid,

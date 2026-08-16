@@ -109,6 +109,17 @@ If users do not see new fields, dynamic dropdown values, actions, list columns,
 workflow placement, or Insights mappings after an upgrade, check whether the
 starter pack was republished for that tenant.
 
+Native module workspaces are an optional rendering mode for dense tables,
+charts, dialogs, and print layouts. Deployment administrators must explicitly
+approve this package class because its JavaScript runs in the signed-in
+OpsRabbit origin. Shadow DOM contains styling but is not a security sandbox.
+
+The workspace can use only its declared host clients, and the host independently
+checks tenant enablement, active package generation, role, and Forms resource
+access. Disabling, replacing, rolling back, or removing the plugin makes stale
+workspace requests fail closed. The declarative Forms recovery view remains the
+fallback for authorized users when native mounting fails.
+
 ### 5. Use the workspace
 
 Operators use the plugin workspace like a normal OpsRabbit app. Depending on the

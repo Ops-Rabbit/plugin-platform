@@ -1,0 +1,30 @@
+import type { OpsRabbitWorkspaceModule } from "@opsrabbit/plugin-sdk";
+
+export const mount: OpsRabbitWorkspaceModule["mount"] = (target, context) => {
+  const heading = document.createElement("h2");
+  const summary = document.createElement("p");
+  heading.textContent = "{{displayName}}";
+  target.append(heading, summary);
+
+  const render = () => {
+    summary.textContent = `${context.locale.current} · ${context.theme.current}`;
+  };
+  const stopLocale = context.locale.subscribe(render);
+  const stopTheme = context.theme.subscribe(render);
+  render();
+
+  void context.forms.catalog().catch((error: unknown) => {
+    context.notifications.show({
+      type: "error",
+      message: String(error),
+    });
+  });
+
+  return {
+    destroy() {
+      stopLocale();
+      stopTheme();
+      target.replaceChildren();
+    },
+  };
+};

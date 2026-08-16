@@ -24,6 +24,7 @@ describe("CLI", () => {
         "forms-insights",
         "service-ingress",
         "knowledge-publisher",
+        "native-workspace",
       ].join("\n")}\n`,
     );
     expect(await main(["examples", "list", "--verbose"])).toBe(0);

@@ -1,5 +1,6 @@
 import type { PluginDeclaredCapabilities } from "./capabilities.js";
 import type { PluginFormStarterPackReference } from "./forms.js";
+import type { PluginNativeWorkspace } from "./frontend.js";
 
 export const PLUGIN_API_VERSION = "1.0" as const;
 
@@ -93,6 +94,7 @@ export interface PluginManifest {
   };
   settings?: PluginSetting[];
   navigation?: PluginFormsWorkspaceNavigation;
+  frontend?: PluginNativeWorkspace;
   formStarterPack?: PluginFormStarterPackReference;
   capabilities: PluginDeclaredCapabilities;
 }

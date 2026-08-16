@@ -176,6 +176,61 @@
         }
       }
     },
+    "frontend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "entry",
+        "styles",
+        "assets",
+        "sdkVersion",
+        "mountIsolation",
+        "capabilities"
+      ],
+      "properties": {
+        "kind": { "const": "native_workspace" },
+        "entry": {
+          "type": "string",
+          "pattern": "^\\./dist/(?!.*\\.\\.)(?!.*[?:#])[A-Za-z0-9._/-]+\\.js$"
+        },
+        "styles": {
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^\\./dist/(?!.*\\.\\.)(?!.*[?:#])[A-Za-z0-9._/-]+\\.css$"
+          }
+        },
+        "assets": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^\\./dist/assets/(?!.*\\.\\.)(?:[A-Za-z0-9._/-]+/)?\\*\\*$"
+          }
+        },
+        "sdkVersion": { "const": "1" },
+        "mountIsolation": { "const": "shadow_dom" },
+        "capabilities": {
+          "type": "array",
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "forms.catalog.read",
+              "forms.submissions.read",
+              "forms.submissions.write",
+              "forms.attachments",
+              "forms.workflow",
+              "forms.actions"
+            ]
+          }
+        }
+      }
+    },
     "formStarterPack": {
       "type": "object",
       "additionalProperties": false,
@@ -330,6 +385,7 @@
       "uniqueItems": true
     },
     "navigation": { "$ref": "#/$defs/navigation" },
+    "frontend": { "$ref": "#/$defs/frontend" },
     "formStarterPack": { "$ref": "#/$defs/formStarterPack" },
     "capabilities": {
       "type": "object",
@@ -408,6 +464,7 @@
   },
   "dependentRequired": {
     "formStarterPack": ["navigation"],
+    "frontend": ["navigation"],
     "database": ["capabilities"]
   },
   "allOf": [

@@ -79,6 +79,10 @@ export interface OpsRabbitWorkspaceContext {
         values?: Record<string, JsonValue>,
       ): Promise<unknown>;
     };
+    attachments: {
+      contentUrl(submissionId: string, attachmentId: string): Promise<string>;
+      text(submissionId: string, attachmentId: string): Promise<unknown>;
+    };
   };
 }
 

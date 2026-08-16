@@ -39,6 +39,7 @@ describe("{{displayName}}", () => {
         async definition() {}, async list() {}, async get() {}, async create() {}, async update() {},
         workflow: { async get() {}, async record() {}, async transition() {} },
         actions: { async list() {}, async execute() {} },
+        attachments: { async contentUrl() { return ""; }, async text() {} },
       },
     });
     expect(target.textContent).toContain("{{displayName}}");
@@ -69,6 +70,7 @@ describe("{{displayName}}", () => {
         async definition() {}, async list() {}, async get() {}, async create() {}, async update() {},
         workflow: { async get() {}, async record() {}, async transition() {} },
         actions: { async list() {}, async execute() {} },
+        attachments: { async contentUrl() { return ""; }, async text() {} },
       },
     });
     await vi.waitFor(() => expect(show).toHaveBeenCalledWith({ type: "error", message: "Error: Catalog denied" }));

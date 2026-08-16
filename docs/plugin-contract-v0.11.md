@@ -58,7 +58,9 @@ export const mount: OpsRabbitWorkspaceModule["mount"] = (target, context) => {
 
 The context exposes display-safe identity; locale and theme subscriptions; safe
 same-origin navigation; host notifications and confirmation; an overlay root;
-declared asset URLs; lifecycle cancellation; and Forms clients. It never
+declared asset URLs; lifecycle cancellation; and Forms clients, including
+authorized existing-attachment content/text reads when `forms.attachments` is
+declared. It never
 exposes cookies, tokens, host stores, database connections, private frontend
 imports, or backend service objects.
 

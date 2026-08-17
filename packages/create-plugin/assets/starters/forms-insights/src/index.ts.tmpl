@@ -16,6 +16,7 @@ const analyticsCatalog = {
       record_type: "insight_record",
       dimensions: [
         { field_key: "category", value_type: "text", sensitivity: "internal" },
+        { field_key: "recorded_at", value_type: "timestamp", sensitivity: "internal" },
       ],
       measures: [
         { key: "record_count", aggregation: "count", unit: "records" },
@@ -26,7 +27,7 @@ const analyticsCatalog = {
           unit: "units",
         },
       ],
-      default_time_field: null,
+      default_time_field: "recorded_at",
     },
   ],
 } satisfies FormsAnalyticsCatalog;
@@ -39,6 +40,7 @@ const templateCatalog = {
       title: "Records overview",
       description: "Caller-visible record totals and category distribution.",
       suggested_questions: ["Which category has the most records?"],
+      presentation: { show_date_range: true },
       layout: { columns: 12 },
       queries: [
         {

@@ -30,6 +30,7 @@ const templates = {
     {
       id: "quality-overview",
       title: "Quality overview",
+      presentation: { show_date_range: true },
       queries: [
         {
           key: "by-category",
@@ -129,6 +130,22 @@ describe("Data Insight public catalog validation", () => {
       expect.arrayContaining([
         expect.objectContaining({ code: "duplicate" }),
         expect.objectContaining({ code: "invalid-source" }),
+      ]),
+    );
+  });
+
+  it("rejects invalid dashboard presentation settings", () => {
+    const invalid = structuredClone(templates);
+    invalid.templates[0]!.presentation = { show_date_range: "yes" as never };
+
+    const result = validateDataInsightDashboardTemplateCatalog(invalid);
+    expect(result.ok).toBe(false);
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "$.templates[0].presentation.show_date_range",
+          code: "type",
+        }),
       ]),
     );
   });

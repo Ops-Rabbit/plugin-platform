@@ -290,6 +290,7 @@ function validateTemplate(
       "description",
       "suggested_questions",
       "layout",
+      "presentation",
       "queries",
       "widgets",
     ],
@@ -300,6 +301,36 @@ function validateTemplate(
   boundedString(value.title, `${path}.title`, 160, issues);
   if (value.description !== undefined)
     boundedString(value.description, `${path}.description`, 1000, issues);
+  if (value.presentation !== undefined) {
+    if (!record(value.presentation)) {
+      issues.push(
+        issue(
+          `${path}.presentation`,
+          "type",
+          "presentation must be an object.",
+        ),
+      );
+    } else {
+      unknownKeys(
+        value.presentation,
+        ["show_date_range"],
+        `${path}.presentation`,
+        issues,
+      );
+      if (
+        value.presentation.show_date_range !== undefined &&
+        typeof value.presentation.show_date_range !== "boolean"
+      ) {
+        issues.push(
+          issue(
+            `${path}.presentation.show_date_range`,
+            "type",
+            "show_date_range must be a boolean.",
+          ),
+        );
+      }
+    }
+  }
   if (!Array.isArray(value.queries) || value.queries.length > 20)
     issues.push(
       issue(

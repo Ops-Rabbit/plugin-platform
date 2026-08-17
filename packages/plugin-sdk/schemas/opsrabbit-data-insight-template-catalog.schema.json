@@ -33,6 +33,11 @@
           "items": { "type": "string", "minLength": 1, "maxLength": 300 }
         },
         "layout": { "$ref": "#/$defs/jsonObject" },
+        "presentation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "show_date_range": { "type": "boolean" } }
+        },
         "queries": {
           "type": "array",
           "maxItems": 20,

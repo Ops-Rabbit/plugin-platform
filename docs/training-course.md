@@ -450,6 +450,11 @@ measures, and a default time field. Dashboard queries refer to dataset ids and
 contain bounded `semantic_query` JSON. Widgets may be `metric`, `table`, `text`,
 `bar`, `line`, `area`, `pie`, `donut`, or `scatter`.
 
+Use `presentation.show_date_range: true` when the dashboard needs From and To
+controls. Every referenced dataset must declare a timestamp
+`default_time_field`, and every template query must use at most 10 saved filters
+so Core can add the two range bounds without exceeding the Forms limit.
+
 ### Lab: records overview
 
 Generate `forms-insights` and add:

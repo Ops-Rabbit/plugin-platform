@@ -1,0 +1,43 @@
+{
+  "id": "{{id}}",
+  "name": "{{displayName}}",
+  "version": "0.1.0",
+  "description": "{{displayName}} precompiled native Forms workspace",
+  "apiVersion": "1.0",
+  "minimumOpsRabbitVersion": "0.3.1",
+  "main": "./dist/index.js",
+  "navigation": {
+    "kind": "forms_workspace",
+    "moduleKey": "workspace_records",
+    "path": "/apps/workspace-records",
+    "icon": "building",
+    "fallbackTitle": "{{displayName}}"
+  },
+  "formStarterPack": {
+    "moduleKey": "workspace_records",
+    "path": "./forms/workspace-records.json"
+  },
+  "frontend": {
+    "kind": "native_workspace",
+    "entry": "./dist/frontend.js",
+    "styles": ["./dist/frontend.css"],
+    "assets": ["./dist/assets/**"],
+    "sdkVersion": "1",
+    "mountIsolation": "shadow_dom",
+    "capabilities": [
+      "forms.catalog.read",
+      "forms.submissions.read",
+      "forms.submissions.write"
+    ]
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "id": "workspace-status",
+        "risk": "read",
+        "audience": "all",
+        "requiredPermission": "read"
+      }
+    ]
+  }
+}

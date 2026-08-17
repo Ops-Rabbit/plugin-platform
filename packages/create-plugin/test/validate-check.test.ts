@@ -258,4 +258,105 @@ describe("plugin directory validation", () => {
       expect.objectContaining({ code: "journal-files" }),
     );
   });
+
+  it("validates referenced native workspace files", async () => {
+    const target = await preparedPlugin();
+    const manifestPath = join(target, "opsrabbit.plugin.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    await writeFile(
+      manifestPath,
+      JSON.stringify({
+        ...manifest,
+        navigation: {
+          kind: "forms_workspace",
+          moduleKey: "quality",
+          path: "/apps/quality",
+          icon: "building",
+          fallbackTitle: "Quality",
+        },
+        formStarterPack: {
+          moduleKey: "quality",
+          path: "./forms/quality.json",
+        },
+        frontend: {
+          kind: "native_workspace",
+          entry: "./dist/frontend.js",
+          styles: ["./dist/frontend.css"],
+          assets: ["./dist/assets/**"],
+          sdkVersion: "1",
+          mountIsolation: "shadow_dom",
+          capabilities: ["forms.catalog.read"],
+        },
+      }),
+    );
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "asset-read" }),
+    );
+    await mkdir(join(target, "forms"));
+    await writeFile(
+      join(target, "forms", "quality.json"),
+      JSON.stringify({
+        formatVersion: 1,
+        moduleKey: "quality",
+        starters: [
+          {
+            starterKey: "quality_record",
+            title: "Quality Record",
+            description: "A quality record.",
+            recordType: "quality_record",
+            badge: "Quality",
+            icon: "building",
+            schema: {
+              fields: [
+                {
+                  key: "summary",
+                  label: "Summary",
+                  type: "text",
+                  required: true,
+                },
+              ],
+              sections: [
+                {
+                  key: "main",
+                  label: "Main",
+                  fieldKeys: ["summary"],
+                },
+              ],
+              actions: [{ key: "submit", label: "Submit", kind: "submit" }],
+            },
+            listConfig: {
+              columns: [{ fieldKey: "summary", label: "Summary" }],
+              defaultSort: "updated_at_desc",
+            },
+          },
+        ],
+      }),
+    );
+    await mkdir(join(target, "dist", "assets"));
+    await writeFile(
+      join(target, "dist", "frontend.js"),
+      "export const mount = () => {};\n",
+    );
+    await writeFile(
+      join(target, "dist", "frontend.css"),
+      ":host { display: block; }\n",
+    );
+    await writeFile(join(target, "dist", "assets", "icon.svg"), "<svg/>\n");
+    expect((await validatePluginDirectory(target)).issues).toEqual([]);
+    await writeFile(
+      join(target, "dist", "undeclared.js"),
+      "export const unexpected = true;\n",
+    );
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "executable-undeclared" }),
+    );
+    await rm(join(target, "dist", "undeclared.js"));
+    await writeFile(join(target, "dist", "assets", "bundle.js.map"), "{}\n");
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "source-map" }),
+    );
+  });
 });

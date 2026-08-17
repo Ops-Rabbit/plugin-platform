@@ -33,8 +33,143 @@ export async function validatePluginDirectory(
   const issues = [
     ...(await validateReferencedStarterPack(directory, result.value)),
     ...(await validateReferencedMigrations(directory, result.value)),
+    ...(await validateReferencedFrontend(directory, result.value)),
   ];
   return { manifest: result.value, issues };
+}
+
+const MAX_FRONTEND_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_FRONTEND_AGGREGATE_BYTES = 20 * 1024 * 1024;
+
+async function validateReferencedFrontend(
+  directory: string,
+  manifest: PluginManifest,
+): Promise<ValidationIssue[]> {
+  const frontend = manifest.frontend;
+  if (!frontend) return [];
+  const paths = new Set<string>([frontend.entry, ...frontend.styles]);
+  const issues: ValidationIssue[] = [];
+  try {
+    const main = manifest.main.replace(/^\.\//u, "");
+    const entry = frontend.entry.replace(/^\.\//u, "");
+    for (const relativePath of await listRegularFiles(
+      resolve(directory, "dist"),
+      directory,
+    )) {
+      if (
+        relativePath.endsWith(".js") &&
+        relativePath !== main &&
+        relativePath !== entry
+      )
+        issues.push(
+          frontendIssue(
+            "executable-undeclared",
+            "Frontend JavaScript entry points must be explicitly declared.",
+            `./${relativePath}`,
+          ),
+        );
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT")
+      issues.push(frontendIssue("asset-read", readableError(error), "./dist"));
+  }
+  for (const asset of frontend.assets) {
+    const prefix = asset.slice(2, -2);
+    const root = resolve(directory, prefix);
+    try {
+      for (const relativePath of await listRegularFiles(root, directory))
+        paths.add(`./${relativePath}`);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT")
+        return [frontendIssue("asset-read", readableError(error), asset)];
+    }
+  }
+  let aggregateBytes = 0;
+  for (const relativePath of paths) {
+    const path = resolve(directory, relativePath);
+    try {
+      const stat = await lstat(path);
+      if (!stat.isFile() || stat.isSymbolicLink()) {
+        issues.push(
+          frontendIssue(
+            "asset-type",
+            "Frontend assets must be regular files.",
+            relativePath,
+          ),
+        );
+        continue;
+      }
+      if (relativePath.endsWith(".map")) {
+        issues.push(
+          frontendIssue(
+            "source-map",
+            "Frontend source maps are not published by default.",
+            relativePath,
+          ),
+        );
+      }
+      aggregateBytes += stat.size;
+      if (stat.size > MAX_FRONTEND_FILE_BYTES)
+        issues.push(
+          frontendIssue(
+            "asset-size",
+            `Frontend file exceeds ${MAX_FRONTEND_FILE_BYTES} bytes.`,
+            relativePath,
+          ),
+        );
+    } catch (error) {
+      issues.push(
+        frontendIssue("asset-read", readableError(error), relativePath),
+      );
+    }
+  }
+  if (aggregateBytes > MAX_FRONTEND_AGGREGATE_BYTES)
+    issues.push(
+      frontendIssue(
+        "assets-size",
+        `Frontend files exceed ${MAX_FRONTEND_AGGREGATE_BYTES} aggregate bytes.`,
+        "$.frontend",
+      ),
+    );
+  return issues;
+}
+
+async function listRegularFiles(
+  directory: string,
+  packageRoot: string,
+): Promise<string[]> {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const paths: string[] = [];
+  for (const entry of entries) {
+    const path = resolve(directory, entry.name);
+    if (entry.isSymbolicLink())
+      throw new Error(`Symbolic links are not permitted: ${path}`);
+    if (entry.isDirectory())
+      paths.push(...(await listRegularFiles(path, packageRoot)));
+    else if (entry.isFile())
+      paths.push(
+        path
+          .slice(resolve(packageRoot).length + 1)
+          .split("\\")
+          .join("/"),
+      );
+    else throw new Error(`Frontend asset is not a regular file: ${path}`);
+  }
+  return paths;
+}
+
+function frontendIssue(
+  code: string,
+  message: string,
+  path: string,
+): ValidationIssue {
+  return {
+    path: path.startsWith("$.")
+      ? path
+      : `$.frontend.asset[${JSON.stringify(path)}]`,
+    code,
+    message,
+  };
 }
 
 async function validateReferencedMigrations(

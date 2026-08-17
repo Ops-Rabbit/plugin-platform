@@ -1,0 +1,16 @@
+import { definePlugin } from "@opsrabbit/plugin-sdk";
+
+export default definePlugin({
+  tools: [
+    {
+      id: "workspace-status",
+      description: "Describe the native workspace reference.",
+      risk: "read",
+      audience: "all",
+      requiredPermission: "read",
+      async run() {
+        return { moduleKey: "workspace_records", frontendSdkVersion: "1" };
+      },
+    },
+  ],
+});

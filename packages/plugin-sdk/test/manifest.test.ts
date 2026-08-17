@@ -115,6 +115,78 @@ describe("validateManifest", () => {
       value: valid,
       issues: [],
     }));
+  it("accepts a bounded native Forms workspace declaration", () => {
+    const manifest = {
+      ...valid,
+      frontend: {
+        kind: "native_workspace",
+        entry: "./dist/frontend.js",
+        styles: ["./dist/frontend.css"],
+        assets: ["./dist/assets/**"],
+        sdkVersion: "1",
+        mountIsolation: "shadow_dom",
+        capabilities: [
+          "forms.catalog.read",
+          "forms.submissions.read",
+          "forms.submissions.write",
+        ],
+      },
+    };
+    expect(validateManifest(manifest)).toEqual({
+      ok: true,
+      value: manifest,
+      issues: [],
+    });
+  });
+
+  it("rejects unsafe, incompatible, duplicate, and unowned native workspaces", () => {
+    const result = validateManifest({
+      ...valid,
+      navigation: undefined,
+      frontend: {
+        kind: "remote_workspace",
+        entry: "https://cdn.example/frontend.js",
+        styles: ["./dist/../shell.css", "./dist/../shell.css"],
+        assets: ["./dist/assets/*"],
+        sdkVersion: "2",
+        mountIsolation: "iframe",
+        capabilities: ["forms.catalog.read", "host.internal"],
+      },
+    });
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "$.frontend.kind" }),
+        expect.objectContaining({ path: "$.frontend.entry" }),
+        expect.objectContaining({
+          path: "$.frontend.styles[1]",
+          code: "duplicate",
+        }),
+        expect.objectContaining({ path: "$.frontend.assets[0]" }),
+        expect.objectContaining({ path: "$.frontend.sdkVersion" }),
+        expect.objectContaining({ path: "$.frontend.mountIsolation" }),
+        expect.objectContaining({ path: "$.frontend.capabilities[1]" }),
+        expect.objectContaining({ path: "$.frontend", code: "invalid" }),
+      ]),
+    );
+  });
+  it("requires native workspaces to own a matching Forms starter pack", () => {
+    const result = validateManifest({
+      ...valid,
+      formStarterPack: undefined,
+      frontend: {
+        kind: "native_workspace",
+        entry: "./dist/frontend.js",
+        styles: [],
+        assets: [],
+        sdkVersion: "1",
+        mountIsolation: "shadow_dom",
+        capabilities: [],
+      },
+    });
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({ path: "$.frontend", code: "invalid" }),
+    );
+  });
   it("rejects empty, malformed, excessive, and duplicate entitlement declarations", () => {
     expect(
       validateManifest({ ...valid, requiredEntitlements: [] }).issues,
@@ -247,6 +319,46 @@ describe("validateManifest", () => {
           path: "$.dataInsight.workspace.allowUserDefault",
         }),
       ]),
+    );
+  });
+  it("accepts separate-menu Insights workspaces without tab preferences", () => {
+    expect(
+      validateManifest({
+        ...valid,
+        dataInsight: {
+          catalogRoute: "/status",
+          templatesRoute: "/insights-templates",
+          workspace: {
+            placement: "menu",
+            defaultTemplateId: "quality-overview",
+          },
+        },
+      }).issues,
+    ).toEqual([]);
+  });
+  it("rejects tab defaults for separate-menu Insights workspaces", () => {
+    const result = validateManifest({
+      ...valid,
+      dataInsight: {
+        catalogRoute: "/status",
+        templatesRoute: "/insights-templates",
+        workspace: {
+          placement: "menu",
+          defaultTemplateId: "quality-overview",
+          defaultTab: "insights",
+          allowUserDefault: true,
+        },
+      },
+    });
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        path: "$.dataInsight.workspace.defaultTab",
+      }),
+    );
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        path: "$.dataInsight.workspace.allowUserDefault",
+      }),
     );
   });
   it("requires Data Insight routes to be viewer-readable", () => {

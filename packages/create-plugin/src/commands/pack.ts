@@ -11,6 +11,7 @@ const INCLUDED_ROOTS = [
   "LICENSE",
   "NOTICE",
   "dist",
+  "runtime",
 ];
 
 export async function packPlugin(

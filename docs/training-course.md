@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` and
-`@opsrabbit/create-plugin` 0.10.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.11.1
+and `@opsrabbit/create-plugin` 0.11.0.
 
 ## Course promise
 
@@ -54,7 +54,7 @@ alone:
 - `packages/plugin-sdk/src/validation/`: runtime and cross-reference checks;
 - `packages/plugin-sdk/schemas/`: published JSON Schemas;
 - `packages/plugin-sdk/src/testing/`: test context and parity assertions;
-- `packages/create-plugin/assets/starters/`: eight executable references;
+- `packages/create-plugin/assets/starters/`: nine executable references;
 - `packages/create-plugin/src/constants.ts`: authoritative CLI starter list;
 - `scripts/verify-generated-starters.mjs`: isolated consumer verification;
 - `docs/plugin-contract-v0.2.md` through `v0.9.md`: capability history and host
@@ -62,7 +62,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public packages are version 0.10.0 and the manifest `apiVersion` is
+here. The public SDK is version 0.11.1, the create-plugin CLI is 0.11.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -126,7 +126,7 @@ commands, and produce a reviewable ZIP.
 npx opsrabbit-plugin examples list --verbose
 ```
 
-The eight current starter ids are:
+The nine current starter ids are:
 
 - `basic-readonly`
 - `operational-action`
@@ -136,6 +136,7 @@ The eight current starter ids are:
 - `forms-insights`
 - `service-ingress`
 - `knowledge-publisher`
+- `native-workspace`
 
 ### Lab: read-only tenant status
 
@@ -386,6 +387,27 @@ Republishing refreshes starter-backed definitions while preserving definition
 ids, form keys, title/description customizations, submissions, and historical
 schema snapshots. Plugin code must not issue SQL updates against ordinary Forms
 definitions.
+
+### Native Forms workspace boundary
+
+Use the `native-workspace` starter when a Forms-backed module needs a dense,
+specialist browser interface that the declarative renderer cannot express. The
+plugin ships precompiled JavaScript and CSS; it never ships source for the host
+to compile and never imports host-private Svelte modules.
+
+The browser entry exports the public `mount(target, context)` ABI. Bundle Svelte
+and every grid, chart, icon, or animation dependency into the plugin output.
+Declare every entry, stylesheet, asset glob, SDK version, isolation mode, and
+host capability. A native Forms workspace must also declare a starter pack
+whose module key matches its navigation; validation fails closed when any of
+those three declarations disagree. The host must still check tenant enablement, package
+generation, module ownership, role, grants, validation, persistence, audit, and
+retention for each request.
+
+Shadow DOM prevents ordinary plugin CSS from leaking into the OpsRabbit shell,
+but same-origin JavaScript remains full-trust browser code. Deployment approval
+must communicate that risk. A native workspace must clean up subscriptions and
+pending work when destroyed and must not durably cache customer data.
 
 ### Dynamic values
 
@@ -775,6 +797,7 @@ A successful learner should be able to say:
 - `docs/plugin-contract-v0.2.md`: authoritative manifest and compatibility;
 - `docs/plugin-contract-v0.3.md`: Forms workspace navigation;
 - `docs/plugin-contract-v0.4.md`: Forms starter packs;
+- `docs/plugin-contract-v0.11.md`: native Forms workspace ABI and trust model;
 - `docs/plugin-contract-v0.5.md`: Forms workflows;
 - `docs/plugin-contract-v0.6.md`: entitlements and governed services;
 - `docs/plugin-contract-v0.7.md`: Forms Insights workspace;

@@ -32,6 +32,22 @@ Both routes must be declared read routes. `workspace` requires a
 `forms_workspace` navigation declaration. When supplied, `enabledSetting` must
 name a declared boolean setting.
 
+### Separate Dashboard menu (SDK 0.11.1)
+
+Set `placement` to `menu` to request a host-rendered **Dashboard** navigation
+entry immediately before the declaring application workspace. The Dashboard
+URL uses the application route with `?tab=insights`; the ordinary application
+route opens its records or native specialist workspace directly and does not
+render a Records/Insights tab strip. `defaultTab` and `allowUserDefault` are
+tab-placement options and are invalid for menu placement.
+
+Menu placement requires `minimumOpsRabbitVersion` `0.3.1` or newer.
+
+Hosts expose the menu only when the declaring plugin and its optional
+`enabledSetting` are effective for the active tenant. Navigation remains
+discoverability: Data Insight and Forms authorization is rechecked by the
+corresponding backend service on every request.
+
 ## Templates route
 
 Return a `DataInsightDashboardTemplateCatalog` with `schema_version: 1`.

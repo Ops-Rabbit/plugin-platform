@@ -63,6 +63,39 @@ describe("published manifest schema", () => {
     };
     expect(validateSchema(quotationNavigation)).toBe(true);
     expect(validateManifest(quotationNavigation).ok).toBe(true);
+    const nativeWorkspace = {
+      ...quotationNavigation,
+      formStarterPack: {
+        moduleKey: "quotations",
+        path: "./forms/quotations.json",
+      },
+      frontend: {
+        kind: "native_workspace",
+        entry: "./dist/frontend.js",
+        styles: ["./dist/frontend.css"],
+        assets: ["./dist/assets/**"],
+        sdkVersion: "1",
+        mountIsolation: "shadow_dom",
+        capabilities: ["forms.catalog.read", "forms.submissions.read"],
+      },
+    };
+    expect(validateSchema(nativeWorkspace)).toBe(true);
+    expect(validateManifest(nativeWorkspace).ok).toBe(true);
+    const nativeWorkspaceWithoutStarterPack = {
+      ...nativeWorkspace,
+      formStarterPack: undefined,
+    };
+    expect(validateSchema(nativeWorkspaceWithoutStarterPack)).toBe(false);
+    expect(validateManifest(nativeWorkspaceWithoutStarterPack).ok).toBe(false);
+    const invalidWorkspace = {
+      ...nativeWorkspace,
+      frontend: {
+        ...nativeWorkspace.frontend,
+        entry: "https://cdn.example/app.js",
+      },
+    };
+    expect(validateSchema(invalidWorkspace)).toBe(false);
+    expect(validateManifest(invalidWorkspace).ok).toBe(false);
 
     const invalid = {
       ...valid,
@@ -161,6 +194,33 @@ describe("published manifest schema", () => {
             defaultTemplateId: "quality-overview",
             defaultTab: "records",
             allowUserDefault: true,
+          },
+        },
+      }),
+    ).toBe(true);
+    expect(
+      validateSchema({
+        ...valid,
+        dataInsight: {
+          catalogRoute: "/analytics-catalog",
+          templatesRoute: "/analytics-templates",
+          workspace: {
+            placement: "menu",
+            defaultTemplateId: "quality-overview",
+            defaultTab: "insights",
+          },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      validateSchema({
+        ...valid,
+        dataInsight: {
+          catalogRoute: "/analytics-catalog",
+          templatesRoute: "/analytics-templates",
+          workspace: {
+            placement: "menu",
+            defaultTemplateId: "quality-overview",
           },
         },
       }),

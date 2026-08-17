@@ -22,6 +22,7 @@ const starterIds = [
   "forms-insights",
   "service-ingress",
   "knowledge-publisher",
+  "native-workspace",
 ];
 await mkdir(tarballDirectory);
 

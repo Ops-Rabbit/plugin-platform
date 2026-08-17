@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.11.1 - 2026-08-16
+
+- Add `menu` placement for host-rendered plugin Data Insights dashboards.
+- Keep menu dashboards separate from application records and reject tab-only
+  default/preference fields for menu placement.
+
+## 0.11.0 - 2026-08-16
+
+- Add the versioned, framework-neutral native workspace manifest and browser ABI.
+- Validate entry, stylesheet, and asset declarations plus referenced regular files and size limits.
+- Add the executable `native-workspace` starter and host-boundary guidance.
+
 ## 0.10.0 - 2026-08-12
 
 - Add optional immutable `conversationBindings` and separately verified `embeddedChat` identity to plugin invocation context for deterministic, authorizable Embedded Chat tool calls.

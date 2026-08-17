@@ -15,9 +15,10 @@ needed. Run `opsrabbit-plugin examples list` to see the ids and generate one wit
 | `forms-insights`          | Forms analytics and Insights    | Catalog, templates, editable dashboard, Records drill-through     |
 | `service-ingress`         | ingress, database, object store | Scoped tokens, journaled Drizzle migrations, evidence uploads     |
 | `knowledge-publisher`     | action and Knowledge write      | Plugin-owned source ingestion and explicit index publication      |
+| `native-workspace`        | Forms frontend capabilities     | Precompiled browser workspace, Shadow DOM styling, lifecycle ABI  |
 
 Each generated repository includes unit tests, coverage enforcement, TypeScript
 checks, a pinned GitHub Actions workflow, README, `AGENTS.md`, manifest, and
-deterministic package command. The platform CI regenerates all eight from the
+deterministic package command. The platform CI regenerates all nine from the
 packed npm candidates, installs them outside the workspace, and runs every
 documented quality command before either public package can be released.

@@ -27,6 +27,7 @@ describe("packPlugin", () => {
     const target = await builtPlugin();
     await writeFile(join(target, ".env"), "SECRET=do-not-package");
     await mkdir(join(target, "forms"));
+    await mkdir(join(target, "runtime"));
     await mkdir(join(target, "migrations", "declared"), { recursive: true });
     await mkdir(join(target, "migrations", "undeclared"), { recursive: true });
     const manifestPath = join(target, "opsrabbit.plugin.json");
@@ -57,6 +58,10 @@ describe("packPlugin", () => {
           migrationsPath: "./migrations/declared",
         },
       }),
+    );
+    await writeFile(
+      join(target, "runtime", "quotation.js"),
+      "export const quotation = true;\n",
     );
     await writeFile(
       join(target, "migrations", "declared", "0001_records.sql"),
@@ -104,6 +109,7 @@ describe("packPlugin", () => {
     const files = Object.keys(unzipSync(firstBytes));
     expect(files).toContain("opsrabbit.plugin.json");
     expect(files).toContain("dist/index.js");
+    expect(files).toContain("runtime/quotation.js");
     expect(files).toContain("forms/starter.json");
     expect(files).toContain("migrations/declared/0001_records.sql");
     expect(files).toContain("migrations/declared/meta/_journal.json");

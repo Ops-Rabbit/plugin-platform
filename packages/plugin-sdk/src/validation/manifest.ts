@@ -11,6 +11,10 @@ import {
   PLUGIN_NAVIGATION_ICONS,
   type PluginManifest,
 } from "../contracts/manifest.js";
+import {
+  PLUGIN_FRONTEND_CAPABILITIES,
+  PLUGIN_FRONTEND_SDK_VERSION,
+} from "../contracts/frontend.js";
 
 const ID = /^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$/;
 const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
@@ -32,6 +36,7 @@ const TOP_LEVEL = new Set([
   "dataInsight",
   "settings",
   "navigation",
+  "frontend",
   "formStarterPack",
   "capabilities",
 ]);
@@ -123,6 +128,12 @@ export function validateManifest(
   }
   validateSettings(input.settings, issues);
   validateNavigation(input.navigation, input.settings, issues);
+  validateFrontend(
+    input.frontend,
+    input.navigation,
+    input.formStarterPack,
+    issues,
+  );
   validateFormStarterPackReference(
     input.formStarterPack,
     input.navigation,
@@ -151,6 +162,176 @@ export function validateManifest(
   return issues.length === 0
     ? { ok: true, value: input as unknown as PluginManifest, issues }
     : { ok: false, issues };
+}
+
+function validateFrontend(
+  value: unknown,
+  navigationValue: unknown,
+  starterPackValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (value === undefined) return;
+  if (!record(value)) {
+    issues.push(issue("$.frontend", "type", "Frontend must be an object."));
+    return;
+  }
+  unknownKeys(
+    value,
+    new Set([
+      "kind",
+      "entry",
+      "styles",
+      "assets",
+      "sdkVersion",
+      "mountIsolation",
+      "capabilities",
+    ]),
+    "$.frontend",
+    issues,
+  );
+  if (value.kind !== "native_workspace")
+    issues.push(
+      issue(
+        "$.frontend.kind",
+        "unsupported",
+        "Frontend kind must be native_workspace.",
+      ),
+    );
+  if (value.sdkVersion !== PLUGIN_FRONTEND_SDK_VERSION)
+    issues.push(
+      issue(
+        "$.frontend.sdkVersion",
+        "unsupported",
+        `Supported frontend SDK version is ${PLUGIN_FRONTEND_SDK_VERSION}.`,
+      ),
+    );
+  if (value.mountIsolation !== "shadow_dom")
+    issues.push(
+      issue(
+        "$.frontend.mountIsolation",
+        "unsupported",
+        "Native workspaces must use shadow_dom isolation.",
+      ),
+    );
+  string(
+    value.entry,
+    "$.frontend.entry",
+    issues,
+    (entry) => safeFrontendFile(entry, ".js"),
+    "Use a safe relative JavaScript file under ./dist/.",
+  );
+  validateFrontendFiles(value.styles, "styles", ".css", 8, issues);
+  validateFrontendAssets(value.assets, issues);
+  if (!Array.isArray(value.capabilities)) {
+    issues.push(
+      issue(
+        "$.frontend.capabilities",
+        "type",
+        "Frontend capabilities must be an array.",
+      ),
+    );
+  } else {
+    uniqueStrings(
+      value.capabilities,
+      "$.frontend.capabilities",
+      issues,
+      /^[a-z][a-z.]+$/,
+    );
+    for (const [index, capability] of value.capabilities.entries())
+      member(
+        capability,
+        PLUGIN_FRONTEND_CAPABILITIES,
+        `$.frontend.capabilities[${index}]`,
+        issues,
+      );
+  }
+  if (!record(navigationValue) || navigationValue.kind !== "forms_workspace")
+    issues.push(
+      issue(
+        "$.frontend",
+        "invalid",
+        "A native workspace requires forms_workspace navigation.",
+      ),
+    );
+  if (!record(starterPackValue))
+    issues.push(
+      issue(
+        "$.frontend",
+        "invalid",
+        "A native workspace requires a Forms starter pack owned by its navigation module.",
+      ),
+    );
+}
+
+function validateFrontendFiles(
+  value: unknown,
+  field: string,
+  extension: string,
+  maximum: number,
+  issues: ValidationIssue[],
+): void {
+  const path = `$.frontend.${field}`;
+  if (!Array.isArray(value) || value.length > maximum) {
+    issues.push(
+      issue(
+        path,
+        "invalid",
+        `${field} must contain at most ${maximum} entries.`,
+      ),
+    );
+    return;
+  }
+  uniqueStrings(value, path, issues, /^\.\/dist\/[A-Za-z0-9._/-]+$/);
+  for (const [index, entry] of value.entries())
+    if (typeof entry === "string" && !safeFrontendFile(entry, extension))
+      issues.push(
+        issue(
+          `${path}[${index}]`,
+          "invalid",
+          `Use a safe relative ${extension} file under ./dist/.`,
+        ),
+      );
+}
+
+function validateFrontendAssets(
+  value: unknown,
+  issues: ValidationIssue[],
+): void {
+  const path = "$.frontend.assets";
+  if (!Array.isArray(value) || value.length > 16) {
+    issues.push(
+      issue(path, "invalid", "assets must contain at most 16 entries."),
+    );
+    return;
+  }
+  uniqueStrings(value, path, issues, /^\.\/dist\/assets\/[A-Za-z0-9._/*-]+$/);
+  for (const [index, entry] of value.entries())
+    if (
+      typeof entry === "string" &&
+      (!/^\.\/dist\/assets\/[A-Za-z0-9._/*-]+$/.test(entry) ||
+        !entry.endsWith("/**") ||
+        entry.slice(0, -3).includes("*") ||
+        entry.includes(".."))
+    )
+      issues.push(
+        issue(
+          `${path}[${index}]`,
+          "invalid",
+          "Use a safe relative /** glob under ./dist/assets/.",
+        ),
+      );
+}
+
+function safeFrontendFile(value: string, extension: string): boolean {
+  return (
+    /^\.\/dist\/[A-Za-z0-9._/-]+$/.test(value) &&
+    value.endsWith(extension) &&
+    !value.endsWith(".map") &&
+    !value.includes("..") &&
+    !value.includes(":") &&
+    !value.includes("?") &&
+    !value.includes("#")
+  );
 }
 
 function validateDataInsight(
@@ -278,12 +459,12 @@ function validateDataInsightWorkspace(
       ),
     );
   }
-  if (value.placement !== "tab") {
+  if (value.placement !== "tab" && value.placement !== "menu") {
     issues.push(
       issue(
         "$.dataInsight.workspace.placement",
         "invalid",
-        "Only tab placement is supported.",
+        "Placement must be tab or menu.",
       ),
     );
   }
@@ -304,6 +485,24 @@ function validateDataInsightWorkspace(
         "$.dataInsight.workspace.defaultTab",
         "invalid",
         "Default tab must be records or insights.",
+      ),
+    );
+  }
+  if (value.placement === "menu" && value.defaultTab !== undefined) {
+    issues.push(
+      issue(
+        "$.dataInsight.workspace.defaultTab",
+        "invalid",
+        "Menu placement does not use a default tab.",
+      ),
+    );
+  }
+  if (value.placement === "menu" && value.allowUserDefault !== undefined) {
+    issues.push(
+      issue(
+        "$.dataInsight.workspace.allowUserDefault",
+        "invalid",
+        "Menu placement does not use a default-tab preference.",
       ),
     );
   }

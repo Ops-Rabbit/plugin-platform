@@ -1,6 +1,6 @@
 # Plugin contract 0.11: native Forms workspaces
 
-OpsRabbit 0.5 and `@opsrabbit/plugin-sdk` 0.11 add an optional precompiled
+OpsRabbit 0.3.1 and `@opsrabbit/plugin-sdk` 0.11 add an optional precompiled
 browser workspace for a plugin-owned Forms module. The host still owns the
 authenticated shell, tenant selection, plugin enablement, Forms persistence,
 RBAC and grants, validation, attachments, workflow transitions, audit,
@@ -16,6 +16,10 @@ retention, deletion, exports, package approval, deployment, and rollback.
     "path": "/apps/quotations",
     "icon": "receipt",
     "fallbackTitle": "Quotations"
+  },
+  "formStarterPack": {
+    "moduleKey": "quotations",
+    "path": "./forms/quotations.json"
   },
   "frontend": {
     "kind": "native_workspace",
@@ -35,7 +39,9 @@ retention, deletion, exports, package approval, deployment, and rollback.
 }
 ```
 
-All paths are package-relative regular files. Remote URLs, traversal, links,
+The navigation, starter pack, and frontend must declare the same module key;
+the host will not mount a native Forms workspace without its owned starter
+pack. All paths are package-relative regular files. Remote URLs, traversal, links,
 source maps, unknown capabilities, and incompatible SDK or isolation versions
 fail validation. Individual frontend files are limited to 5 MiB and the
 declared frontend inventory to 20 MiB. The host revalidates the immutable

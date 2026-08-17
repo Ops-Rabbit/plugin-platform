@@ -478,7 +478,7 @@
   },
   "dependentRequired": {
     "formStarterPack": ["navigation"],
-    "frontend": ["navigation"],
+    "frontend": ["navigation", "formStarterPack"],
     "database": ["capabilities"]
   },
   "allOf": [

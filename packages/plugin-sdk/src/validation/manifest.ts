@@ -128,7 +128,12 @@ export function validateManifest(
   }
   validateSettings(input.settings, issues);
   validateNavigation(input.navigation, input.settings, issues);
-  validateFrontend(input.frontend, input.navigation, issues);
+  validateFrontend(
+    input.frontend,
+    input.navigation,
+    input.formStarterPack,
+    issues,
+  );
   validateFormStarterPackReference(
     input.formStarterPack,
     input.navigation,
@@ -162,6 +167,7 @@ export function validateManifest(
 function validateFrontend(
   value: unknown,
   navigationValue: unknown,
+  starterPackValue: unknown,
   issues: ValidationIssue[],
 ): void {
   if (value === undefined) return;
@@ -245,6 +251,14 @@ function validateFrontend(
         "$.frontend",
         "invalid",
         "A native workspace requires forms_workspace navigation.",
+      ),
+    );
+  if (!record(starterPackValue))
+    issues.push(
+      issue(
+        "$.frontend",
+        "invalid",
+        "A native workspace requires a Forms starter pack owned by its navigation module.",
       ),
     );
 }

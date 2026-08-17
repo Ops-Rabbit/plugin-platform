@@ -398,7 +398,9 @@ to compile and never imports host-private Svelte modules.
 The browser entry exports the public `mount(target, context)` ABI. Bundle Svelte
 and every grid, chart, icon, or animation dependency into the plugin output.
 Declare every entry, stylesheet, asset glob, SDK version, isolation mode, and
-host capability. The host must still check tenant enablement, package
+host capability. A native Forms workspace must also declare a starter pack
+whose module key matches its navigation; validation fails closed when any of
+those three declarations disagree. The host must still check tenant enablement, package
 generation, module ownership, role, grants, validation, persistence, audit, and
 retention for each request.
 

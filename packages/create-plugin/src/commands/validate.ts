@@ -48,6 +48,31 @@ async function validateReferencedFrontend(
   const frontend = manifest.frontend;
   if (!frontend) return [];
   const paths = new Set<string>([frontend.entry, ...frontend.styles]);
+  const issues: ValidationIssue[] = [];
+  try {
+    const main = manifest.main.replace(/^\.\//u, "");
+    const entry = frontend.entry.replace(/^\.\//u, "");
+    for (const relativePath of await listRegularFiles(
+      resolve(directory, "dist"),
+      directory,
+    )) {
+      if (
+        relativePath.endsWith(".js") &&
+        relativePath !== main &&
+        relativePath !== entry
+      )
+        issues.push(
+          frontendIssue(
+            "executable-undeclared",
+            "Frontend JavaScript entry points must be explicitly declared.",
+            `./${relativePath}`,
+          ),
+        );
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT")
+      issues.push(frontendIssue("asset-read", readableError(error), "./dist"));
+  }
   for (const asset of frontend.assets) {
     const prefix = asset.slice(2, -2);
     const root = resolve(directory, prefix);
@@ -60,7 +85,6 @@ async function validateReferencedFrontend(
     }
   }
   let aggregateBytes = 0;
-  const issues: ValidationIssue[] = [];
   for (const relativePath of paths) {
     const path = resolve(directory, relativePath);
     try {

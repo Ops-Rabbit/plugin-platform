@@ -169,6 +169,24 @@ describe("validateManifest", () => {
       ]),
     );
   });
+  it("requires native workspaces to own a matching Forms starter pack", () => {
+    const result = validateManifest({
+      ...valid,
+      formStarterPack: undefined,
+      frontend: {
+        kind: "native_workspace",
+        entry: "./dist/frontend.js",
+        styles: [],
+        assets: [],
+        sdkVersion: "1",
+        mountIsolation: "shadow_dom",
+        capabilities: [],
+      },
+    });
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({ path: "$.frontend", code: "invalid" }),
+    );
+  });
   it("rejects empty, malformed, excessive, and duplicate entitlement declarations", () => {
     expect(
       validateManifest({ ...valid, requiredEntitlements: [] }).issues,

@@ -65,6 +65,10 @@ describe("published manifest schema", () => {
     expect(validateManifest(quotationNavigation).ok).toBe(true);
     const nativeWorkspace = {
       ...quotationNavigation,
+      formStarterPack: {
+        moduleKey: "quotations",
+        path: "./forms/quotations.json",
+      },
       frontend: {
         kind: "native_workspace",
         entry: "./dist/frontend.js",
@@ -77,6 +81,12 @@ describe("published manifest schema", () => {
     };
     expect(validateSchema(nativeWorkspace)).toBe(true);
     expect(validateManifest(nativeWorkspace).ok).toBe(true);
+    const nativeWorkspaceWithoutStarterPack = {
+      ...nativeWorkspace,
+      formStarterPack: undefined,
+    };
+    expect(validateSchema(nativeWorkspaceWithoutStarterPack)).toBe(false);
+    expect(validateManifest(nativeWorkspaceWithoutStarterPack).ok).toBe(false);
     const invalidWorkspace = {
       ...nativeWorkspace,
       frontend: {

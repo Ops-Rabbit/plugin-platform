@@ -75,6 +75,7 @@ export type DataInsightDashboardTemplate = {
   description?: string;
   suggested_questions?: string[];
   layout?: Record<string, JsonValue>;
+  presentation?: { show_date_range?: boolean };
   queries: DataInsightTemplateQuery[];
   widgets: DataInsightTemplateWidget[];
 };

@@ -65,6 +65,13 @@ caller. A template cannot contain SQL, grant access, or expose records hidden by
 Forms authorization. The host—not plugin code—persists the materialized saved
 queries, dashboard, widgets, and layout.
 
+Templates that need a host-rendered calendar range may declare
+`presentation.show_date_range: true`. Every referenced Forms dataset must name
+a timestamp dimension as `default_time_field`, and each template query must
+leave two of the 12 filter slots available for the inclusive range bounds. The
+host persists the presentation choice with the dashboard and fails closed when
+the time-field contract is incomplete.
+
 ## Preferences and saved dashboards
 
 The host may persist the initial Records/Insights tab for the current tenant,

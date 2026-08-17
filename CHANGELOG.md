@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.2 - 2026-08-17
+
+- Add the optional `presentation.show_date_range` dashboard-template contract.
+
 ## 0.11.1 - 2026-08-16
 
 - Add `menu` placement for host-rendered plugin Data Insights dashboards.

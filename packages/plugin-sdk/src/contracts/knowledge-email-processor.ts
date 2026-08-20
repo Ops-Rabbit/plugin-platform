@@ -11,6 +11,27 @@ export interface KnowledgeEmailProcessingContextV1 {
   readonly configRevision: string;
   readonly signal: AbortSignal;
   readonly settings: Readonly<Record<string, JsonValue>>;
+  /** Host-managed structured classification. Optional; returns null when classification is unavailable or invalid. */
+  readonly classifyWithLlm?: (
+    input: KnowledgeEmailLlmClassificationInputV1,
+  ) => Promise<KnowledgeEmailLlmClassificationResultV1 | null>;
+}
+
+export interface KnowledgeEmailLlmClassificationInputV1 {
+  readonly subject: string;
+  readonly evidenceText: string;
+  readonly instructions: string;
+  readonly classes: readonly {
+    readonly id: string;
+    readonly description: string;
+    readonly allowedResolutionStatuses: readonly string[];
+  }[];
+}
+
+export interface KnowledgeEmailLlmClassificationResultV1 {
+  readonly chunkType: string;
+  readonly resolutionStatus: string;
+  readonly confidence: number;
 }
 
 export interface KnowledgeEmailMessageInputV1 {

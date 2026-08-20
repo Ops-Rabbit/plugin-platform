@@ -3,6 +3,7 @@ import {
   validateKnowledgeEmailCandidateResult,
   validateKnowledgeEmailMessageResult,
 } from "../src/validation/knowledge-email-processor.js";
+import type { KnowledgeEmailProcessingContextV1 } from "../src/contracts/knowledge-email-processor.js";
 
 const message = {
   sourceType: "imap_email" as const,
@@ -22,6 +23,36 @@ const message = {
 };
 
 describe("Knowledge email processor validation", () => {
+  it("exposes an optional host-managed LLM classifier in processing context", async () => {
+    const classifyWithLlm = async () => ({
+      chunkType: "problem",
+      resolutionStatus: "unknown",
+      confidence: 0.8,
+    });
+    const context: KnowledgeEmailProcessingContextV1 = {
+      tenantId: "t",
+      sourceId: "s",
+      configRevision: "1",
+      signal: new AbortController().signal,
+      settings: {},
+      classifyWithLlm,
+    };
+    if (!context.classifyWithLlm) throw new Error("Expected classifier.");
+    await expect(
+      context.classifyWithLlm({
+        subject: "Issue",
+        evidenceText: "Failed",
+        instructions: "Classify",
+        classes: [
+          {
+            id: "problem",
+            description: "Failure",
+            allowedResolutionStatuses: ["unknown"],
+          },
+        ],
+      }),
+    ).resolves.toMatchObject({ chunkType: "problem" });
+  });
   it("accepts evidence-backed sections and rejects invented text", () => {
     expect(
       validateKnowledgeEmailMessageResult(message, {

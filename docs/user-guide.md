@@ -388,3 +388,4 @@ For production usage:
 - use OpsRabbit agents with bounded Data Insight tools for questions over
   plugin data;
 - document plugin-specific operator steps in the customer runbook.
+  The processing context may expose `classifyWithLlm`. This is a bounded, host-managed structured classifier: plugins provide evidence, instructions, and an allowlist of classes/statuses, while model credentials and provider selection remain in the host. Plugins must retain deterministic fallback behavior when the callback is absent, throws, or returns `null`.

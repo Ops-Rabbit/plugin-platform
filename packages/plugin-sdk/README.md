@@ -142,3 +142,4 @@ falls back to generic email processing when the processor is unavailable.
 
 Use the `knowledge-email-processor` starter for a conservative implementation that
 preserves evidence and defaults to `general_message` with unknown resolution status.
+`context.classifyWithLlm` is optional and host-managed. Use it only as a bounded fallback after deterministic processing; never require provider credentials in plugin settings, and validate the returned class and status against the plugin's configured allowlist.

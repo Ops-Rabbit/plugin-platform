@@ -135,3 +135,16 @@ semantic versioning for the SDK contract and CLI.
   managed-tenant-record starter/reference plugins.
 - Add deterministic release ZIPs, clean-consumer verification, CI, and guarded
   npm publication from `main` using trusted publishing.
+
+# Changelog
+
+## 0.12.0 - 2026-08-20
+
+- Add the public `knowledgeEmailProcessor` V1 capability and registration contract for host-invoked IMAP Knowledge processing.
+- Add provenance and candidate-result validators that reject invented evidence and unknown candidate IDs.
+- Add the executable `knowledge-email-processor` starter and clean-consumer coverage.
+- Extend Knowledge email processor V1 context with an optional host-managed structured LLM classifier.
+
+## 0.13.0 - 2026-08-20
+
+- Extend Knowledge email processor V1 context with an optional host-managed structured LLM classifier.

@@ -878,6 +878,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "database",
     "objectStore",
     "knowledge",
+    "knowledgeEmailProcessor",
   ]);
   unknownKeys(value, allowed, "$.capabilities", issues);
   const capabilities = value as PluginDeclaredCapabilities;
@@ -1142,6 +1143,22 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
         );
     },
   );
+  validateSingletonCapability(
+    capabilities.knowledgeEmailProcessor,
+    "knowledgeEmailProcessor",
+    ["schemaVersion"],
+    issues,
+    (entry) => {
+      if (entry.schemaVersion !== "1")
+        issues.push(
+          issue(
+            "$.capabilities.knowledgeEmailProcessor.schemaVersion",
+            "invalid",
+            "Knowledge email processor schema version must be 1.",
+          ),
+        );
+    },
+  );
   const surfaceCount = [
     capabilities.tools,
     capabilities.actions,
@@ -1155,7 +1172,8 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     !capabilities.tenantRecords &&
     !capabilities.database &&
     !capabilities.objectStore &&
-    !capabilities.knowledge
+    !capabilities.knowledge &&
+    !capabilities.knowledgeEmailProcessor
   )
     issues.push(
       issue("$.capabilities", "required", "Declare at least one capability."),

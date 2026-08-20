@@ -24,6 +24,7 @@ describe("CLI", () => {
         "forms-insights",
         "service-ingress",
         "knowledge-publisher",
+        "knowledge-email-processor",
         "native-workspace",
       ].join("\n")}\n`,
     );

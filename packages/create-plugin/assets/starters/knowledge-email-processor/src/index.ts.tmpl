@@ -1,0 +1,26 @@
+import { definePlugin } from '@opsrabbit/plugin-sdk';
+
+export const plugin = definePlugin({
+  knowledgeEmailProcessor: {
+    schemaVersion: '1',
+    async processMessage(input) {
+      if (!input.evidenceText) return { sections: [], processorVersion: '{{id}}/0.1.0', classificationSchemaVersion: 1 };
+      return {
+        sections: [{
+          sourceText: input.evidenceText,
+          embeddingText: `Subject: ${input.subject || '(no subject)'}\nKnowledge type: general message\n\n${input.evidenceText}`,
+          chunkType: 'general_message',
+          resolutionStatus: 'unknown',
+          sourceOffsets: { start: 0, end: input.evidenceText.length },
+        }],
+        processorVersion: '{{id}}/0.1.0',
+        classificationSchemaVersion: 1,
+      };
+    },
+    async postProcessCandidates(input) {
+      return { orderedCandidateIds: input.candidates.map(({ id }) => id) };
+    },
+  },
+});
+
+export default plugin;

@@ -80,4 +80,5 @@ export interface PluginDeclaredCapabilities {
   database?: { mode: "plugin_schema" };
   objectStore?: { read?: boolean; write?: boolean };
   knowledge?: { write: true };
+  knowledgeEmailProcessor?: { schemaVersion: "1" };
 }

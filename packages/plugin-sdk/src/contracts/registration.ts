@@ -12,6 +12,7 @@ import type {
   PluginRouteContext,
 } from "./contexts.js";
 import type { JsonValue } from "./manifest.js";
+import type { KnowledgeEmailProcessorDefinitionV1 } from "./knowledge-email-processor.js";
 
 export const PLUGIN_TOOL_RESULT_KIND = "opsrabbit.tool-result/v1" as const;
 
@@ -119,6 +120,7 @@ export interface PluginDefinition {
   routes?: ReadRouteDefinition[];
   ingressRoutes?: IngressRouteDefinition[];
   widgets?: WidgetDefinition[];
+  knowledgeEmailProcessor?: KnowledgeEmailProcessorDefinitionV1;
 }
 
 export function definePlugin(

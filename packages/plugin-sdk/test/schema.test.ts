@@ -172,6 +172,31 @@ describe("published manifest schema", () => {
     }
   });
 
+  it("keeps Knowledge email processor capability schema and runtime validation in parity", async () => {
+    const schema = JSON.parse(
+      await readFile(
+        resolve(import.meta.dirname, "../schemas/opsrabbit-plugin.schema.json"),
+        "utf8",
+      ),
+    );
+    const validateSchema = new Ajv2020({
+      allErrors: true,
+      strict: true,
+    }).compile(schema);
+    for (const [knowledgeEmailProcessor, expected] of [
+      [{ schemaVersion: "1" }, true],
+      [{ schemaVersion: "2" }, false],
+      [{}, false],
+      [{ schemaVersion: "1", write: true }, false],
+    ] as const) {
+      const candidate: Record<string, unknown> = structuredClone(valid);
+      delete candidate.database;
+      candidate.capabilities = { knowledgeEmailProcessor };
+      expect(validateSchema(candidate)).toBe(expected);
+      expect(validateManifest(candidate).ok).toBe(expected);
+    }
+  });
+
   it("publishes the bounded Data Insight workspace shape", async () => {
     const schema = JSON.parse(
       await readFile(

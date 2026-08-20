@@ -1,5 +1,9 @@
 # OpsRabbit Plugin Platform
 
+The public SDK includes a V1 `knowledgeEmailProcessor` capability for bounded,
+host-invoked processing of IMAP-derived Knowledge evidence and email-only candidate
+post-processing. It does not grant direct Knowledge storage access.
+
 Public, versioned developer tooling for creating high-quality OpsRabbit plugins
 without access to the private OpsRabbit product source.
 

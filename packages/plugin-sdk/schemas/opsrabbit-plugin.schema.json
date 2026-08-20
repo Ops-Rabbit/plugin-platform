@@ -472,6 +472,12 @@
           "additionalProperties": false,
           "required": ["write"],
           "properties": { "write": { "const": true } }
+        },
+        "knowledgeEmailProcessor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion"],
+          "properties": { "schemaVersion": { "const": "1" } }
         }
       }
     }

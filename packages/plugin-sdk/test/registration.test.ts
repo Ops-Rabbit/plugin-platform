@@ -39,6 +39,42 @@ const statusTool = {
 };
 
 describe("plugin registration", () => {
+  it("requires a declared matching Knowledge email processor", () => {
+    const processorManifest: PluginManifest = {
+      ...manifest,
+      capabilities: { knowledgeEmailProcessor: { schemaVersion: "1" } },
+    };
+    const processor = {
+      schemaVersion: "1" as const,
+      async processMessage() {
+        return {
+          sections: [],
+          processorVersion: "test/1",
+          classificationSchemaVersion: 1,
+        };
+      },
+      async postProcessCandidates() {
+        return { orderedCandidateIds: [] };
+      },
+    };
+    expect(
+      validateRegistration(processorManifest, {
+        knowledgeEmailProcessor: processor,
+      }),
+    ).toEqual([]);
+    expect(validateRegistration(processorManifest, {})).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "missing-registration" }),
+      ]),
+    );
+    expect(
+      validateRegistration(manifest, { knowledgeEmailProcessor: processor }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "undeclared-capability" }),
+      ]),
+    );
+  });
   it("defines a frozen declarative registration", () => {
     const plugin = definePlugin({ tools: [statusTool] });
     expect(plugin.tools?.[0]?.id).toBe("status");

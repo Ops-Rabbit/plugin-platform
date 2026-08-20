@@ -13,6 +13,7 @@ const SECTIONS = [
   "routes",
   "ingressRoutes",
   "widgets",
+  "knowledgeEmailProcessor",
 ] as const;
 
 export function validateRegistration(
@@ -32,7 +33,9 @@ export function validateRegistration(
           `Unknown registration section: ${key}.`,
         ),
       );
-  for (const section of SECTIONS)
+  for (const section of SECTIONS.filter(
+    (entry) => entry !== "knowledgeEmailProcessor",
+  ))
     if (
       definition[section] !== undefined &&
       !Array.isArray(definition[section])
@@ -41,6 +44,45 @@ export function validateRegistration(
         issue(`$.${section}`, "type", `${section} must be an array.`),
       );
   if (issues.some(({ code }) => code === "type")) return issues;
+
+  const declaredEmailProcessor = manifest.capabilities.knowledgeEmailProcessor;
+  const registeredEmailProcessor = definition.knowledgeEmailProcessor;
+  if (Boolean(declaredEmailProcessor) !== Boolean(registeredEmailProcessor)) {
+    issues.push(
+      issue(
+        "$.knowledgeEmailProcessor",
+        declaredEmailProcessor
+          ? "missing-registration"
+          : "undeclared-capability",
+        declaredEmailProcessor
+          ? "Manifest declares a Knowledge email processor, but the entry does not register it."
+          : "Knowledge email processor is not declared in the manifest.",
+      ),
+    );
+  } else if (declaredEmailProcessor && registeredEmailProcessor) {
+    if (
+      declaredEmailProcessor.schemaVersion !==
+      registeredEmailProcessor.schemaVersion
+    )
+      issues.push(
+        issue(
+          "$.knowledgeEmailProcessor.schemaVersion",
+          "metadata-mismatch",
+          "Knowledge email processor schema version differs from the manifest.",
+        ),
+      );
+    if (
+      typeof registeredEmailProcessor.processMessage !== "function" ||
+      typeof registeredEmailProcessor.postProcessCandidates !== "function"
+    )
+      issues.push(
+        issue(
+          "$.knowledgeEmailProcessor",
+          "invalid-registration",
+          "Knowledge email processor requires message and candidate handlers.",
+        ),
+      );
+  }
 
   validateNamed("tools", manifest.capabilities.tools, definition.tools, issues);
   validateNamed(

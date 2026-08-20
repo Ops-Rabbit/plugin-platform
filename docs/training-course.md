@@ -136,6 +136,7 @@ The nine current starter ids are:
 - `forms-insights`
 - `service-ingress`
 - `knowledge-publisher`
+- `knowledge-email-processor`
 - `native-workspace`
 
 ### Lab: read-only tenant status
@@ -694,6 +695,18 @@ template.
 Use the `knowledge-publisher` starter when a trusted plugin needs to contribute
 reference content to native OpsRabbit Knowledge. The manifest must declare
 `capabilities.knowledge.write: true`, and runtime code must still treat
+
+Use `knowledge-email-processor` when a tenant needs customer-specific semantics for
+host-owned IMAP Knowledge. It declares
+`capabilities.knowledgeEmailProcessor.schemaVersion: "1"` and registers a pure
+processor. It does not directly read or write Knowledge storage. The host supplies
+already-authorized bounded evidence, validates that returned source text matches
+source offsets, owns embeddings and lifecycle, and may fall back to generic chunks.
+
+Retrieval post-processing receives only the processor's email candidates and may
+return an ordering or suppress redundant supplied IDs. It cannot introduce results,
+replace evidence, or alter non-email scores. Recommendations and hypotheses must
+remain uncertain unless the source explicitly confirms a cause or resolution.
 `context.knowledge` as optional because the host may withhold it when the actor,
 tenant, plugin state, or invocation surface is not authorized.
 

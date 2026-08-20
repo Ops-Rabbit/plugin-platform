@@ -15,6 +15,11 @@ low-level SDK contract.
 A plugin can provide one or more of these user-facing features and host-brokered
 capabilities:
 
+The optional `knowledgeEmailProcessor` V1 capability lets a plugin provide pure,
+deterministic processing for IMAP-derived Knowledge. The host continues to authorize,
+persist, embed, audit, retain, delete, and retrieve the content. Processor output is
+untrusted and evidence text must map exactly to host-supplied source offsets.
+
 - **Navigation/workspace**: a menu entry or app workspace inside OpsRabbit.
 - **Forms-backed records**: configured records such as inspections, tickets,
   quality checks, cases, or service requests.

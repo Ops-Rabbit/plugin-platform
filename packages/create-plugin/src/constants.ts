@@ -1,5 +1,5 @@
-export const CLI_VERSION = "0.11.2";
-export const SDK_VERSION = "^0.11.2";
+export const CLI_VERSION = "0.12.0";
+export const SDK_VERSION = "^0.12.0";
 export const STARTER_IDS = [
   "basic-readonly",
   "operational-action",
@@ -9,6 +9,7 @@ export const STARTER_IDS = [
   "forms-insights",
   "service-ingress",
   "knowledge-publisher",
+  "knowledge-email-processor",
   "native-workspace",
 ] as const;
 
@@ -29,6 +30,8 @@ export const STARTER_DESCRIPTIONS: Record<StarterId, string> = {
     "API-token ingress, plugin-schema migrations, and governed evidence uploads.",
   "knowledge-publisher":
     "Admin action that publishes tenant-scoped documents through the Knowledge broker.",
+  "knowledge-email-processor":
+    "Pure host-invoked processing for IMAP-derived Knowledge evidence and candidates.",
   "native-workspace":
     "Precompiled Forms workspace using the versioned browser mount contract.",
 };

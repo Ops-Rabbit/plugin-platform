@@ -1,0 +1,29 @@
+import { describe, expect, it } from 'vitest';
+import { plugin } from '../src/index.js';
+
+describe('{{id}}', () => {
+  const context = { tenantId: 'tenant-a', sourceId: 'source-1', configRevision: '1', signal: new AbortController().signal, settings: {} };
+  const input = (evidenceText: string, subject = 'Certificate') => ({
+    sourceType: 'imap_email' as const, mailbox: 'support', folder: 'INBOX', threadId: 'thread-1', messageId: 'message-1', imapUid: '1', subject, timestamp: null, evidenceText,
+    limits: { maximumSections: 10, maximumSectionBytes: 4096, maximumEmbeddingTextBytes: 8192 },
+  });
+
+  it('preserves evidence and defaults to an uncertain general message', async () => {
+    const evidenceText = 'This may be related to the certificate.';
+    const result = await plugin.knowledgeEmailProcessor!.processMessage(input(evidenceText), context);
+    expect(result.sections[0]).toMatchObject({ sourceText: evidenceText, chunkType: 'general_message', resolutionStatus: 'unknown', sourceOffsets: { start: 0, end: evidenceText.length } });
+  });
+
+  it('handles empty evidence and missing subjects conservatively', async () => {
+    expect((await plugin.knowledgeEmailProcessor!.processMessage(input(''), context)).sections).toEqual([]);
+    expect((await plugin.knowledgeEmailProcessor!.processMessage(input('Evidence', ''), context)).sections[0]?.embeddingText).toContain('Subject: (no subject)');
+  });
+
+  it('preserves candidate order by default', async () => {
+    const result = await plugin.knowledgeEmailProcessor!.postProcessCandidates({ query: 'certificate', candidates: [
+      { id: 'a', score: 1, sourceText: 'A', threadId: 't', messageId: 'm1', chunkType: 'general_message', resolutionStatus: 'unknown', metadata: {} },
+      { id: 'b', score: 0.9, sourceText: 'B', threadId: 't', messageId: 'm2', chunkType: 'general_message', resolutionStatus: 'unknown', metadata: {} },
+    ] }, context);
+    expect(result.orderedCandidateIds).toEqual(['a', 'b']);
+  });
+});

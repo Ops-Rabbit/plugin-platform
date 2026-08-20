@@ -130,3 +130,15 @@ publication. The host retains tenant and source isolation, administrator
 authorization, indexing, retention, and audit; search access and agent-source
 assignment are separate grants. See Plugin Contract 0.9 and the generated
 `knowledge-publisher` starter.
+
+### Knowledge email processors
+
+Plugins that deterministically classify and enrich host-owned IMAP evidence declare
+`capabilities.knowledgeEmailProcessor.schemaVersion: "1"` and register one
+`knowledgeEmailProcessor`. This capability does not grant Knowledge write, database,
+object-store, network, or attachment access. The host authorizes and bounds input,
+validates source offsets and candidate IDs, persists evidence and embeddings, and
+falls back to generic email processing when the processor is unavailable.
+
+Use the `knowledge-email-processor` starter for a conservative implementation that
+preserves evidence and defaults to `general_message` with unknown resolution status.

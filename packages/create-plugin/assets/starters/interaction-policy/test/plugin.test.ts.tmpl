@@ -44,7 +44,7 @@ describe('interaction policy', () => {
     await expect(route?.handle({ ...base, path: '/accounts', query: { query: 'User', cursor: 'next', limit: '20' } } satisfies PluginRouteContext)).resolves.toEqual({ schemaVersion: '1', rows: [{ id: actor.id, values: { subject_id: actor.id, display_name: 'User One', email: 'user@example.com', enabled: false } }] });
     expect(base.identityDirectory.listUsers).toHaveBeenCalledWith({ query: 'User', cursor: 'next', limit: 20 });
     const action = plugin.actions?.[0];
-    await expect(action?.run({ schemaVersion: '1', idempotencyKey: 'adjust-1', rowId: actor.id, rowValues: {}, fields: { enabled: 'true' } }, base satisfies PluginInvocationContext)).resolves.toEqual({ subject_id: actor.id, enabled: true });
+    await expect(action?.run({ schemaVersion: '1', idempotencyKey: 'adjust-1', requestFingerprint: 'v1:test', rowId: actor.id, rowValues: {}, fields: { enabled: 'true' } }, base satisfies PluginInvocationContext)).resolves.toEqual({ subject_id: actor.id, enabled: true });
     expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('on conflict'), [actor.id, true]);
   });
 
@@ -53,8 +53,8 @@ describe('interaction policy', () => {
     const context = { tenantId: 'tenant-1', actor: { id: 'admin-1', role: 'admin' as const, kind: 'user' as const }, signal: new AbortController().signal, logger: { debug() {}, info() {}, warn() {}, error() {} }, settings: {}, path: '/accounts', query: {} };
     await expect(route?.handle(context)).rejects.toThrow('Identity directory capability is unavailable');
     const action = plugin.actions?.[0];
-    await expect(action?.run({ schemaVersion: '1', idempotencyKey: 'bad-1', rowId: actor.id, rowValues: {}, fields: { enabled: 'true' } }, context)).rejects.toThrow('Database and audit capabilities are required');
-    await expect(action?.run({ schemaVersion: '1', idempotencyKey: 'bad-2', rowId: actor.id, rowValues: {}, fields: { enabled: 'invalid' } }, { ...context, database: database(), audit: { record: vi.fn(async () => undefined) } })).rejects.toThrow('rowId and enabled are required');
+    await expect(action?.run({ schemaVersion: '1', idempotencyKey: 'bad-1', requestFingerprint: 'v1:test', rowId: actor.id, rowValues: {}, fields: { enabled: 'true' } }, context)).rejects.toThrow('Database and audit capabilities are required');
+    await expect(action?.run({ schemaVersion: '1', idempotencyKey: 'bad-2', requestFingerprint: 'v1:test', rowId: actor.id, rowValues: {}, fields: { enabled: 'invalid' } }, { ...context, database: database(), audit: { record: vi.fn(async () => undefined) } })).rejects.toThrow('rowId and enabled are required');
   });
 
   it('uses bounded defaults and returns the directory cursor without database access', async () => {

@@ -156,6 +156,8 @@ export interface DeploymentAdminTableResultV1 {
 export interface DeploymentAdminRowActionInputV1 {
   readonly schemaVersion: "1";
   readonly idempotencyKey: string;
+  /** Host-authenticated HMAC over the actor, plugin, action, and canonical request payload. */
+  readonly requestFingerprint: string;
   readonly rowId: string;
   readonly rowValues: Readonly<Record<string, JsonValue>>;
   readonly fields: Readonly<Record<string, JsonValue>>;

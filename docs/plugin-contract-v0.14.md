@@ -22,7 +22,9 @@ Table routes receive `query`, `cursor`, and `limit` query parameters and return
 `DeploymentAdminTableResultV1`: schema version `1`, rows with stable `id` plus a
 `values` object, and an optional `nextCursor`. `rowIdKey` identifies the value
 corresponding to the stable row id. Row actions receive
-`DeploymentAdminRowActionInputV1`, containing a host-generated idempotency key,
+`DeploymentAdminRowActionInputV1`, containing a host-generated idempotency key and a
+host-authenticated request fingerprint (an HMAC over the actor, plugin, action, and
+canonical payload),
 the row id, displayed row values, and validated dialog fields. Option values are
 strings; plugins parse them explicitly rather than relying on UI coercion. Hosts
 bound limits, reject malformed envelopes, and never treat row values as

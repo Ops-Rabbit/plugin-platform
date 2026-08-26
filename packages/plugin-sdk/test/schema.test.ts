@@ -51,6 +51,121 @@ describe("published manifest schema", () => {
     }).compile(schema);
     expect(validateSchema(valid)).toBe(true);
     expect(validateManifest(valid).ok).toBe(true);
+    const interaction = {
+      ...valid,
+      localization: {
+        schemaVersion: "1",
+        defaultLocale: "en",
+        supportedLocales: ["en"],
+        path: "./locales/messages",
+      },
+      adminWorkspace: {
+        schemaVersion: "1",
+        titleKey: "policy.title",
+        icon: "receipt",
+        order: 1,
+        tables: [
+          {
+            id: "accounts",
+            titleKey: "policy.accounts",
+            routePath: "/accounts",
+            rowIdKey: "subject_id",
+            columns: [
+              { key: "balance", labelKey: "policy.balance", format: "decimal" },
+            ],
+            rowActions: [
+              {
+                id: "adjust",
+                actionId: "adjust",
+                labelKey: "policy.adjust",
+                intent: "primary",
+                fields: [
+                  {
+                    key: "amount",
+                    labelKey: "policy.amount",
+                    type: "integer",
+                    minimum: -1,
+                    maximum: 1,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      capabilities: {
+        database: { mode: "plugin_schema" },
+        audit: { write: true },
+        identityDirectory: { read: true },
+        localization: { schemaVersion: "1" },
+        chatTurnAdmission: { schemaVersion: "1", scope: "deployment" },
+        chatComposerStatus: { schemaVersion: "1" },
+        deploymentAdminWorkspace: { schemaVersion: "1" },
+        subjectLifecycle: { schemaVersion: "1", userDeletion: true },
+        routes: [{ path: "/accounts", requiredRole: "admin" }],
+        actions: [
+          {
+            id: "adjust",
+            risk: "write",
+            requiredRole: "admin",
+            deploymentAdminOnly: true,
+          },
+        ],
+      },
+    };
+    expect(validateSchema(interaction)).toBe(true);
+    expect(validateManifest(interaction).ok).toBe(true);
+    for (const candidate of [
+      (() => {
+        const candidate = structuredClone(interaction);
+        Reflect.deleteProperty(candidate, "localization");
+        return candidate;
+      })(),
+      (() => {
+        const candidate = structuredClone(interaction);
+        candidate.adminWorkspace.tables[0]!.columns[0]!.key = "Bad Key";
+        return candidate;
+      })(),
+      (() => {
+        const candidate = structuredClone(interaction);
+        Reflect.set(
+          candidate.adminWorkspace.tables[0]!.rowActions[0]!.fields[0]!,
+          "options",
+          [{ value: "valid", labelKey: "policy.valid" }],
+        );
+        return candidate;
+      })(),
+      (() => {
+        const candidate = structuredClone(interaction);
+        const field =
+          candidate.adminWorkspace.tables[0]!.rowActions[0]!.fields[0]!;
+        field.type = "select";
+        Reflect.deleteProperty(field, "minimum");
+        Reflect.deleteProperty(field, "maximum");
+        Reflect.set(field, "options", [
+          { value: " ", labelKey: "policy.whitespace" },
+        ]);
+        return candidate;
+      })(),
+      (() => {
+        const candidate = structuredClone(interaction);
+        candidate.adminWorkspace.tables[0]!.rowActions[0]!.fields[0]!.maximum =
+          Number.MAX_SAFE_INTEGER + 1;
+        return candidate;
+      })(),
+      {
+        ...interaction,
+        adminWorkspace: { ...interaction.adminWorkspace, order: 1.5 },
+      },
+      (() => {
+        const candidate = structuredClone(interaction);
+        Reflect.deleteProperty(candidate.capabilities, "audit");
+        return candidate;
+      })(),
+    ]) {
+      expect(validateSchema(candidate), JSON.stringify(candidate)).toBe(false);
+      expect(validateManifest(candidate).ok).toBe(false);
+    }
     const quotationNavigation = {
       ...valid,
       navigation: {

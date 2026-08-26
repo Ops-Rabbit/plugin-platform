@@ -37,6 +37,8 @@ const TOP_LEVEL = new Set([
   "settings",
   "navigation",
   "frontend",
+  "adminWorkspace",
+  "localization",
   "formStarterPack",
   "capabilities",
 ]);
@@ -139,7 +141,10 @@ export function validateManifest(
     input.navigation,
     issues,
   );
+  validateAdminWorkspace(input.adminWorkspace, input.capabilities, issues);
+  validateLocalization(input.localization, input.capabilities, issues);
   validateCapabilities(input.capabilities, issues);
+  validateInteractionDependencies(input.capabilities, issues);
   if (record(input.capabilities) && Array.isArray(input.capabilities.actions)) {
     for (const [index, action] of input.capabilities.actions.entries()) {
       if (
@@ -162,6 +167,36 @@ export function validateManifest(
   return issues.length === 0
     ? { ok: true, value: input as unknown as PluginManifest, issues }
     : { ok: false, issues };
+}
+
+function validateInteractionDependencies(
+  value: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (!record(value)) return;
+  const requireCapabilities = (source: string, required: string[]) => {
+    if (value[source] === undefined) return;
+    for (const dependency of required)
+      if (value[dependency] === undefined)
+        issues.push(
+          issue(
+            `$.capabilities.${source}`,
+            "invalid",
+            `${source} requires the ${dependency} capability.`,
+          ),
+        );
+  };
+  requireCapabilities("chatTurnAdmission", [
+    "database",
+    "audit",
+    "localization",
+  ]);
+  requireCapabilities("chatComposerStatus", ["database", "localization"]);
+  requireCapabilities("deploymentAdminWorkspace", [
+    "identityDirectory",
+    "localization",
+  ]);
+  requireCapabilities("subjectLifecycle", ["database", "audit"]);
 }
 
 function validateFrontend(
@@ -879,6 +914,13 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "objectStore",
     "knowledge",
     "knowledgeEmailProcessor",
+    "chatTurnAdmission",
+    "chatComposerStatus",
+    "deploymentAdminWorkspace",
+    "identityDirectory",
+    "audit",
+    "subjectLifecycle",
+    "localization",
   ]);
   unknownKeys(value, allowed, "$.capabilities", issues);
   const capabilities = value as PluginDeclaredCapabilities;
@@ -1102,6 +1144,103 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
         );
     },
   );
+  for (const [name, singleton] of [
+    ["chatTurnAdmission", capabilities.chatTurnAdmission],
+    ["chatComposerStatus", capabilities.chatComposerStatus],
+    ["deploymentAdminWorkspace", capabilities.deploymentAdminWorkspace],
+    ["localization", capabilities.localization],
+  ] as const)
+    validateSingletonCapability(
+      singleton,
+      name,
+      ["schemaVersion", ...(name === "chatTurnAdmission" ? ["scope"] : [])],
+      issues,
+      (entry) => {
+        if (entry.schemaVersion !== "1")
+          issues.push(
+            issue(
+              `$.capabilities.${name}.schemaVersion`,
+              "invalid",
+              `${name} schema version must be 1.`,
+            ),
+          );
+        if (name === "chatTurnAdmission" && entry.scope !== "deployment")
+          issues.push(
+            issue(
+              "$.capabilities.chatTurnAdmission.scope",
+              "invalid",
+              "Chat admission scope must be deployment.",
+            ),
+          );
+      },
+    );
+  validateSingletonCapability(
+    capabilities.identityDirectory,
+    "identityDirectory",
+    ["read"],
+    issues,
+    (entry) => {
+      if (entry.read !== true)
+        issues.push(
+          issue(
+            "$.capabilities.identityDirectory.read",
+            "invalid",
+            "Identity directory read access must be explicitly enabled.",
+          ),
+        );
+    },
+  );
+  validateSingletonCapability(
+    capabilities.audit,
+    "audit",
+    ["write"],
+    issues,
+    (entry) => {
+      if (entry.write !== true)
+        issues.push(
+          issue(
+            "$.capabilities.audit.write",
+            "invalid",
+            "Audit write access must be explicitly enabled.",
+          ),
+        );
+    },
+  );
+  validateSingletonCapability(
+    capabilities.subjectLifecycle,
+    "subjectLifecycle",
+    ["schemaVersion", "userDeletion", "tenantAttributionRemoval"],
+    issues,
+    (entry) => {
+      if (entry.schemaVersion !== "1")
+        issues.push(
+          issue(
+            "$.capabilities.subjectLifecycle.schemaVersion",
+            "invalid",
+            "Subject lifecycle schema version must be 1.",
+          ),
+        );
+      if (entry.userDeletion !== true)
+        issues.push(
+          issue(
+            "$.capabilities.subjectLifecycle.userDeletion",
+            "invalid",
+            "User deletion handling must be explicitly enabled.",
+          ),
+        );
+      if (
+        entry.tenantAttributionRemoval !== undefined &&
+        entry.tenantAttributionRemoval !== true
+      )
+        issues.push(
+          issue(
+            "$.capabilities.subjectLifecycle.tenantAttributionRemoval",
+            "invalid",
+            "tenantAttributionRemoval must be true when declared.",
+          ),
+        );
+    },
+  );
   validateSingletonCapability(
     capabilities.objectStore,
     "objectStore",
@@ -1173,11 +1312,517 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     !capabilities.database &&
     !capabilities.objectStore &&
     !capabilities.knowledge &&
-    !capabilities.knowledgeEmailProcessor
+    !capabilities.knowledgeEmailProcessor &&
+    !capabilities.chatTurnAdmission &&
+    !capabilities.chatComposerStatus &&
+    !capabilities.deploymentAdminWorkspace &&
+    !capabilities.identityDirectory &&
+    !capabilities.audit &&
+    !capabilities.subjectLifecycle &&
+    !capabilities.localization
   )
     issues.push(
       issue("$.capabilities", "required", "Declare at least one capability."),
     );
+}
+
+function validateLocalization(
+  value: unknown,
+  capabilitiesValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  const declared =
+    record(capabilitiesValue) && capabilitiesValue.localization !== undefined;
+  if (value === undefined) {
+    if (declared)
+      issues.push(
+        issue(
+          "$.localization",
+          "required",
+          "The localization capability requires a localization declaration.",
+        ),
+      );
+    return;
+  }
+  if (!declared)
+    issues.push(
+      issue(
+        "$.localization",
+        "invalid",
+        "Localization must be declared as a capability.",
+      ),
+    );
+  if (!record(value)) {
+    issues.push(
+      issue("$.localization", "type", "Localization must be an object."),
+    );
+    return;
+  }
+  unknownKeys(
+    value,
+    new Set(["schemaVersion", "defaultLocale", "supportedLocales", "path"]),
+    "$.localization",
+    issues,
+  );
+  if (value.schemaVersion !== "1")
+    issues.push(
+      issue(
+        "$.localization.schemaVersion",
+        "invalid",
+        "Localization schema version must be 1.",
+      ),
+    );
+  string(
+    value.defaultLocale,
+    "$.localization.defaultLocale",
+    issues,
+    (v) => /^[a-z]{2}(?:-[A-Z]{2})?$/.test(v),
+    "Use a locale such as en or en-US.",
+  );
+  if (
+    !Array.isArray(value.supportedLocales) ||
+    value.supportedLocales.length === 0
+  )
+    issues.push(
+      issue(
+        "$.localization.supportedLocales",
+        "required",
+        "Declare at least one supported locale.",
+      ),
+    );
+  else {
+    uniqueStrings(
+      value.supportedLocales,
+      "$.localization.supportedLocales",
+      issues,
+      /^[a-z]{2}(?:-[A-Z]{2})?$/,
+    );
+    if (
+      typeof value.defaultLocale === "string" &&
+      !value.supportedLocales.includes(value.defaultLocale)
+    )
+      issues.push(
+        issue(
+          "$.localization.defaultLocale",
+          "invalid",
+          "Default locale must be supported.",
+        ),
+      );
+  }
+  string(
+    value.path,
+    "$.localization.path",
+    issues,
+    (v) => /^\.\/locales\/[A-Za-z0-9._/-]+$/.test(v) && !v.includes(".."),
+    "Use a safe relative path under ./locales/.",
+  );
+}
+
+function validateAdminWorkspace(
+  value: unknown,
+  capabilitiesValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  const capabilities = record(capabilitiesValue) ? capabilitiesValue : {};
+  const declared = capabilities.deploymentAdminWorkspace !== undefined;
+  if (value === undefined) {
+    if (declared)
+      issues.push(
+        issue(
+          "$.adminWorkspace",
+          "required",
+          "The admin workspace capability requires an adminWorkspace declaration.",
+        ),
+      );
+    return;
+  }
+  if (!declared)
+    issues.push(
+      issue(
+        "$.adminWorkspace",
+        "invalid",
+        "Admin workspace must be declared as a capability.",
+      ),
+    );
+  if (!record(value)) {
+    issues.push(
+      issue("$.adminWorkspace", "type", "Admin workspace must be an object."),
+    );
+    return;
+  }
+  unknownKeys(
+    value,
+    new Set([
+      "schemaVersion",
+      "titleKey",
+      "descriptionKey",
+      "icon",
+      "order",
+      "tables",
+    ]),
+    "$.adminWorkspace",
+    issues,
+  );
+  if (value.schemaVersion !== "1")
+    issues.push(
+      issue(
+        "$.adminWorkspace.schemaVersion",
+        "invalid",
+        "Admin workspace schema version must be 1.",
+      ),
+    );
+  string(
+    value.titleKey,
+    "$.adminWorkspace.titleKey",
+    issues,
+    (v) => SCOPE.test(v),
+    "Use a localization message key.",
+  );
+  if (value.descriptionKey !== undefined)
+    string(
+      value.descriptionKey,
+      "$.adminWorkspace.descriptionKey",
+      issues,
+      (v) => SCOPE.test(v),
+      "Use a localization message key.",
+    );
+  member(value.icon, PLUGIN_NAVIGATION_ICONS, "$.adminWorkspace.icon", issues);
+  if (
+    value.order !== undefined &&
+    (!Number.isFinite(value.order) || !Number.isInteger(value.order))
+  )
+    issues.push(
+      issue("$.adminWorkspace.order", "type", "Order must be an integer."),
+    );
+  if (!Array.isArray(value.tables) || value.tables.length === 0) {
+    issues.push(
+      issue(
+        "$.adminWorkspace.tables",
+        "required",
+        "Declare at least one admin table.",
+      ),
+    );
+    return;
+  }
+  const routes = new Map(
+    (Array.isArray(capabilities.routes) ? capabilities.routes : [])
+      .filter(record)
+      .map((entry) => [entry.path, entry]),
+  );
+  const actions = new Map(
+    (Array.isArray(capabilities.actions) ? capabilities.actions : [])
+      .filter(record)
+      .map((entry) => [entry.id, entry]),
+  );
+  const tableIds = new Set<string>();
+  for (const [index, table] of value.tables.entries()) {
+    const path = `$.adminWorkspace.tables[${index}]`;
+    if (!record(table)) {
+      issues.push(issue(path, "type", "Admin table must be an object."));
+      continue;
+    }
+    unknownKeys(
+      table,
+      new Set([
+        "id",
+        "titleKey",
+        "routePath",
+        "rowIdKey",
+        "columns",
+        "rowActions",
+      ]),
+      path,
+      issues,
+    );
+    string(
+      table.id,
+      `${path}.id`,
+      issues,
+      (v) => ID.test(v),
+      "Use a plugin identifier.",
+    );
+    if (typeof table.id === "string") {
+      if (tableIds.has(table.id))
+        issues.push(
+          issue(`${path}.id`, "duplicate", "Table ids must be unique."),
+        );
+      tableIds.add(table.id);
+    }
+    string(
+      table.titleKey,
+      `${path}.titleKey`,
+      issues,
+      (v) => SCOPE.test(v),
+      "Use a localization message key.",
+    );
+    string(
+      table.rowIdKey,
+      `${path}.rowIdKey`,
+      issues,
+      (v) => COLLECTION.test(v),
+      "Use lowercase snake_case.",
+    );
+    const route = routes.get(table.routePath);
+    if (!route || route.requiredRole !== "admin")
+      issues.push(
+        issue(
+          `${path}.routePath`,
+          "invalid",
+          "Admin table must reference a declared admin route.",
+        ),
+      );
+    if (!Array.isArray(table.columns) || table.columns.length === 0)
+      issues.push(
+        issue(`${path}.columns`, "required", "Declare at least one column."),
+      );
+    else validateAdminColumns(table.columns, `${path}.columns`, issues);
+    const rowActionIds = new Set<string>();
+    for (const [actionIndex, rowAction] of (Array.isArray(table.rowActions)
+      ? table.rowActions
+      : []
+    ).entries()) {
+      const actionPath = `${path}.rowActions[${actionIndex}]`;
+      if (!record(rowAction)) {
+        issues.push(issue(actionPath, "type", "Row action must be an object."));
+        continue;
+      }
+      unknownKeys(
+        rowAction,
+        new Set(["id", "actionId", "labelKey", "intent", "fields"]),
+        actionPath,
+        issues,
+      );
+      string(
+        rowAction.id,
+        `${actionPath}.id`,
+        issues,
+        (v) => ID.test(v),
+        "Use a plugin identifier.",
+      );
+      string(
+        rowAction.labelKey,
+        `${actionPath}.labelKey`,
+        issues,
+        (v) => SCOPE.test(v),
+        "Use a localization message key.",
+      );
+      member(
+        rowAction.intent,
+        ["primary", "neutral", "danger"] as const,
+        `${actionPath}.intent`,
+        issues,
+      );
+      if (typeof rowAction.id === "string") {
+        if (rowActionIds.has(rowAction.id))
+          issues.push(
+            issue(
+              `${actionPath}.id`,
+              "duplicate",
+              "Row action ids must be unique.",
+            ),
+          );
+        rowActionIds.add(rowAction.id);
+      }
+      const action = actions.get(rowAction.actionId);
+      if (
+        !action ||
+        action.requiredRole !== "admin" ||
+        action.deploymentAdminOnly !== true
+      )
+        issues.push(
+          issue(
+            `${actionPath}.actionId`,
+            "invalid",
+            "Row action must reference a deployment-admin-only admin action.",
+          ),
+        );
+      if (rowAction.fields !== undefined)
+        validateAdminFields(rowAction.fields, `${actionPath}.fields`, issues);
+    }
+  }
+}
+
+function validateAdminColumns(
+  value: unknown[],
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  const keys = new Set<string>();
+  for (const [index, column] of value.entries()) {
+    const itemPath = `${path}[${index}]`;
+    if (!record(column)) {
+      issues.push(issue(itemPath, "type", "Column must be an object."));
+      continue;
+    }
+    unknownKeys(
+      column,
+      new Set(["key", "labelKey", "format"]),
+      itemPath,
+      issues,
+    );
+    string(
+      column.key,
+      `${itemPath}.key`,
+      issues,
+      (v) => COLLECTION.test(v),
+      "Use lowercase snake_case.",
+    );
+    string(
+      column.labelKey,
+      `${itemPath}.labelKey`,
+      issues,
+      (v) => SCOPE.test(v),
+      "Use a localization message key.",
+    );
+    member(
+      column.format,
+      ["text", "decimal", "timestamp", "status"] as const,
+      `${itemPath}.format`,
+      issues,
+    );
+    if (typeof column.key === "string") {
+      if (keys.has(column.key))
+        issues.push(
+          issue(`${itemPath}.key`, "duplicate", "Column keys must be unique."),
+        );
+      keys.add(column.key);
+    }
+  }
+}
+
+function validateAdminFields(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!Array.isArray(value)) {
+    issues.push(issue(path, "type", "Fields must be an array."));
+    return;
+  }
+  const keys = new Set<string>();
+  for (const [index, field] of value.entries()) {
+    const itemPath = `${path}[${index}]`;
+    if (!record(field)) {
+      issues.push(issue(itemPath, "type", "Field must be an object."));
+      continue;
+    }
+    unknownKeys(
+      field,
+      new Set([
+        "key",
+        "labelKey",
+        "type",
+        "required",
+        "minimum",
+        "maximum",
+        "options",
+      ]),
+      itemPath,
+      issues,
+    );
+    string(
+      field.key,
+      `${itemPath}.key`,
+      issues,
+      (v) => COLLECTION.test(v),
+      "Use lowercase snake_case.",
+    );
+    string(
+      field.labelKey,
+      `${itemPath}.labelKey`,
+      issues,
+      (v) => SCOPE.test(v),
+      "Use a localization message key.",
+    );
+    member(
+      field.type,
+      ["text", "integer", "select", "textarea"] as const,
+      `${itemPath}.type`,
+      issues,
+    );
+    if (field.required !== undefined && typeof field.required !== "boolean")
+      issues.push(
+        issue(`${itemPath}.required`, "type", "required must be boolean."),
+      );
+    for (const bound of ["minimum", "maximum"] as const)
+      if (field[bound] !== undefined && !Number.isSafeInteger(field[bound]))
+        issues.push(
+          issue(
+            `${itemPath}.${bound}`,
+            "type",
+            `${bound} must be a safe integer.`,
+          ),
+        );
+    if (
+      typeof field.minimum === "number" &&
+      typeof field.maximum === "number" &&
+      field.minimum > field.maximum
+    )
+      issues.push(
+        issue(itemPath, "invalid", "minimum must not exceed maximum."),
+      );
+    if (
+      field.type === "select" &&
+      (!Array.isArray(field.options) || field.options.length === 0)
+    )
+      issues.push(
+        issue(
+          `${itemPath}.options`,
+          "required",
+          "Select fields require options.",
+        ),
+      );
+    else if (field.type === "select" && Array.isArray(field.options)) {
+      const values = new Set<string>();
+      for (const [optionIndex, option] of field.options.entries()) {
+        const optionPath = `${itemPath}.options[${optionIndex}]`;
+        if (!record(option)) {
+          issues.push(issue(optionPath, "type", "Option must be an object."));
+          continue;
+        }
+        unknownKeys(option, new Set(["value", "labelKey"]), optionPath, issues);
+        string(
+          option.value,
+          `${optionPath}.value`,
+          issues,
+          undefined,
+          "Option value is required.",
+        );
+        string(
+          option.labelKey,
+          `${optionPath}.labelKey`,
+          issues,
+          (v) => SCOPE.test(v),
+          "Use a localization message key.",
+        );
+        if (typeof option.value === "string") {
+          if (values.has(option.value))
+            issues.push(
+              issue(
+                `${optionPath}.value`,
+                "duplicate",
+                "Option values must be unique.",
+              ),
+            );
+          values.add(option.value);
+        }
+      }
+    } else if (field.options !== undefined)
+      issues.push(
+        issue(
+          `${itemPath}.options`,
+          "invalid",
+          "Only select fields may declare options.",
+        ),
+      );
+    if (typeof field.key === "string") {
+      if (keys.has(field.key))
+        issues.push(
+          issue(`${itemPath}.key`, "duplicate", "Field keys must be unique."),
+        );
+      keys.add(field.key);
+    }
+  }
 }
 
 function validateSingletonCapability(

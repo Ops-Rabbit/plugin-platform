@@ -1,5 +1,5 @@
-export const CLI_VERSION = "0.13.0";
-export const SDK_VERSION = "^0.13.0";
+export const CLI_VERSION = "0.14.0";
+export const SDK_VERSION = "^0.14.0";
 export const STARTER_IDS = [
   "basic-readonly",
   "operational-action",
@@ -11,6 +11,7 @@ export const STARTER_IDS = [
   "knowledge-publisher",
   "knowledge-email-processor",
   "native-workspace",
+  "interaction-policy",
 ] as const;
 
 export type StarterId = (typeof STARTER_IDS)[number];
@@ -34,6 +35,8 @@ export const STARTER_DESCRIPTIONS: Record<StarterId, string> = {
     "Pure host-invoked processing for IMAP-derived Knowledge evidence and candidates.",
   "native-workspace":
     "Precompiled Forms workspace using the versioned browser mount contract.",
+  "interaction-policy":
+    "Transactional chat admission, composer status, and deployment-admin workspace.",
 };
 
 export function isStarterId(value: string): value is StarterId {

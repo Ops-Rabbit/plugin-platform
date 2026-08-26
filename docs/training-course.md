@@ -54,15 +54,15 @@ alone:
 - `packages/plugin-sdk/src/validation/`: runtime and cross-reference checks;
 - `packages/plugin-sdk/schemas/`: published JSON Schemas;
 - `packages/plugin-sdk/src/testing/`: test context and parity assertions;
-- `packages/create-plugin/assets/starters/`: nine executable references;
+- `packages/create-plugin/assets/starters/`: eleven executable references;
 - `packages/create-plugin/src/constants.ts`: authoritative CLI starter list;
 - `scripts/verify-generated-starters.mjs`: isolated consumer verification;
-- `docs/plugin-contract-v0.2.md` through `v0.9.md`: capability history and host
+- `docs/plugin-contract-v0.2.md` through `v0.14.md`: capability history and host
   compatibility expectations.
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK is version 0.11.1, the create-plugin CLI is 0.11.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.14.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -126,7 +126,7 @@ commands, and produce a reviewable ZIP.
 npx opsrabbit-plugin examples list --verbose
 ```
 
-The nine current starter ids are:
+The eleven current starter ids are:
 
 - `basic-readonly`
 - `operational-action`
@@ -138,6 +138,14 @@ The nine current starter ids are:
 - `knowledge-publisher`
 - `knowledge-email-processor`
 - `native-workspace`
+- `interaction-policy`
+
+The `interaction-policy` starter demonstrates a privileged policy boundary.
+Admission runs inside a host-owned transaction with a schema-confined database
+facade and audit broker; it must not perform network calls or attempt transaction
+control. Composer status is advisory, admin routes/actions remain host role-gated,
+identity-directory values are presentation-only, and subject deletion removes
+identity linkage without corrupting retained domain facts.
 
 ### Lab: read-only tenant status
 

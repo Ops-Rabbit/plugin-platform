@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.0 - 2026-08-26
+
+- Add versioned deployment interaction-policy contracts for transactional chat
+  admission, composer status, declarative admin workspaces, identity-directory
+  reads, transactional audit, subject lifecycle, and plugin localization.
+- Validate manifest and runtime registration parity, admin-only references, and
+  packaged localization bundles.
+- Add the executable `interaction-policy` starter and clean-consumer coverage.
+
 ## 0.11.2 - 2026-08-17
 
 - Add the optional `presentation.show_date_range` dashboard-template contract.

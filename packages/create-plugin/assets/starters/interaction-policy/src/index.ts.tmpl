@@ -1,0 +1,77 @@
+import { definePlugin, type DeploymentAdminRowActionInputV1, type DeploymentAdminTableResultV1, type TransactionBoundPluginDatabase } from '@opsrabbit/plugin-sdk';
+
+async function enabled(database: TransactionBoundPluginDatabase, subjectId: string): Promise<boolean> {
+  const row = await database.queryOne<{ enabled: boolean }>(
+    'select enabled from policy_account where subject_id = $1',
+    [subjectId],
+  );
+  return row?.enabled ?? true;
+}
+
+export const plugin = definePlugin({
+  chatTurnAdmission: {
+    schemaVersion: '1',
+    async admit(input, context) {
+      if (await enabled(context.database, input.actor.id)) {
+        await context.audit.record({ eventType: 'interaction_policy.accepted', subjectType: 'user', subjectId: input.actor.id, outcome: 'success' });
+        return { decision: 'approve' };
+      }
+      await context.audit.record({ eventType: 'interaction_policy.rejected', subjectType: 'user', subjectId: input.actor.id, outcome: 'rejected' });
+      return { decision: 'reject', code: 'interaction_not_allowed', messageKey: 'policy.blocked' };
+    },
+  },
+  chatComposerStatus: {
+    schemaVersion: '1',
+    async read(context) {
+      const allowed = await enabled(context.database, context.actor.id);
+      return allowed
+        ? { state: 'ready', labelKey: 'policy.ready' }
+        : { state: 'blocked', labelKey: 'policy.blocked' };
+    },
+  },
+  routes: [{
+    path: '/accounts',
+    requiredRole: 'admin',
+    async handle(context) {
+      if (!context.identityDirectory) throw new Error('Identity directory capability is unavailable');
+      const limit = Math.min(Math.max(Number(context.query.limit) || 50, 1), 100);
+      const directory = await context.identityDirectory.listUsers({
+        ...(context.query.query ? { query: context.query.query } : {}),
+        ...(context.query.cursor ? { cursor: context.query.cursor } : {}),
+        limit,
+      });
+      const subjectIds = directory.users.map((user) => user.id);
+      const states = context.database && subjectIds.length > 0
+        ? await context.database.query<{ subject_id: string; enabled: boolean }>('select subject_id, enabled from policy_account where subject_id = any($1)', [subjectIds])
+        : [];
+      const bySubject = new Map(states.map((row) => [row.subject_id, row.enabled]));
+      return { schemaVersion: '1', rows: directory.users.map((user) => ({ id: user.id, values: { subject_id: user.id, display_name: user.displayName, email: user.email, enabled: bySubject.get(user.id) ?? true } })), ...(directory.nextCursor ? { nextCursor: directory.nextCursor } : {}) } satisfies DeploymentAdminTableResultV1;
+    },
+  }],
+  actions: [{
+    id: 'set-enabled',
+    title: 'Set interaction status',
+    risk: 'write',
+    requiredRole: 'admin',
+    deploymentAdminOnly: true,
+    async run(input: DeploymentAdminRowActionInputV1, context) {
+      if (!context.database || !context.audit) throw new Error('Database and audit capabilities are required');
+      const subjectId = input.rowId.trim();
+      const enabledValue = input.fields.enabled;
+      if (!subjectId || (enabledValue !== 'true' && enabledValue !== 'false')) throw new Error('rowId and enabled are required');
+      const nextEnabled = enabledValue === 'true';
+      await context.database.execute('insert into policy_account (subject_id, enabled) values ($1, $2) on conflict (subject_id) do update set enabled = excluded.enabled, updated_at = now()', [subjectId, nextEnabled]);
+      await context.audit.record({ eventType: 'interaction_policy.updated', subjectType: 'user', subjectId, outcome: 'success', metadata: { enabled: nextEnabled, idempotencyKey: input.idempotencyKey } });
+      return { subject_id: subjectId, enabled: nextEnabled };
+    },
+  }],
+  subjectLifecycle: {
+    schemaVersion: '1',
+    async beforeUserDelete(input, context) {
+      await context.database.execute('delete from policy_account where subject_id = $1', [input.subjectId]);
+      await context.audit.record({ eventType: 'interaction_policy.subject_deleted', subjectType: 'user', subjectId: input.subjectId, outcome: 'success' });
+    },
+  },
+});
+
+export default plugin;

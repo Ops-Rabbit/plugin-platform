@@ -1,0 +1,38 @@
+{
+  "id": "{{id}}",
+  "name": "{{displayName}}",
+  "version": "0.1.0",
+  "description": "{{displayName}} deployment interaction policy",
+  "apiVersion": "1.0",
+  "main": "./dist/index.js",
+  "database": { "migrationsPath": "./migrations/sql" },
+  "localization": { "schemaVersion": "1", "defaultLocale": "en", "supportedLocales": ["en"], "path": "./locales/messages" },
+  "adminWorkspace": {
+    "schemaVersion": "1",
+    "titleKey": "policy.admin.title",
+    "icon": "shield_check",
+    "tables": [{
+      "id": "accounts",
+      "titleKey": "policy.admin.accounts",
+      "routePath": "/accounts",
+      "rowIdKey": "subject_id",
+      "columns": [
+        { "key": "subject_id", "labelKey": "policy.subject", "format": "text" },
+        { "key": "enabled", "labelKey": "policy.enabled", "format": "status" }
+      ],
+      "rowActions": [{ "id": "set-enabled", "actionId": "set-enabled", "labelKey": "policy.set_enabled", "intent": "primary", "fields": [{ "key": "enabled", "labelKey": "policy.enabled", "type": "select", "required": true, "options": [{ "value": "true", "labelKey": "policy.yes" }, { "value": "false", "labelKey": "policy.no" }] }] }]
+    }]
+  },
+  "capabilities": {
+    "database": { "mode": "plugin_schema" },
+    "routes": [{ "path": "/accounts", "requiredRole": "admin" }],
+    "actions": [{ "id": "set-enabled", "risk": "write", "requiredRole": "admin", "deploymentAdminOnly": true }],
+    "chatTurnAdmission": { "schemaVersion": "1", "scope": "deployment" },
+    "chatComposerStatus": { "schemaVersion": "1" },
+    "deploymentAdminWorkspace": { "schemaVersion": "1" },
+    "identityDirectory": { "read": true },
+    "audit": { "write": true },
+    "subjectLifecycle": { "schemaVersion": "1", "userDeletion": true },
+    "localization": { "schemaVersion": "1" }
+  }
+}

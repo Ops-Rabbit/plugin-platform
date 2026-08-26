@@ -5,6 +5,12 @@ framework-neutral `OpsRabbitWorkspaceModule` browser ABI. See
 [`plugin-contract-v0.11.md`](../../docs/plugin-contract-v0.11.md) and the
 generated `native-workspace` starter for build and trust-boundary guidance.
 
+Deployment interaction policies use the versioned `chatTurnAdmission`,
+`chatComposerStatus`, `deploymentAdminWorkspace`, `subjectLifecycle`, and
+`localization` contracts. The host owns authentication, authorization, queue and
+transaction boundaries, schema confinement, and UI rendering. See the generated
+`interaction-policy` starter and Plugin Contract 0.14.
+
 The stable public contract for building and testing OpsRabbit plugins without
 checking out the OpsRabbit product source.
 

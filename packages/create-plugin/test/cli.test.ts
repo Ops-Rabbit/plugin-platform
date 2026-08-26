@@ -26,6 +26,7 @@ describe("CLI", () => {
         "knowledge-publisher",
         "knowledge-email-processor",
         "native-workspace",
+        "interaction-policy",
       ].join("\n")}\n`,
     );
     expect(await main(["examples", "list", "--verbose"])).toBe(0);

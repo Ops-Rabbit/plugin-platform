@@ -12,7 +12,7 @@ This repository publishes:
 - [`@opsrabbit/plugin-sdk`](./packages/plugin-sdk): contracts, manifest schema,
   validation, compatibility checks, governed service-plugin contracts, package
   inventory, and an isolated test harness.
-- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, nine starters,
+- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, eleven starters,
   reference implementations, generated tests, CI, README, and `AGENTS.md`.
 
 ## Create a plugin
@@ -68,6 +68,7 @@ The [starter reference](./docs/starter-reference.md),
 [Forms workspace navigation](./docs/plugin-contract-v0.3.md),
 [Forms starter-pack](./docs/plugin-contract-v0.4.md),
 [native workspace](./docs/plugin-contract-v0.11.md),
+[deployment interaction policies](./docs/plugin-contract-v0.14.md),
 [Forms workflow](./docs/plugin-contract-v0.5.md),
 [plugin Insights workspace](./docs/plugin-contract-v0.7.md), and
 [required entitlements](./docs/plugin-contract-v0.6.md) guides explain the contract

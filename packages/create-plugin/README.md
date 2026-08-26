@@ -26,11 +26,19 @@ Available starters:
 - `forms-insights`
 - `service-ingress`
 - `knowledge-publisher`
+- `knowledge-email-processor`
+- `native-workspace`
+- `interaction-policy`
 
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.
 `opsrabbit-plugin examples list` retains its script-friendly one-ID-per-line
 output; add `--verbose` for descriptions.
+
+The `interaction-policy` starter demonstrates transactional chat admission,
+advisory composer state, a declarative deployment-admin workspace, packaged
+localization, and subject-deletion handling. The host retains authentication,
+authorization, queue, transaction, schema-confinement, and UI boundaries.
 
 The generated repository contains unit tests, CI and automatic-release workflows,
 `AGENTS.md`, a manifest, build configuration, and release packaging. `pack` validates the

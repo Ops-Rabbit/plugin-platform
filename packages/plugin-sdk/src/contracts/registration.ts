@@ -13,6 +13,11 @@ import type {
 } from "./contexts.js";
 import type { JsonValue } from "./manifest.js";
 import type { KnowledgeEmailProcessorDefinitionV1 } from "./knowledge-email-processor.js";
+import type {
+  ChatComposerStatusDefinitionV1,
+  ChatTurnAdmissionDefinitionV1,
+  SubjectLifecycleDefinitionV1,
+} from "./interaction-policy.js";
 
 export const PLUGIN_TOOL_RESULT_KIND = "opsrabbit.tool-result/v1" as const;
 
@@ -121,6 +126,9 @@ export interface PluginDefinition {
   ingressRoutes?: IngressRouteDefinition[];
   widgets?: WidgetDefinition[];
   knowledgeEmailProcessor?: KnowledgeEmailProcessorDefinitionV1;
+  chatTurnAdmission?: ChatTurnAdmissionDefinitionV1;
+  chatComposerStatus?: ChatComposerStatusDefinitionV1;
+  subjectLifecycle?: SubjectLifecycleDefinitionV1;
 }
 
 export function definePlugin(

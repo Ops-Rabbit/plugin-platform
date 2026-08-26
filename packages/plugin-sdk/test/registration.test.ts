@@ -39,6 +39,51 @@ const statusTool = {
 };
 
 describe("plugin registration", () => {
+  it("requires declared interaction policy registrations and handlers", () => {
+    const policyManifest: PluginManifest = {
+      ...manifest,
+      capabilities: {
+        chatTurnAdmission: { schemaVersion: "1", scope: "deployment" },
+        chatComposerStatus: { schemaVersion: "1" },
+        subjectLifecycle: { schemaVersion: "1", userDeletion: true },
+      },
+    };
+    const definition = {
+      chatTurnAdmission: {
+        schemaVersion: "1" as const,
+        async admit() {
+          return { decision: "approve" as const };
+        },
+      },
+      chatComposerStatus: {
+        schemaVersion: "1" as const,
+        async read() {
+          return { state: "ready" as const, labelKey: "points.ready" };
+        },
+      },
+      subjectLifecycle: {
+        schemaVersion: "1" as const,
+        async beforeUserDelete() {},
+      },
+    };
+    expect(validateRegistration(policyManifest, definition)).toEqual([]);
+    expect(validateRegistration(policyManifest, {})).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "$.chatTurnAdmission",
+          code: "missing-registration",
+        }),
+        expect.objectContaining({
+          path: "$.chatComposerStatus",
+          code: "missing-registration",
+        }),
+        expect.objectContaining({
+          path: "$.subjectLifecycle",
+          code: "missing-registration",
+        }),
+      ]),
+    );
+  });
   it("requires a declared matching Knowledge email processor", () => {
     const processorManifest: PluginManifest = {
       ...manifest,

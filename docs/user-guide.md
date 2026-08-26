@@ -10,6 +10,19 @@ This guide is for plugin users, tenant administrators, and solution teams. It
 explains what plugins can do and how they are normally used. It is not a
 low-level SDK contract.
 
+## Deployment interaction policies
+
+Plugins using contract 0.14 can govern acceptance of signed-in web-chat turns
+and contribute a deployment-admin workspace. Enablement is deployment-global
+for this capability: disabling the plugin unregisters admission, composer, and
+administration contributions while preserving its data. Composer status is
+advisory; the transactional admission decision is final.
+
+Only deployment admins may use the contributed workspace and mutations. Plugin
+localization bundles provide display text while the host supplies generic chrome.
+Package removal must follow the host's fenced data-disposition workflow so
+retained data, legal holds, and lifecycle handlers are not orphaned.
+
 ## What a plugin can add
 
 A plugin can provide one or more of these user-facing features and host-brokered

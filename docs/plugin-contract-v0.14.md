@@ -21,10 +21,19 @@ dialogs, pagination, errors, and localized chrome.
 Table routes receive `query`, `cursor`, and `limit` query parameters and return
 `DeploymentAdminTableResultV1`: schema version `1`, rows with stable `id` plus a
 `values` object, and an optional `nextCursor`. `rowIdKey` identifies the value
-corresponding to the stable row id. Row actions receive
+corresponding to the stable row id. A cell may return a bounded
+`DeploymentAdminLocalizedCellV1` message key and string parameters; the host
+resolves it from the plugin bundle with the normal locale fallback. Row actions receive
 `DeploymentAdminRowActionInputV1`, containing a host-generated idempotency key and a
 host-authenticated request fingerprint (an HMAC over the actor, plugin, action, and
-canonical payload),
+canonical payload). The `v1` fingerprint key is deployment-stable: restore and
+encryption-key rotation preserve its key material until all corresponding action
+claims are retired, so identical retries continue to compare equal. Row actions
+declared with `deploymentAdminOnly: true` receive `DeploymentAdminActionContext`;
+its schema-bound database, identity reads, plugin writes, and audit broker share
+one host-owned transaction. Plugins cannot control its transaction boundary, and
+any handler or audit failure rolls the complete action back before response. The
+input also contains
 the row id, displayed row values, and validated dialog fields. Option values are
 strings; plugins parse them explicitly rather than relying on UI coercion. Hosts
 bound limits, reject malformed envelopes, and never treat row values as
@@ -34,8 +43,7 @@ Actions may throw `PluginActionError` with a stable code and one of the bounded
 only the declared safe envelope.
 
 The identity-directory broker exposes bounded presentation facts only and is
-never an authorization source. The audit broker joins the surrounding host
-transaction where one exists. `subjectLifecycle/v1` lets a data-owning plugin
+never an authorization source. `subjectLifecycle/v1` lets a data-owning plugin
 erase or detach identity linkage during host-controlled deletion.
 
 Localization is packaged under the declared directory as one `<locale>.json`

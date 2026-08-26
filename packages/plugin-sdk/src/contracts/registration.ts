@@ -7,6 +7,7 @@ import type {
   PluginWidgetType,
 } from "./capabilities.js";
 import type {
+  DeploymentAdminActionContext,
   PluginIngressContext,
   PluginInvocationContext,
   PluginRouteContext,
@@ -61,7 +62,11 @@ export interface ToolDefinition<
   run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
 }
 
-export interface ActionDefinition<TInput = unknown, TOutput = JsonValue> {
+export interface ActionDefinition<
+  TInput = unknown,
+  TOutput = JsonValue,
+  TContext = PluginInvocationContext,
+> {
   id: string;
   title: string;
   description?: string;
@@ -78,8 +83,15 @@ export interface ActionDefinition<TInput = unknown, TOutput = JsonValue> {
     input: TInput,
     context: PluginInvocationContext,
   ): Promise<{ enabled: boolean; reason?: string }>;
-  run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
+  run(input: TInput, context: TContext): Promise<TOutput>;
 }
+
+export type DeploymentAdminActionDefinition<
+  TInput = unknown,
+  TOutput = JsonValue,
+> = ActionDefinition<TInput, TOutput, DeploymentAdminActionContext> & {
+  readonly deploymentAdminOnly: true;
+};
 
 export interface ScheduledJobDefinition {
   id: string;

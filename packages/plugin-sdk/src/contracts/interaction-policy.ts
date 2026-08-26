@@ -144,7 +144,14 @@ export interface DeploymentAdminTableQueryV1 {
 
 export interface DeploymentAdminTableRowV1 {
   readonly id: string;
-  readonly values: Readonly<Record<string, JsonValue>>;
+  readonly values: Readonly<
+    Record<string, JsonValue | DeploymentAdminLocalizedCellV1>
+  >;
+}
+
+export interface DeploymentAdminLocalizedCellV1 {
+  readonly messageKey: string;
+  readonly parameters?: Readonly<Record<string, string>>;
 }
 
 export interface DeploymentAdminTableResultV1 {

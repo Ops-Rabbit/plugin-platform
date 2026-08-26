@@ -165,6 +165,18 @@ export type TransactionBoundPluginDatabase = Pick<
   "query" | "queryOne" | "execute"
 >;
 
+/** Host-authorized deployment-admin action context bound to one transaction. */
+export interface DeploymentAdminActionContext
+  extends Omit<
+    PluginInvocationContext,
+    "actor" | "database" | "identityDirectory" | "audit"
+  > {
+  readonly actor: PluginUserActor & { readonly role: "admin" };
+  readonly database: TransactionBoundPluginDatabase;
+  readonly identityDirectory: PluginIdentityDirectoryService;
+  readonly audit: PluginAuditService;
+}
+
 export interface PluginObjectUpload {
   readonly objectId: string;
   readonly method: "PUT";

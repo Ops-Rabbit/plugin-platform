@@ -1,4 +1,4 @@
-import { definePlugin, type DeploymentAdminRowActionInputV1, type DeploymentAdminTableResultV1, type TransactionBoundPluginDatabase } from '@opsrabbit/plugin-sdk';
+import { defineDeploymentAdminAction, definePlugin, type DeploymentAdminRowActionInputV1, type DeploymentAdminTableResultV1, type TransactionBoundPluginDatabase } from '@opsrabbit/plugin-sdk';
 
 async function enabled(database: TransactionBoundPluginDatabase, subjectId: string): Promise<boolean> {
   const row = await database.queryOne<{ enabled: boolean }>(
@@ -48,14 +48,13 @@ export const plugin = definePlugin({
       return { schemaVersion: '1', rows: directory.users.map((user) => ({ id: user.id, values: { subject_id: user.id, display_name: user.displayName, email: user.email, enabled: bySubject.get(user.id) ?? true } })), ...(directory.nextCursor ? { nextCursor: directory.nextCursor } : {}) } satisfies DeploymentAdminTableResultV1;
     },
   }],
-  actions: [{
+  actions: [defineDeploymentAdminAction({
     id: 'set-enabled',
     title: 'Set interaction status',
     risk: 'write',
     requiredRole: 'admin',
     deploymentAdminOnly: true,
     async run(input: DeploymentAdminRowActionInputV1, context) {
-      if (!context.database || !context.audit) throw new Error('Database and audit capabilities are required');
       const subjectId = input.rowId.trim();
       const enabledValue = input.fields.enabled;
       if (!subjectId || (enabledValue !== 'true' && enabledValue !== 'false')) throw new Error('rowId and enabled are required');
@@ -64,7 +63,7 @@ export const plugin = definePlugin({
       await context.audit.record({ eventType: 'interaction_policy.updated', subjectType: 'user', subjectId, outcome: 'success', metadata: { enabled: nextEnabled, idempotencyKey: input.idempotencyKey } });
       return { subject_id: subjectId, enabled: nextEnabled };
     },
-  }],
+  })],
   subjectLifecycle: {
     schemaVersion: '1',
     async beforeUserDelete(input, context) {

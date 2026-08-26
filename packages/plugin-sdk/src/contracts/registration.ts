@@ -93,6 +93,16 @@ export type DeploymentAdminActionDefinition<
   readonly deploymentAdminOnly: true;
 };
 
+/** Author a deployment-admin action with its required transaction-bound context. */
+export function defineDeploymentAdminAction<
+  TInput = unknown,
+  TOutput = JsonValue,
+>(
+  definition: DeploymentAdminActionDefinition<TInput, TOutput>,
+): ActionDefinition<TInput, TOutput> {
+  return definition as unknown as ActionDefinition<TInput, TOutput>;
+}
+
 export interface ScheduledJobDefinition {
   id: string;
   description: string;

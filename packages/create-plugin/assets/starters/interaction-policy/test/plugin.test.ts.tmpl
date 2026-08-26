@@ -48,12 +48,11 @@ describe('interaction policy', () => {
     expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('on conflict'), [actor.id, true]);
   });
 
-  it('fails closed when required admin capabilities or input are absent', async () => {
+  it('fails closed when route capabilities or action input are invalid', async () => {
     const route = plugin.routes?.[0];
     const context = { tenantId: 'tenant-1', actor: { id: 'admin-1', role: 'admin' as const, kind: 'user' as const }, signal: new AbortController().signal, logger: { debug() {}, info() {}, warn() {}, error() {} }, settings: {}, path: '/accounts', query: {} };
     await expect(route?.handle(context)).rejects.toThrow('Identity directory capability is unavailable');
     const action = plugin.actions?.[0];
-    await expect(action?.run({ schemaVersion: '1', idempotencyKey: 'bad-1', requestFingerprint: 'v1:test', rowId: actor.id, rowValues: {}, fields: { enabled: 'true' } }, context)).rejects.toThrow('Database and audit capabilities are required');
     await expect(action?.run({ schemaVersion: '1', idempotencyKey: 'bad-2', requestFingerprint: 'v1:test', rowId: actor.id, rowValues: {}, fields: { enabled: 'invalid' } }, { ...context, database: database(), audit: { record: vi.fn(async () => undefined) } })).rejects.toThrow('rowId and enabled are required');
   });
 

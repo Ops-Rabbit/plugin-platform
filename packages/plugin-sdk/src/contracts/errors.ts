@@ -15,3 +15,16 @@ export class PluginValidationError extends Error {
     this.issues = issues;
   }
 }
+
+/** Stable, user-safe failure from a plugin action boundary. */
+export class PluginActionError extends Error {
+  readonly status: 400 | 409 | 410 | 422;
+  readonly code: string;
+
+  constructor(status: 400 | 409 | 410 | 422, code: string, message: string) {
+    super(message);
+    this.name = "PluginActionError";
+    this.status = status;
+    this.code = code;
+  }
+}

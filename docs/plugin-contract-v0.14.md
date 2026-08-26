@@ -29,6 +29,9 @@ the row id, displayed row values, and validated dialog fields. Option values are
 strings; plugins parse them explicitly rather than relying on UI coercion. Hosts
 bound limits, reject malformed envelopes, and never treat row values as
 authorization facts.
+Actions may throw `PluginActionError` with a stable code and one of the bounded
+400/409/410/422 statuses. Hosts reject malformed structural lookalikes and expose
+only the declared safe envelope.
 
 The identity-directory broker exposes bounded presentation facts only and is
 never an authorization source. The audit broker joins the surrounding host

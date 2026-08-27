@@ -47,6 +47,14 @@ export async function packPlugin(
       resolve(directory, report.manifest.database.migrationsPath),
     );
   }
+  if (report.manifest.localization) {
+    for (const locale of report.manifest.localization.supportedLocales)
+      await addToArchive(
+        archive,
+        resolve(directory),
+        resolve(directory, report.manifest.localization.path, `${locale}.json`),
+      );
+  }
   await mkdir(outputDirectory, { recursive: true });
   const output = resolve(
     outputDirectory,

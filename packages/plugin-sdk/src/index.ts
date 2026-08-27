@@ -6,6 +6,7 @@ export * from "./contracts/forms.js";
 export * from "./contracts/frontend.js";
 export * from "./contracts/manifest.js";
 export * from "./contracts/knowledge-email-processor.js";
+export * from "./contracts/interaction-policy.js";
 export * from "./contracts/registration.js";
 export * from "./validation/compatibility.js";
 export * from "./validation/data-insight.js";

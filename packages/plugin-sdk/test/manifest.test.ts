@@ -108,7 +108,312 @@ const valid = {
   },
 };
 
+function minimalInteractionManifest() {
+  return {
+    id: "policy",
+    name: "Policy",
+    version: "1.0.0",
+    description: "Policy",
+    apiVersion: "1.0",
+    main: "./dist/index.js",
+    database: { migrationsPath: "./migrations/sql" },
+    localization: {
+      schemaVersion: "1",
+      defaultLocale: "en",
+      supportedLocales: ["en"],
+      path: "./locales/messages",
+    },
+    adminWorkspace: {
+      schemaVersion: "1",
+      titleKey: "policy.title",
+      icon: "receipt",
+      order: 1,
+      tables: [
+        {
+          id: "accounts",
+          titleKey: "policy.accounts",
+          routePath: "/accounts",
+          rowIdKey: "subject_id",
+          columns: [
+            { key: "balance", labelKey: "policy.balance", format: "decimal" },
+          ],
+          rowActions: [
+            {
+              id: "adjust",
+              actionId: "adjust",
+              labelKey: "policy.adjust",
+              intent: "primary",
+              fields: [
+                {
+                  key: "amount",
+                  labelKey: "policy.amount",
+                  type: "integer",
+                  required: true,
+                  minimum: -10,
+                  maximum: 10,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    capabilities: {
+      database: { mode: "plugin_schema" },
+      routes: [{ path: "/accounts", requiredRole: "admin" }],
+      actions: [
+        {
+          id: "adjust",
+          risk: "write",
+          requiredRole: "admin",
+          deploymentAdminOnly: true,
+        },
+      ],
+      chatTurnAdmission: { schemaVersion: "1", scope: "deployment" },
+      chatComposerStatus: { schemaVersion: "1" },
+      deploymentAdminWorkspace: { schemaVersion: "1" },
+      identityDirectory: { read: true },
+      audit: { write: true },
+      subjectLifecycle: { schemaVersion: "1", userDeletion: true },
+      localization: { schemaVersion: "1" },
+    },
+  };
+}
+
+type MutableObject = Record<string, unknown>;
+function child(value: unknown, key: string): MutableObject {
+  return (value as MutableObject)[key] as MutableObject;
+}
+function first(value: unknown, key: string): MutableObject {
+  return ((value as MutableObject)[key] as unknown[])[0] as MutableObject;
+}
+
 describe("validateManifest", () => {
+  it("accepts a deployment interaction policy surface", () => {
+    const manifest = {
+      ...valid,
+      localization: {
+        schemaVersion: "1",
+        defaultLocale: "en",
+        supportedLocales: ["en", "de"],
+        path: "./locales/messages",
+      },
+      adminWorkspace: {
+        schemaVersion: "1",
+        titleKey: "points.admin.title",
+        icon: "receipt",
+        tables: [
+          {
+            id: "accounts",
+            titleKey: "points.admin.accounts",
+            routePath: "/accounts",
+            rowIdKey: "subject_id",
+            columns: [
+              { key: "balance", labelKey: "points.balance", format: "decimal" },
+            ],
+            rowActions: [
+              {
+                id: "adjust",
+                actionId: "adjust-points",
+                labelKey: "points.adjust",
+                intent: "primary",
+              },
+            ],
+          },
+        ],
+      },
+      capabilities: {
+        database: { mode: "plugin_schema" },
+        routes: [
+          { path: "/status", requiredRole: "viewer" },
+          { path: "/insights-templates", requiredRole: "viewer" },
+          { path: "/accounts", requiredRole: "admin" },
+        ],
+        actions: [
+          {
+            id: "adjust-points",
+            risk: "write",
+            requiredRole: "admin",
+            deploymentAdminOnly: true,
+          },
+        ],
+        chatTurnAdmission: { schemaVersion: "1", scope: "deployment" },
+        chatComposerStatus: { schemaVersion: "1" },
+        deploymentAdminWorkspace: { schemaVersion: "1" },
+        identityDirectory: { read: true },
+        audit: { write: true },
+        subjectLifecycle: {
+          schemaVersion: "1",
+          userDeletion: true,
+          tenantAttributionRemoval: true,
+        },
+        localization: { schemaVersion: "1" },
+      },
+    };
+    expect(validateManifest(manifest)).toEqual({
+      ok: true,
+      value: manifest,
+      issues: [],
+    });
+  });
+
+  it("rejects interaction surfaces that escape their declared boundaries", () => {
+    const manifest = {
+      ...valid,
+      adminWorkspace: {
+        schemaVersion: "1",
+        titleKey: "points.admin.title",
+        icon: "receipt",
+        tables: [
+          {
+            id: "accounts",
+            titleKey: "points.accounts",
+            routePath: "/accounts",
+            rowIdKey: "subject_id",
+            columns: [
+              { key: "balance", labelKey: "points.balance", format: "decimal" },
+            ],
+            rowActions: [
+              {
+                id: "adjust",
+                actionId: "adjust",
+                labelKey: "points.adjust",
+                intent: "primary",
+              },
+            ],
+          },
+        ],
+      },
+      capabilities: {
+        deploymentAdminWorkspace: { schemaVersion: "1" },
+        routes: [{ path: "/accounts", requiredRole: "viewer" }],
+        actions: [{ id: "adjust", risk: "write", requiredRole: "operator" }],
+      },
+    };
+    expect(validateManifest(manifest).issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "$.adminWorkspace.tables[0].routePath",
+        }),
+        expect.objectContaining({
+          path: "$.adminWorkspace.tables[0].rowActions[0].actionId",
+        }),
+      ]),
+    );
+  });
+  it("rejects malformed interaction policy metadata", () => {
+    const mutations: Array<(manifest: MutableObject) => void> = [
+      (m) => {
+        delete m.localization;
+      },
+      (m) => {
+        const localization = child(m, "localization");
+        localization.schemaVersion = "2";
+        localization.defaultLocale = "EN";
+        localization.supportedLocales = [];
+        localization.path = "../messages";
+      },
+      (m) => {
+        child(m, "localization").defaultLocale = "de";
+      },
+      (m) => {
+        delete m.adminWorkspace;
+      },
+      (m) => {
+        m.adminWorkspace = "invalid";
+      },
+      (m) => {
+        const workspace = child(m, "adminWorkspace");
+        workspace.schemaVersion = "2";
+        workspace.order = 1.5;
+        workspace.tables = [];
+      },
+      (m) => {
+        child(m, "adminWorkspace").tables = [null];
+      },
+      (m) => {
+        const table = first(child(m, "adminWorkspace"), "tables");
+        table.columns = [];
+        table.rowActions = [null];
+      },
+      (m) => {
+        const table = first(child(m, "adminWorkspace"), "tables");
+        table.columns = [
+          null,
+          { key: "balance", labelKey: "bad key", format: "money" },
+          { key: "balance", labelKey: "policy.balance", format: "decimal" },
+        ];
+      },
+      (m) => {
+        const table = first(child(m, "adminWorkspace"), "tables");
+        const action = first(table, "rowActions");
+        action.id = "Bad";
+        action.intent = "unknown";
+        action.fields = "invalid";
+      },
+      (m) => {
+        const table = first(child(m, "adminWorkspace"), "tables");
+        const action = first(table, "rowActions");
+        const field = first(action, "fields");
+        field.key = "Bad";
+        field.labelKey = "bad key";
+        field.type = "select";
+        field.required = "yes";
+        field.minimum = 1.5;
+        field.options = [];
+      },
+      (m) => {
+        const table = first(child(m, "adminWorkspace"), "tables");
+        const action = first(table, "rowActions");
+        const field = first(action, "fields");
+        field.type = "select";
+        field.minimum = 10;
+        field.maximum = 1;
+        field.options = [
+          null,
+          { value: "same", labelKey: "bad key" },
+          { value: "same", labelKey: "policy.same", extra: true },
+        ];
+      },
+      (m) => {
+        const table = first(child(m, "adminWorkspace"), "tables");
+        const action = first(table, "rowActions");
+        const field = first(action, "fields");
+        field.options = [
+          { value: "unexpected", labelKey: "policy.unexpected" },
+        ];
+      },
+      (m) => {
+        const capabilities = child(m, "capabilities");
+        child(capabilities, "chatTurnAdmission").schemaVersion = "2";
+        child(capabilities, "chatTurnAdmission").scope = "tenant";
+        child(capabilities, "identityDirectory").read = false;
+        child(capabilities, "audit").write = false;
+        child(capabilities, "subjectLifecycle").userDeletion = false;
+        child(capabilities, "subjectLifecycle").tenantAttributionRemoval =
+          "yes";
+      },
+      (m) => {
+        delete child(m, "capabilities").database;
+      },
+      (m) => {
+        delete child(m, "capabilities").audit;
+      },
+      (m) => {
+        delete child(m, "capabilities").localization;
+      },
+      (m) => {
+        delete child(m, "capabilities").identityDirectory;
+      },
+    ];
+    for (const mutate of mutations) {
+      const manifest = structuredClone(
+        minimalInteractionManifest(),
+      ) as MutableObject;
+      mutate(manifest);
+      expect(validateManifest(manifest).ok).toBe(false);
+    }
+  });
   it("accepts a complete named capability manifest", () =>
     expect(validateManifest(valid)).toEqual({
       ok: true,

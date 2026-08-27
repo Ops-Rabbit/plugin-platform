@@ -1,0 +1,72 @@
+import { describe, expect, it, vi } from 'vitest';
+import type { ChatTurnAdmissionContextV1, ChatTurnAdmissionInputV1, PluginDatabase, PluginInvocationContext, PluginRouteContext } from '@opsrabbit/plugin-sdk';
+import plugin from '../src/index.js';
+
+const actor = { id: 'user-1', role: 'viewer' as const, kind: 'user' as const };
+
+function database(value?: boolean): PluginDatabase {
+  const db: PluginDatabase = {
+    async query<T extends Record<string, unknown>>() { return [] as T[]; },
+    async queryOne<T extends Record<string, unknown>>() { return (value === undefined ? undefined : { enabled: value }) as T | undefined; },
+    execute: vi.fn(async () => 1),
+    async transaction<T>(run: (database: PluginDatabase) => Promise<T>) { return run(db); },
+  };
+  return db;
+}
+
+function admissionContext(db: PluginDatabase): ChatTurnAdmissionContextV1 {
+  return { signal: new AbortController().signal, settings: {}, database: db, audit: { record: vi.fn(async () => undefined) } };
+}
+
+const input: ChatTurnAdmissionInputV1 = { requestId: 'request-1', requestFingerprint: 'fingerprint', threadId: 'thread-1', turnId: 'turn-1', tenantId: 'tenant-1', source: 'signed_in_web_chat', actor, isReplay: false, facts: {} };
+
+describe('interaction policy', () => {
+  it('approves a permitted user and records audit in the admission context', async () => {
+    const context = admissionContext(database(true));
+    await expect(plugin.chatTurnAdmission?.admit(input, context)).resolves.toEqual({ decision: 'approve' });
+    expect(context.audit.record).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'success' }));
+  });
+
+  it('rejects a blocked user without throwing', async () => {
+    await expect(plugin.chatTurnAdmission?.admit(input, admissionContext(database(false)))).resolves.toEqual({ decision: 'reject', code: 'interaction_not_allowed', messageKey: 'policy.blocked' });
+  });
+
+  it('reports composer status from the same policy state', async () => {
+    await expect(plugin.chatComposerStatus?.read({ actor, tenantId: 'tenant-1', signal: new AbortController().signal, settings: {}, database: database(false) })).resolves.toEqual({ state: 'blocked', labelKey: 'policy.blocked' });
+    await expect(plugin.chatComposerStatus?.read({ actor, tenantId: 'tenant-1', signal: new AbortController().signal, settings: {}, database: database() })).resolves.toEqual({ state: 'ready', labelKey: 'policy.ready' });
+  });
+
+  it('lists directory users and applies an admin update', async () => {
+    const db = database();
+    db.query = async <T extends Record<string, unknown>>() => [{ subject_id: actor.id, enabled: false }] as unknown as T[];
+    const base = { tenantId: 'tenant-1', actor: { id: 'admin-1', role: 'admin' as const, kind: 'user' as const }, signal: new AbortController().signal, logger: { debug() {}, info() {}, warn() {}, error() {} }, settings: {}, database: db, audit: { record: vi.fn(async () => undefined) }, identityDirectory: { listUsers: vi.fn(async () => ({ users: [{ id: actor.id, displayName: 'User One', email: 'user@example.com', role: 'viewer' as const, active: true }] })), getUser: vi.fn() } };
+    const route = plugin.routes?.[0];
+    await expect(route?.handle({ ...base, path: '/accounts', query: { query: 'User', cursor: 'next', limit: '20' } } satisfies PluginRouteContext)).resolves.toEqual({ schemaVersion: '1', rows: [{ id: actor.id, values: { subject_id: actor.id, display_name: 'User One', email: 'user@example.com', enabled: false } }] });
+    expect(base.identityDirectory.listUsers).toHaveBeenCalledWith({ query: 'User', cursor: 'next', limit: 20 });
+    const action = plugin.actions?.[0];
+    await expect(action?.run({ schemaVersion: '1', idempotencyKey: 'adjust-1', requestFingerprint: 'v1:test', rowId: actor.id, rowValues: {}, fields: { enabled: 'true' } }, base satisfies PluginInvocationContext)).resolves.toEqual({ subject_id: actor.id, enabled: true });
+    expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('on conflict'), [actor.id, true]);
+  });
+
+  it('fails closed when route capabilities or action input are invalid', async () => {
+    const route = plugin.routes?.[0];
+    const context = { tenantId: 'tenant-1', actor: { id: 'admin-1', role: 'admin' as const, kind: 'user' as const }, signal: new AbortController().signal, logger: { debug() {}, info() {}, warn() {}, error() {} }, settings: {}, path: '/accounts', query: {} };
+    await expect(route?.handle(context)).rejects.toThrow('Identity directory capability is unavailable');
+    const action = plugin.actions?.[0];
+    await expect(action?.run({ schemaVersion: '1', idempotencyKey: 'bad-2', requestFingerprint: 'v1:test', rowId: actor.id, rowValues: {}, fields: { enabled: 'invalid' } }, { ...context, database: database(), audit: { record: vi.fn(async () => undefined) } })).rejects.toThrow('rowId and enabled are required');
+  });
+
+  it('uses bounded defaults and returns the directory cursor without database access', async () => {
+    const route = plugin.routes?.[0];
+    const identityDirectory = { listUsers: vi.fn(async () => ({ users: [{ id: actor.id, displayName: 'User One', email: 'user@example.com', role: 'viewer' as const, active: true }], nextCursor: 'page-2' })), getUser: vi.fn() };
+    const context = { tenantId: 'tenant-1', actor: { id: 'admin-1', role: 'admin' as const, kind: 'user' as const }, signal: new AbortController().signal, logger: { debug() {}, info() {}, warn() {}, error() {} }, settings: {}, path: '/accounts', query: {}, identityDirectory };
+    await expect(route?.handle(context)).resolves.toEqual({ schemaVersion: '1', rows: [{ id: actor.id, values: { subject_id: actor.id, display_name: 'User One', email: 'user@example.com', enabled: true } }], nextCursor: 'page-2' });
+    expect(identityDirectory.listUsers).toHaveBeenCalledWith({ limit: 50 });
+  });
+
+  it('removes the subject link through the lifecycle hook', async () => {
+    const db = database();
+    await plugin.subjectLifecycle?.beforeUserDelete({ subjectId: actor.id, actor }, { signal: new AbortController().signal, database: db, audit: { record: vi.fn(async () => undefined) } });
+    expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('delete from policy_account'), [actor.id]);
+  });
+});

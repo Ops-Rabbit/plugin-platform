@@ -14,6 +14,9 @@ const SECTIONS = [
   "ingressRoutes",
   "widgets",
   "knowledgeEmailProcessor",
+  "chatTurnAdmission",
+  "chatComposerStatus",
+  "subjectLifecycle",
 ] as const;
 
 export function validateRegistration(
@@ -34,7 +37,13 @@ export function validateRegistration(
         ),
       );
   for (const section of SECTIONS.filter(
-    (entry) => entry !== "knowledgeEmailProcessor",
+    (entry) =>
+      ![
+        "knowledgeEmailProcessor",
+        "chatTurnAdmission",
+        "chatComposerStatus",
+        "subjectLifecycle",
+      ].includes(entry),
   ))
     if (
       definition[section] !== undefined &&
@@ -83,6 +92,30 @@ export function validateRegistration(
         ),
       );
   }
+
+  validateSingletonRegistration(
+    "chatTurnAdmission",
+    manifest.capabilities.chatTurnAdmission,
+    definition.chatTurnAdmission,
+    issues,
+    ["admit"],
+  );
+  validateSingletonRegistration(
+    "chatComposerStatus",
+    manifest.capabilities.chatComposerStatus,
+    definition.chatComposerStatus,
+    issues,
+    ["read"],
+  );
+  validateSingletonRegistration(
+    "subjectLifecycle",
+    manifest.capabilities.subjectLifecycle,
+    definition.subjectLifecycle,
+    issues,
+    manifest.capabilities.subjectLifecycle?.tenantAttributionRemoval
+      ? ["beforeUserDelete", "removeTenantAttribution"]
+      : ["beforeUserDelete"],
+  );
 
   validateNamed("tools", manifest.capabilities.tools, definition.tools, issues);
   validateNamed(
@@ -303,6 +336,48 @@ export function validateRegistration(
       );
   }
   return issues;
+}
+
+function validateSingletonRegistration(
+  name: "chatTurnAdmission" | "chatComposerStatus" | "subjectLifecycle",
+  declared: { schemaVersion: "1" } | undefined,
+  registered: { schemaVersion: "1" } | undefined,
+  issues: ValidationIssue[],
+  handlers: string[],
+): void {
+  if (Boolean(declared) !== Boolean(registered)) {
+    issues.push(
+      issue(
+        `$.${name}`,
+        declared ? "missing-registration" : "undeclared-capability",
+        declared
+          ? `Manifest declares ${name}, but the entry does not register it.`
+          : `${name} is not declared in the manifest.`,
+      ),
+    );
+    return;
+  }
+  if (!declared || !registered) return;
+  if (declared.schemaVersion !== registered.schemaVersion)
+    issues.push(
+      issue(
+        `$.${name}.schemaVersion`,
+        "metadata-mismatch",
+        `${name} schema version differs from the manifest.`,
+      ),
+    );
+  for (const handler of handlers)
+    if (
+      typeof (registered as unknown as Record<string, unknown>)[handler] !==
+      "function"
+    )
+      issues.push(
+        issue(
+          `$.${name}.${handler}`,
+          "invalid-registration",
+          `${name} requires a ${handler} handler.`,
+        ),
+      );
 }
 
 function validateNamed(

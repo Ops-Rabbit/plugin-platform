@@ -1,5 +1,5 @@
 import { lstat, readFile, readdir } from "node:fs/promises";
-import { resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import {
   validateFormStarterPack,
   validateManifest,
@@ -34,8 +34,131 @@ export async function validatePluginDirectory(
     ...(await validateReferencedStarterPack(directory, result.value)),
     ...(await validateReferencedMigrations(directory, result.value)),
     ...(await validateReferencedFrontend(directory, result.value)),
+    ...(await validateReferencedLocalization(directory, result.value)),
   ];
   return { manifest: result.value, issues };
+}
+
+const MAX_LOCALIZATION_FILE_BYTES = 256 * 1024;
+const MAX_LOCALIZATION_AGGREGATE_BYTES = 1024 * 1024;
+
+async function validateReferencedLocalization(
+  directory: string,
+  manifest: PluginManifest,
+): Promise<ValidationIssue[]> {
+  if (!manifest.localization) return [];
+  const issues: ValidationIssue[] = [];
+  const root = resolve(directory, manifest.localization.path);
+  const expected = new Set(
+    manifest.localization.supportedLocales.map((locale) =>
+      relative(directory, resolve(root, `${locale}.json`))
+        .split(sep)
+        .join("/"),
+    ),
+  );
+  try {
+    await rejectSymlinkSegments(directory, root);
+    const actual = await listRegularFiles(root, directory);
+    for (const file of actual)
+      if (!expected.has(file))
+        issues.push({
+          path: "$.localization.path",
+          code: "undeclared-asset",
+          message: `Undeclared localization asset: ${file}.`,
+        });
+  } catch (error) {
+    issues.push({
+      path: "$.localization.path",
+      code: "asset-read",
+      message: readableError(error),
+    });
+    return issues;
+  }
+  const requiredKeys = localizationKeys(manifest);
+  let aggregateBytes = 0;
+  for (const locale of manifest.localization.supportedLocales) {
+    const path = resolve(root, `${locale}.json`);
+    try {
+      const stat = await lstat(path);
+      if (!stat.isFile() || stat.isSymbolicLink())
+        throw new Error("Localization bundle must be a regular file.");
+      aggregateBytes += stat.size;
+      if (stat.size > MAX_LOCALIZATION_FILE_BYTES)
+        issues.push({
+          path: `$.localization.bundle[${JSON.stringify(locale)}]`,
+          code: "asset-size",
+          message: `Localization bundle exceeds ${MAX_LOCALIZATION_FILE_BYTES} bytes.`,
+        });
+      const bundle = JSON.parse(await readFile(path, "utf8")) as unknown;
+      if (
+        !bundle ||
+        typeof bundle !== "object" ||
+        Array.isArray(bundle) ||
+        Object.values(bundle).some((entry) => typeof entry !== "string")
+      )
+        issues.push({
+          path: `$.localization.bundle[${JSON.stringify(locale)}]`,
+          code: "invalid",
+          message:
+            "Localization bundle must be a JSON object with string values.",
+        });
+      else
+        for (const key of requiredKeys)
+          if (!Object.hasOwn(bundle, key))
+            issues.push({
+              path: `$.localization.bundle[${JSON.stringify(locale)}]`,
+              code: "missing-key",
+              message: `Localization bundle is missing ${key}.`,
+            });
+    } catch (error) {
+      issues.push({
+        path: `$.localization.bundle[${JSON.stringify(locale)}]`,
+        code: "asset-read",
+        message: readableError(error),
+      });
+    }
+  }
+  if (aggregateBytes > MAX_LOCALIZATION_AGGREGATE_BYTES)
+    issues.push({
+      path: "$.localization.path",
+      code: "assets-size",
+      message: `Localization bundles exceed ${MAX_LOCALIZATION_AGGREGATE_BYTES} aggregate bytes.`,
+    });
+  return issues;
+}
+
+async function rejectSymlinkSegments(
+  packageRoot: string,
+  target: string,
+): Promise<void> {
+  let current = resolve(packageRoot);
+  for (const segment of relative(packageRoot, target)
+    .split(sep)
+    .filter(Boolean)) {
+    current = join(current, segment);
+    if ((await lstat(current)).isSymbolicLink())
+      throw new Error(`Symbolic links are not permitted: ${current}`);
+  }
+}
+
+function localizationKeys(manifest: PluginManifest): Set<string> {
+  const keys = new Set<string>();
+  const workspace = manifest.adminWorkspace;
+  if (!workspace) return keys;
+  keys.add(workspace.titleKey);
+  if (workspace.descriptionKey) keys.add(workspace.descriptionKey);
+  for (const table of workspace.tables) {
+    keys.add(table.titleKey);
+    for (const column of table.columns) keys.add(column.labelKey);
+    for (const action of table.rowActions ?? []) {
+      keys.add(action.labelKey);
+      for (const field of action.fields ?? []) {
+        keys.add(field.labelKey);
+        for (const option of field.options ?? []) keys.add(option.labelKey);
+      }
+    }
+  }
+  return keys;
 }
 
 const MAX_FRONTEND_FILE_BYTES = 5 * 1024 * 1024;

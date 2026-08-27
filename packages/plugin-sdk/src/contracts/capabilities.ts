@@ -81,4 +81,15 @@ export interface PluginDeclaredCapabilities {
   objectStore?: { read?: boolean; write?: boolean };
   knowledge?: { write: true };
   knowledgeEmailProcessor?: { schemaVersion: "1" };
+  chatTurnAdmission?: { schemaVersion: "1"; scope: "deployment" };
+  chatComposerStatus?: { schemaVersion: "1" };
+  deploymentAdminWorkspace?: { schemaVersion: "1" };
+  identityDirectory?: { read: true };
+  audit?: { write: true };
+  subjectLifecycle?: {
+    schemaVersion: "1";
+    userDeletion: true;
+    tenantAttributionRemoval?: true;
+  };
+  localization?: { schemaVersion: "1" };
 }

@@ -1,6 +1,10 @@
 import type { PluginDeclaredCapabilities } from "./capabilities.js";
 import type { PluginFormStarterPackReference } from "./forms.js";
 import type { PluginNativeWorkspace } from "./frontend.js";
+import type {
+  DeploymentAdminWorkspaceV1,
+  PluginLocalizationV1,
+} from "./interaction-policy.js";
 
 export const PLUGIN_API_VERSION = "1.0" as const;
 
@@ -95,6 +99,8 @@ export interface PluginManifest {
   settings?: PluginSetting[];
   navigation?: PluginFormsWorkspaceNavigation;
   frontend?: PluginNativeWorkspace;
+  adminWorkspace?: DeploymentAdminWorkspaceV1;
+  localization?: PluginLocalizationV1;
   formStarterPack?: PluginFormStarterPackReference;
   capabilities: PluginDeclaredCapabilities;
 }

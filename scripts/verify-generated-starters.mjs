@@ -24,6 +24,7 @@ const starterIds = [
   "knowledge-publisher",
   "knowledge-email-processor",
   "native-workspace",
+  "interaction-policy",
 ];
 await mkdir(tarballDirectory);
 

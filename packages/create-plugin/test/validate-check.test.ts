@@ -31,6 +31,60 @@ async function preparedPlugin(): Promise<string> {
 }
 
 describe("plugin directory validation", () => {
+  it("validates required localization bundles", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "opsrabbit-localization-"));
+    const target = join(parent, "policy");
+    await createPlugin({
+      name: "Policy",
+      starter: "interaction-policy",
+      output: target,
+    });
+    const originalBundle = await readFile(
+      join(target, "locales", "messages", "en.json"),
+      "utf8",
+    );
+    expect((await validatePluginDirectory(target)).issues).toEqual([]);
+    await writeFile(
+      join(target, "locales", "messages", "extra.json"),
+      JSON.stringify({ secret: "must not ship" }),
+    );
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "undeclared-asset" }),
+    );
+    await rm(join(target, "locales", "messages", "extra.json"));
+    await writeFile(
+      join(target, "locales", "messages", "en.json"),
+      JSON.stringify({ "policy.admin.title": "Policy" }),
+    );
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "missing-key" }),
+    );
+    await writeFile(
+      join(target, "locales", "messages", "en.json"),
+      JSON.stringify({ invalid: 42 }),
+    );
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({
+        path: '$.localization.bundle["en"]',
+        code: "invalid",
+      }),
+    );
+    await rm(join(target, "locales", "messages", "en.json"));
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({ code: "asset-read" }),
+    );
+    await rm(join(target, "locales", "messages"), { recursive: true });
+    const external = join(parent, "external-messages");
+    await mkdir(external);
+    await writeFile(join(external, "en.json"), originalBundle);
+    await symlink(external, join(target, "locales", "messages"));
+    expect((await validatePluginDirectory(target)).issues).toContainEqual(
+      expect.objectContaining({
+        path: "$.localization.path",
+        code: "asset-read",
+      }),
+    );
+  });
   it("reports malformed and missing manifests", async () => {
     const root = await mkdtemp(join(tmpdir(), "opsrabbit-invalid-"));
     expect((await validatePluginDirectory(root)).issues[0]?.code).toBe(

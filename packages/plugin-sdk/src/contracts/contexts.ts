@@ -6,6 +6,11 @@ export interface PluginActor {
   readonly kind: "user" | "system";
 }
 
+export type PluginUserActor = PluginActor & {
+  readonly role: "admin" | "operator" | "viewer";
+  readonly kind: "user";
+};
+
 export interface PluginInvocationContext {
   readonly tenantId: string;
   readonly actor: PluginActor;
@@ -24,6 +29,42 @@ export interface PluginInvocationContext {
   readonly objectStore?: PluginObjectStore;
   readonly forms?: PluginFormsService;
   readonly knowledge?: PluginKnowledgeService;
+  /** Available only for host-authorized deployment-admin route/action calls. */
+  readonly identityDirectory?: PluginIdentityDirectoryService;
+  readonly audit?: PluginAuditService;
+}
+
+export interface PluginIdentityDirectoryUser {
+  readonly id: string;
+  readonly displayName: string;
+  readonly email: string;
+  readonly role: "admin" | "operator" | "viewer";
+  readonly active: boolean;
+}
+
+export interface PluginIdentityDirectoryPage {
+  readonly users: readonly PluginIdentityDirectoryUser[];
+  readonly nextCursor?: string;
+}
+
+/** Deployment-admin-only, host-authorized user directory broker. */
+export interface PluginIdentityDirectoryService {
+  listUsers(input?: {
+    query?: string;
+    cursor?: string;
+    limit?: number;
+  }): Promise<PluginIdentityDirectoryPage>;
+  getUser(userId: string): Promise<PluginIdentityDirectoryUser | undefined>;
+}
+
+export interface PluginAuditService {
+  record(input: {
+    eventType: string;
+    subjectType?: string;
+    subjectId?: string;
+    outcome: "success" | "rejected" | "failed";
+    metadata?: Readonly<Record<string, JsonValue>>;
+  }): Promise<void>;
 }
 
 export type PluginKnowledgeSource = Readonly<Record<string, JsonValue>> & {
@@ -116,6 +157,24 @@ export interface PluginDatabase {
   ): Promise<T | undefined>;
   execute(statement: string, params?: readonly unknown[]): Promise<number>;
   transaction<T>(run: (database: PluginDatabase) => Promise<T>): Promise<T>;
+}
+
+/** Database facade already bound to a host transaction. */
+export type TransactionBoundPluginDatabase = Pick<
+  PluginDatabase,
+  "query" | "queryOne" | "execute"
+>;
+
+/** Host-authorized deployment-admin action context bound to one transaction. */
+export interface DeploymentAdminActionContext
+  extends Omit<
+    PluginInvocationContext,
+    "actor" | "database" | "identityDirectory" | "audit"
+  > {
+  readonly actor: PluginUserActor & { readonly role: "admin" };
+  readonly database: TransactionBoundPluginDatabase;
+  readonly identityDirectory: PluginIdentityDirectoryService;
+  readonly audit: PluginAuditService;
 }
 
 export interface PluginObjectUpload {

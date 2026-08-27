@@ -1,0 +1,11 @@
+{
+  "policy.admin.title": "Interaction policy",
+  "policy.admin.accounts": "Accounts",
+  "policy.subject": "User",
+  "policy.enabled": "Enabled",
+  "policy.set_enabled": "Set status",
+  "policy.yes": "Yes",
+  "policy.no": "No",
+  "policy.ready": "Ready",
+  "policy.blocked": "Interaction is not allowed"
+}

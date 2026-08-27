@@ -7,12 +7,18 @@ import type {
   PluginWidgetType,
 } from "./capabilities.js";
 import type {
+  DeploymentAdminActionContext,
   PluginIngressContext,
   PluginInvocationContext,
   PluginRouteContext,
 } from "./contexts.js";
 import type { JsonValue } from "./manifest.js";
 import type { KnowledgeEmailProcessorDefinitionV1 } from "./knowledge-email-processor.js";
+import type {
+  ChatComposerStatusDefinitionV1,
+  ChatTurnAdmissionDefinitionV1,
+  SubjectLifecycleDefinitionV1,
+} from "./interaction-policy.js";
 
 export const PLUGIN_TOOL_RESULT_KIND = "opsrabbit.tool-result/v1" as const;
 
@@ -56,7 +62,11 @@ export interface ToolDefinition<
   run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
 }
 
-export interface ActionDefinition<TInput = unknown, TOutput = JsonValue> {
+export interface ActionDefinition<
+  TInput = unknown,
+  TOutput = JsonValue,
+  TContext = PluginInvocationContext,
+> {
   id: string;
   title: string;
   description?: string;
@@ -73,7 +83,24 @@ export interface ActionDefinition<TInput = unknown, TOutput = JsonValue> {
     input: TInput,
     context: PluginInvocationContext,
   ): Promise<{ enabled: boolean; reason?: string }>;
-  run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
+  run(input: TInput, context: TContext): Promise<TOutput>;
+}
+
+export type DeploymentAdminActionDefinition<
+  TInput = unknown,
+  TOutput = JsonValue,
+> = ActionDefinition<TInput, TOutput, DeploymentAdminActionContext> & {
+  readonly deploymentAdminOnly: true;
+};
+
+/** Author a deployment-admin action with its required transaction-bound context. */
+export function defineDeploymentAdminAction<
+  TInput = unknown,
+  TOutput = JsonValue,
+>(
+  definition: DeploymentAdminActionDefinition<TInput, TOutput>,
+): ActionDefinition<TInput, TOutput> {
+  return definition as unknown as ActionDefinition<TInput, TOutput>;
 }
 
 export interface ScheduledJobDefinition {
@@ -121,6 +148,9 @@ export interface PluginDefinition {
   ingressRoutes?: IngressRouteDefinition[];
   widgets?: WidgetDefinition[];
   knowledgeEmailProcessor?: KnowledgeEmailProcessorDefinitionV1;
+  chatTurnAdmission?: ChatTurnAdmissionDefinitionV1;
+  chatComposerStatus?: ChatComposerStatusDefinitionV1;
+  subjectLifecycle?: SubjectLifecycleDefinitionV1;
 }
 
 export function definePlugin(

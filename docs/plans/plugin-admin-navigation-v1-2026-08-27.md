@@ -22,7 +22,7 @@ This is an admin-only control-plane surface, not a grant root. Deployment-admin 
 
 ## UX
 
-Entries appear in the Administration section of desktop navigation and the corresponding mobile administration navigation. Labels come from packaged localization bundles and icons from the bounded host icon catalog. The workspace page has a localized title/description, independent table loading and errors, accessible dialogs, keyboard behavior, and responsive layout.
+Entries appear in the host's Platform section on desktop. On mobile, they are exposed through an accessible pop-up attached to the existing Plugins destination so plugin entries do not overflow the fixed bottom bar. Labels come from packaged localization bundles and icons from the bounded host icon catalog. The workspace page has a localized title/description, independent table loading and errors, accessible dialogs, keyboard behavior, and responsive layout.
 
 ## Prior art
 

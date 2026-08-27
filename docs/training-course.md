@@ -57,12 +57,12 @@ alone:
 - `packages/create-plugin/assets/starters/`: eleven executable references;
 - `packages/create-plugin/src/constants.ts`: authoritative CLI starter list;
 - `scripts/verify-generated-starters.mjs`: isolated consumer verification;
-- `docs/plugin-contract-v0.2.md` through `v0.14.md`: capability history and host
+- `docs/plugin-contract-v0.2.md` through `v0.15.md`: capability history and host
   compatibility expectations.
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.14.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.15.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---

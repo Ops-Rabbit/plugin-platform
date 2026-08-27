@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.0 - 2026-08-27
+
+- Add host-owned Administration navigation for declarative deployment-admin workspaces.
+- Keep menu routes, localization, enablement, and authorization bounded by the host.
+
 ## 0.14.0 - 2026-08-26
 
 - Add versioned deployment interaction-policy contracts for transactional chat

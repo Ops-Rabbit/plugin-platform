@@ -1458,6 +1458,7 @@ function validateAdminWorkspace(
       "descriptionKey",
       "icon",
       "order",
+      "navigation",
       "tables",
     ]),
     "$.adminWorkspace",
@@ -1494,6 +1495,33 @@ function validateAdminWorkspace(
     issues.push(
       issue("$.adminWorkspace.order", "type", "Order must be an integer."),
     );
+  if (value.navigation !== undefined) {
+    if (!record(value.navigation)) {
+      issues.push(
+        issue(
+          "$.adminWorkspace.navigation",
+          "type",
+          "Admin workspace navigation must be an object.",
+        ),
+      );
+    } else {
+      unknownKeys(
+        value.navigation,
+        new Set(["schemaVersion"]),
+        "$.adminWorkspace.navigation",
+        issues,
+      );
+      if (value.navigation.schemaVersion !== "1") {
+        issues.push(
+          issue(
+            "$.adminWorkspace.navigation.schemaVersion",
+            "invalid",
+            "Admin workspace navigation schema version must be 1.",
+          ),
+        );
+      }
+    }
+  }
   if (!Array.isArray(value.tables) || value.tables.length === 0) {
     issues.push(
       issue(

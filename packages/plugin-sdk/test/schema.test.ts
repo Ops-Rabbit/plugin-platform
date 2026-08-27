@@ -64,6 +64,7 @@ describe("published manifest schema", () => {
         titleKey: "policy.title",
         icon: "receipt",
         order: 1,
+        navigation: { schemaVersion: "1" },
         tables: [
           {
             id: "accounts",
@@ -119,6 +120,26 @@ describe("published manifest schema", () => {
       (() => {
         const candidate = structuredClone(interaction);
         Reflect.deleteProperty(candidate, "localization");
+        return candidate;
+      })(),
+      (() => {
+        const candidate = structuredClone(interaction);
+        Reflect.set(candidate.adminWorkspace, "navigation", {
+          schemaVersion: "2",
+        });
+        return candidate;
+      })(),
+      (() => {
+        const candidate = structuredClone(interaction);
+        Reflect.set(candidate.adminWorkspace, "navigation", {
+          schemaVersion: "1",
+          path: "/unsafe",
+        });
+        return candidate;
+      })(),
+      (() => {
+        const candidate = structuredClone(interaction);
+        Reflect.set(candidate.adminWorkspace, "navigation", true);
         return candidate;
       })(),
       (() => {

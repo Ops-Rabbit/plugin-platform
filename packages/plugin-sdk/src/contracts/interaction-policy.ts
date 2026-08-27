@@ -176,6 +176,8 @@ export interface DeploymentAdminWorkspaceV1 {
   readonly descriptionKey?: string;
   readonly icon: string;
   readonly order?: number;
+  /** Requests a host-owned Administration navigation entry for this workspace. */
+  readonly navigation?: Readonly<{ schemaVersion: "1" }>;
   readonly tables: readonly DeploymentAdminWorkspaceTableV1[];
 }
 

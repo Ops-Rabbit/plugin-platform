@@ -69,6 +69,7 @@ The [starter reference](./docs/starter-reference.md),
 [Forms starter-pack](./docs/plugin-contract-v0.4.md),
 [native workspace](./docs/plugin-contract-v0.11.md),
 [deployment interaction policies](./docs/plugin-contract-v0.14.md),
+[administration navigation](./docs/plugin-contract-v0.15.md),
 [Forms workflow](./docs/plugin-contract-v0.5.md),
 [plugin Insights workspace](./docs/plugin-contract-v0.7.md), and
 [required entitlements](./docs/plugin-contract-v0.6.md) guides explain the contract

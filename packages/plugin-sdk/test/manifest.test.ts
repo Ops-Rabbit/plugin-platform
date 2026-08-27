@@ -128,6 +128,7 @@ function minimalInteractionManifest() {
       titleKey: "policy.title",
       icon: "receipt",
       order: 1,
+      navigation: { schemaVersion: "1" },
       tables: [
         {
           id: "accounts",
@@ -327,6 +328,15 @@ describe("validateManifest", () => {
         workspace.schemaVersion = "2";
         workspace.order = 1.5;
         workspace.tables = [];
+      },
+      (m) => {
+        child(child(m, "adminWorkspace"), "navigation").schemaVersion = "2";
+      },
+      (m) => {
+        child(m, "adminWorkspace").navigation = {
+          schemaVersion: "1",
+          path: "/unsafe",
+        };
       },
       (m) => {
         child(m, "adminWorkspace").tables = [null];

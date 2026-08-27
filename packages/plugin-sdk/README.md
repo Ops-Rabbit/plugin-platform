@@ -10,6 +10,7 @@ Deployment interaction policies use the versioned `chatTurnAdmission`,
 `localization` contracts. The host owns authentication, authorization, queue and
 transaction boundaries, schema confinement, and UI rendering. See the generated
 `interaction-policy` starter and Plugin Contract 0.14.
+Dedicated host-owned menu entries for those workspaces are defined by Plugin Contract 0.15.
 
 The stable public contract for building and testing OpsRabbit plugins without
 checking out the OpsRabbit product source.

@@ -144,6 +144,7 @@ export function validateManifest(
   validateAdminWorkspace(input.adminWorkspace, input.capabilities, issues);
   validateLocalization(input.localization, input.capabilities, issues);
   validateCapabilities(input.capabilities, issues);
+  validateConnectionSelectors(input.capabilities, input.settings, issues);
   validateInteractionDependencies(input.capabilities, issues);
   if (record(input.capabilities) && Array.isArray(input.capabilities.actions)) {
     for (const [index, action] of input.capabilities.actions.entries()) {
@@ -167,6 +168,95 @@ export function validateManifest(
   return issues.length === 0
     ? { ok: true, value: input as unknown as PluginManifest, issues }
     : { ok: false, issues };
+}
+
+function validateConnectionSelectors(
+  capabilitiesValue: unknown,
+  settingsValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (!record(capabilitiesValue) || capabilitiesValue.connections === undefined)
+    return;
+  const connections = capabilitiesValue.connections;
+  if (!record(connections)) return;
+  const selectors = connections.selectors;
+  if (!Array.isArray(selectors)) return;
+  const settings = Array.isArray(settingsValue) ? settingsValue : [];
+  const scheduledJobs = Array.isArray(capabilitiesValue.scheduledJobs)
+    ? capabilitiesValue.scheduledJobs
+    : [];
+  const actions = Array.isArray(capabilitiesValue.actions)
+    ? capabilitiesValue.actions
+    : [];
+  const selectorKeys = new Set<string>();
+  for (const [index, selector] of selectors.entries()) {
+    if (!record(selector)) continue;
+    const path = `$.capabilities.connections.selectors[${index}]`;
+    if (typeof selector.settingKey === "string") {
+      if (selectorKeys.has(selector.settingKey))
+        issues.push(
+          issue(
+            `${path}.settingKey`,
+            "duplicate",
+            "Connection selector setting keys must be unique.",
+          ),
+        );
+      selectorKeys.add(selector.settingKey);
+      const setting = settings.find(
+        (entry) => record(entry) && entry.key === selector.settingKey,
+      );
+      if (
+        !record(setting) ||
+        setting.type !== "string" ||
+        setting.required !== true
+      )
+        issues.push(
+          issue(
+            `${path}.settingKey`,
+            "invalid",
+            "Connection selector must reference a required string setting.",
+          ),
+        );
+    }
+    if (Array.isArray(selector.scheduledJobIds)) {
+      for (const [jobIndex, jobId] of selector.scheduledJobIds.entries()) {
+        if (!scheduledJobs.some((entry) => record(entry) && entry.id === jobId))
+          issues.push(
+            issue(
+              `${path}.scheduledJobIds[${jobIndex}]`,
+              "invalid",
+              "Connection selector scheduled job must be declared in capabilities.scheduledJobs.",
+            ),
+          );
+      }
+    }
+    if (Array.isArray(selector.actionIds)) {
+      for (const [actionIndex, actionId] of selector.actionIds.entries()) {
+        if (!actions.some((entry) => record(entry) && entry.id === actionId))
+          issues.push(
+            issue(
+              `${path}.actionIds[${actionIndex}]`,
+              "invalid",
+              "Connection selector action must be declared in capabilities.actions.",
+            ),
+          );
+      }
+    }
+    const actionIds = Array.isArray(selector.actionIds)
+      ? selector.actionIds
+      : [];
+    const scheduledJobIds = Array.isArray(selector.scheduledJobIds)
+      ? selector.scheduledJobIds
+      : [];
+    if (actionIds.length + scheduledJobIds.length === 0)
+      issues.push(
+        issue(
+          path,
+          "required",
+          "Connection selector must bind at least one action or scheduled job.",
+        ),
+      );
+  }
 }
 
 function validateInteractionDependencies(
@@ -913,6 +1003,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "database",
     "objectStore",
     "knowledge",
+    "connections",
     "knowledgeEmailProcessor",
     "chatTurnAdmission",
     "chatComposerStatus",
@@ -1076,6 +1167,104 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
   );
   namedArray(capabilities.scheduledJobs, "scheduledJobs", issues, ["id"]);
   namedArray(capabilities.widgets, "widgets", issues, ["id"]);
+  if (capabilities.connections !== undefined) {
+    if (!record(capabilities.connections)) {
+      issues.push(
+        issue(
+          "$.capabilities.connections",
+          "type",
+          "connections must be an object.",
+        ),
+      );
+    } else {
+      unknownKeys(
+        capabilities.connections,
+        new Set(["selectors"]),
+        "$.capabilities.connections",
+        issues,
+      );
+      const selectors = capabilities.connections.selectors;
+      if (
+        !Array.isArray(selectors) ||
+        selectors.length === 0 ||
+        selectors.length > 16
+      ) {
+        issues.push(
+          issue(
+            "$.capabilities.connections.selectors",
+            "required",
+            "connections selectors must contain between 1 and 16 declarations.",
+          ),
+        );
+      } else {
+        selectors.forEach((entry, index) => {
+          const path = `$.capabilities.connections.selectors[${index}]`;
+          if (!record(entry)) {
+            issues.push(
+              issue(path, "type", "Connection selector must be an object."),
+            );
+            return;
+          }
+          unknownKeys(
+            entry,
+            new Set([
+              "settingKey",
+              "integrationType",
+              "access",
+              "actionIds",
+              "scheduledJobIds",
+            ]),
+            path,
+            issues,
+          );
+          string(
+            entry.settingKey,
+            `${path}.settingKey`,
+            issues,
+            (value) => COLLECTION.test(value),
+            "Use lowercase snake_case.",
+          );
+          member(
+            entry.integrationType,
+            ["imap_mailbox"] as const,
+            `${path}.integrationType`,
+            issues,
+          );
+          member(entry.access, ["read"] as const, `${path}.access`, issues);
+          if (entry.actionIds !== undefined)
+            if (Array.isArray(entry.actionIds) && entry.actionIds.length > 64)
+              issues.push(
+                issue(
+                  `${path}.actionIds`,
+                  "invalid",
+                  "Declare at most 64 action bindings.",
+                ),
+              );
+            else
+              uniqueStrings(entry.actionIds, `${path}.actionIds`, issues, ID);
+          if (entry.scheduledJobIds !== undefined)
+            if (
+              Array.isArray(entry.scheduledJobIds) &&
+              entry.scheduledJobIds.length > 64
+            )
+              issues.push(
+                issue(
+                  `${path}.scheduledJobIds`,
+                  "invalid",
+                  "Declare at most 64 scheduled-job bindings.",
+                ),
+              );
+            else
+              uniqueStrings(
+                entry.scheduledJobIds,
+                `${path}.scheduledJobIds`,
+                issues,
+                ID,
+              );
+        });
+      }
+    }
+  }
   namedArray(
     capabilities.routes,
     "routes",
@@ -1269,15 +1458,25 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
   validateSingletonCapability(
     capabilities.knowledge,
     "knowledge",
-    ["write"],
+    ["read", "write", "delete"],
     issues,
     (entry) => {
-      if (entry.write !== true)
+      for (const permission of ["read", "write", "delete"] as const) {
+        if (entry[permission] !== undefined && entry[permission] !== true)
+          issues.push(
+            issue(
+              `$.capabilities.knowledge.${permission}`,
+              "invalid",
+              `Knowledge ${permission} access must be explicitly enabled with true.`,
+            ),
+          );
+      }
+      if (entry.read !== true && entry.write !== true && entry.delete !== true)
         issues.push(
           issue(
-            "$.capabilities.knowledge.write",
+            "$.capabilities.knowledge",
             "invalid",
-            "Knowledge write access must be explicitly enabled.",
+            "Enable Knowledge read, write, delete, or a combination.",
           ),
         );
     },

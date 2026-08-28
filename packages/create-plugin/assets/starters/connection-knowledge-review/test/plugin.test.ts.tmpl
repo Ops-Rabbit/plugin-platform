@@ -1,0 +1,112 @@
+import { createHash } from 'node:crypto';
+import type { PluginConnectionsService, PluginFormSubmission, PluginFormsService, PluginKnowledgeService, PluginManifest, PluginMaterializedImapConnection } from '@opsrabbit/plugin-sdk';
+import { createAuthorizedTestContext, createTestContext } from '@opsrabbit/plugin-sdk/testing';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { plugin } from '../src/index.js';
+import { mailboxAdapter } from '../src/mailbox-adapter.js';
+
+const digest = (value: string) => createHash('sha256').update(value).digest('hex');
+const manifest: PluginManifest = {
+  id: '{{id}}', name: '{{displayName}}', version: '0.1.0', description: 'Test manifest', apiVersion: '1.0', main: './dist/index.js',
+  settings: [{ key: 'imap_connection_id', label: 'IMAP', type: 'string', required: true }],
+  capabilities: { tools: [{ id: 'retrieve-case-context', risk: 'read' }], actions: [{ id: 'publish-approved-review', risk: 'write', requiredRole: 'admin' }], scheduledJobs: [{ id: 'stage-connection-review' }], connections: { selectors: [{ settingKey: 'imap_connection_id', integrationType: 'imap_mailbox', access: 'read', scheduledJobIds: ['stage-connection-review'] }] }, knowledge: { read: true, write: true, delete: true } },
+};
+const connection = (): PluginConnectionsService => ({ materialize: vi.fn(async (): Promise<PluginMaterializedImapConnection> => ({ integrationType: 'imap_mailbox', host: 'imap.test', port: 993, security: 'tls', username: { value: 'support', source: 'value' }, password: { value: 'secret', source: 'value' }, allowedFolders: ['INBOX'] })) });
+const values = { case_id: 'case-a', source_revision: 'rev-a', canonical_markdown: '# Case A', structured_review: JSON.stringify({ summary: 'Summary.', sections: [{ key: 'h1', title: 'Cause', section: 'hypothesis', content: 'Evidence.', applicability: 'microsoft 365 rejection', verification: 'verified' }, { key: 'resolution', title: 'Resolution', section: 'resolution', content: 'Validated.' }] }) };
+function forms(approved = true): PluginFormsService {
+  const canonicalHash = digest(values.canonical_markdown); const reviewHash = digest(values.structured_review);
+  return { createSubmission: vi.fn(async (input) => ({ id: 'review-1', moduleKey: 'connection_knowledge_reviews', recordType: 'knowledge_review', status: 'submitted', values: input.values })), getSubmission: vi.fn(async (): Promise<PluginFormSubmission> => ({ id: 'review-1', moduleKey: 'connection_knowledge_reviews', recordType: 'knowledge_review', status: 'submitted', values, workflow_stage_key: approved ? 'approved' : 'awaiting_review', governed_approval: approved ? { transitionId: 'transition-1', transitionType: 'approval', action: 'approve', fromStageKey: 'awaiting_review', toStageKey: 'approved', reviewerUserId: 'reviewer-1', approvedContentHash: canonicalHash, approvedStructuredReviewHash: reviewHash, approvedContentRevision: 'rev-a' } : null, workflow_current_content_hash: canonicalHash, workflow_current_structured_review_hash: reviewHash })), updateSubmission: vi.fn(), attachObject: vi.fn() };
+}
+function knowledge(): PluginKnowledgeService {
+  return { createSource: vi.fn(async () => ({ id: 'source-1', key: 'reviewed-cases', name: 'Reviewed cases' })), upsertDocument: vi.fn(async (input) => ({ id: input.key, key: input.key, title: input.title, contentHash: 'hash' })), deleteDocument: vi.fn(async (input) => ({ deleted: true, key: input.key })), publish: vi.fn(async () => ({ generationId: 'generation-1', documentCount: 5, chunkCount: 7 })), search: vi.fn(async () => ({ matches: [] })), fetchByMetadata: vi.fn(async () => ({ documents: [{ key: 'case_b_canonical', sourceKey: 'reviewed-cases', title: 'Case B', content: '# Case B', score: 1, metadata: { case_id: 'case-b', source_revision: 'rev-b', section: 'canonical' } }] })) };
+}
+
+afterEach(() => { delete process.env.OPSRABBIT_STARTER_MAILBOX_SAMPLE; vi.restoreAllMocks(); });
+describe('{{id}}', () => {
+  it('reads one bounded adapter page without persisting Connection secrets', async () => {
+    process.env.OPSRABBIT_STARTER_MAILBOX_SAMPLE = JSON.stringify(Array.from({ length: 30 }, (_, i) => ({ messageId: `m-${i}`, subject: `Subject ${i}`, receivedAt: '2026-08-28T00:00:00Z', text: 'Body' })));
+    const broker = connection(); const formBroker = forms();
+    const context = createAuthorizedTestContext(manifest, { kind: 'scheduledJob', id: 'stage-connection-review' }, { connections: broker, forms: formBroker });
+    await plugin.scheduledJobs?.[0]?.run(context);
+    expect(broker.materialize).toHaveBeenCalledWith({ selector: 'imap_connection_id' });
+    const serialized = JSON.stringify(vi.mocked(formBroker.createSubmission).mock.calls);
+    expect(serialized).toContain('Review 25 bounded'); expect(serialized).not.toContain('secret');
+  });
+
+  it('bounds and rejects invalid mailbox-adapter input', async () => {
+    const materialized = await connection().materialize({ selector: 'imap_connection_id' });
+    const aborted = new AbortController(); aborted.abort();
+    await expect(mailboxAdapter.readPage({ connection: materialized, folder: 'INBOX', limit: 25, signal: aborted.signal })).resolves.toEqual([]);
+    await expect(mailboxAdapter.readPage({ connection: materialized, folder: 'Archive', limit: 25, signal: new AbortController().signal })).rejects.toThrow('not allowed');
+    await expect(mailboxAdapter.readPage({ connection: materialized, folder: 'INBOX', limit: 25, signal: new AbortController().signal })).resolves.toEqual([]);
+    process.env.OPSRABBIT_STARTER_MAILBOX_SAMPLE = '{}';
+    await expect(mailboxAdapter.readPage({ connection: materialized, folder: 'INBOX', limit: 25, signal: new AbortController().signal })).rejects.toThrow('must be an array');
+    process.env.OPSRABBIT_STARTER_MAILBOX_SAMPLE = JSON.stringify([null]);
+    await expect(mailboxAdapter.readPage({ connection: materialized, folder: 'INBOX', limit: 25, signal: new AbortController().signal })).rejects.toThrow('envelope 0');
+    process.env.OPSRABBIT_STARTER_MAILBOX_SAMPLE = JSON.stringify([{ messageId: '', subject: 'Subject', receivedAt: 'now', text: 'Body' }]);
+    await expect(mailboxAdapter.readPage({ connection: materialized, folder: 'INBOX', limit: 0, signal: new AbortController().signal })).rejects.toThrow('messageId');
+  });
+
+  it('cancels early, requires an allowed folder, and skips empty pages', async () => {
+    const controller = new AbortController(); controller.abort();
+    const cancelled = connection();
+    await plugin.scheduledJobs?.[0]?.run(createTestContext({ signal: controller.signal, connections: cancelled }));
+    expect(cancelled.materialize).not.toHaveBeenCalled();
+    const noFolder: PluginConnectionsService = { materialize: vi.fn(async () => ({ ...(await connection().materialize({ selector: 'imap_connection_id' })), allowedFolders: [] })) };
+    await expect(plugin.scheduledJobs?.[0]?.run(createTestContext({ connections: noFolder }))).rejects.toThrow('no allowed folder');
+    const formBroker = forms();
+    await plugin.scheduledJobs?.[0]?.run(createTestContext({ connections: connection(), forms: formBroker }));
+    expect(formBroker.createSubmission).not.toHaveBeenCalled();
+  });
+
+  it('rejects selector use outside its declared scheduled invocation', async () => {
+    const context = createAuthorizedTestContext(manifest, { kind: 'action', id: 'publish-approved-review' }, { connections: connection() });
+    await expect(context.connections?.materialize({ selector: 'imap_connection_id' })).rejects.toThrow('not authorized');
+    const bound = createAuthorizedTestContext(manifest, { kind: 'scheduledJob', id: 'stage-connection-review' }, { connections: connection() });
+    await expect(bound.connections?.materialize({ selector: 'other_connection' })).rejects.toThrow('not authorized');
+  });
+
+  it('publishes exact approved hashes, a revision manifest, and removes obsolete siblings', async () => {
+    const broker = knowledge();
+    vi.mocked(broker.search!).mockResolvedValueOnce({ matches: [{ key: 'obsolete_hypothesis', sourceKey: 'reviewed-cases', title: 'Old', content: 'Old', score: 1, metadata: { case_id: 'case-a', source_revision: 'old' } }] });
+    const result = await plugin.actions?.[0]?.run({ submission_id: 'review-1' }, createAuthorizedTestContext(manifest, { kind: 'action', id: 'publish-approved-review' }, { forms: forms(), knowledge: broker }));
+    expect(broker.deleteDocument).toHaveBeenCalledWith({ sourceKey: 'reviewed-cases', key: 'obsolete_hypothesis', reason: expect.any(String) });
+    expect(vi.mocked(broker.upsertDocument!).mock.calls.some(([input]) => input.metadata?.section === 'revision_manifest')).toBe(true);
+    expect(result).toEqual(expect.objectContaining({ case_id: 'case-a', source_revision: 'rev-a' }));
+    const altered = forms(); const submission = await altered.getSubmission('review-1'); vi.mocked(altered.getSubmission).mockResolvedValueOnce({ ...submission!, values: { ...submission!.values, canonical_markdown: '# Changed after approval' } });
+    await expect(plugin.actions?.[0]?.run({ submission_id: 'review-1' }, createTestContext({ forms: altered, knowledge: broker }))).rejects.toThrow('immutable approval');
+  });
+
+  it('fails closed for partial Knowledge methods and malformed structured review', async () => {
+    await expect(plugin.actions?.[0]?.run({ submission_id: 'review-1' }, createTestContext({ forms: forms(), knowledge: { createSource: vi.fn() } }))).rejects.toThrow('Knowledge write');
+    const broker = knowledge(); const malformed = forms(); const submission = await malformed.getSubmission('review-1');
+    vi.mocked(malformed.getSubmission).mockResolvedValueOnce({ ...submission!, values: { ...submission!.values, structured_review: JSON.stringify({ summary: 'Summary', sections: [] }) } });
+    await expect(plugin.actions?.[0]?.run({ submission_id: 'review-1' }, createTestContext({ forms: malformed, knowledge: broker }))).rejects.toThrow('immutable approval');
+    await expect(plugin.actions?.[0]?.run({ submission_id: 'review-1' }, createTestContext({ forms: forms(false), knowledge: broker }))).rejects.toThrow('immutable approval');
+  });
+
+  it('enforces independent Knowledge permissions for read and mutation invocations', async () => {
+    const broker = knowledge();
+    const readManifest: PluginManifest = { ...manifest, capabilities: { ...manifest.capabilities, actions: [...(manifest.capabilities.actions ?? []), { id: 'read-only', risk: 'read', requiredRole: 'operator' }] } };
+    const readOnly = createAuthorizedTestContext(readManifest, { kind: 'action', id: 'read-only' }, { knowledge: broker });
+    await expect(readOnly.knowledge?.publish?.('reviewed-cases')).rejects.toThrow('not authorized');
+    await expect(readOnly.knowledge?.deleteDocument?.({ sourceKey: 'reviewed-cases', key: 'x', reason: 'test' })).rejects.toThrow('not authorized');
+  });
+
+  it('reranks competing cases by applicability and verification before exact expansion', async () => {
+    const broker = knowledge();
+    vi.mocked(broker.search!).mockResolvedValueOnce({ matches: [
+      { key: 'case-a-h1', sourceKey: 'reviewed-cases', title: 'Superficial', content: 'Cause', score: 0.95, metadata: { case_id: 'case-a', source_revision: 'rev-a', applicability: 'not applicable: microsoft 365', verification: 'diagnostic' } },
+      { key: 'case-b-h1', sourceKey: 'reviewed-cases', title: 'Applicable', content: 'Cause', score: 0.82, metadata: { case_id: 'case-b', source_revision: 'rev-b', applicability: 'microsoft 365 rejection', verification: 'verified' } },
+    ] });
+    const result = await plugin.tools?.[0]?.run({ query: 'microsoft 365 rejection' }, createTestContext({ knowledge: broker }));
+    expect(broker.fetchByMetadata).toHaveBeenCalledWith({ sourceKey: 'reviewed-cases', caseId: 'case-b', sourceRevision: 'rev-b', limit: 32 });
+    expect(result).toEqual(expect.objectContaining({ value: expect.objectContaining({ case_id: 'case-b' }) }));
+  });
+
+  it('returns an empty retrieval result and fails closed without Knowledge reads', async () => {
+    const broker = knowledge(); vi.mocked(broker.search!).mockResolvedValueOnce({ matches: [] });
+    await expect(plugin.tools?.[0]?.run({ query: 'unknown' }, createTestContext({ knowledge: broker }))).resolves.toEqual(expect.objectContaining({ value: { matches: [] } }));
+    await expect(plugin.tools?.[0]?.run({ query: 'unknown' }, createTestContext({ knowledge: {} }))).rejects.toThrow('Knowledge read');
+  });
+});

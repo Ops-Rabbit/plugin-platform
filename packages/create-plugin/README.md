@@ -27,6 +27,7 @@ Available starters:
 - `service-ingress`
 - `knowledge-publisher`
 - `knowledge-email-processor`
+- `connection-knowledge-review`
 - `native-workspace`
 - `interaction-policy`
 
@@ -104,3 +105,11 @@ Use `knowledge-publisher` as the reference for an administrator-controlled
 action that creates or reuses a plugin-owned Knowledge source, upserts bounded
 documents by stable key, and publishes the batch explicitly. The host retains
 tenant and source isolation, authorization, indexing, retention, and audit.
+
+Use `connection-knowledge-review` to illustrate the generic governed boundary:
+an administrator selects an IMAP Connection, a scheduled job invokes a bounded
+mailbox protocol adapter and stages normalized output for Forms review, immutable
+approval gates Knowledge publication, and a read tool reranks competing hits
+before exact-family expansion. The adapter is an executable teaching seam, not
+production IMAP ingestion; replace it with a maintained protocol library while
+preserving its limits and cancellation. Credentials are never stored or logged.

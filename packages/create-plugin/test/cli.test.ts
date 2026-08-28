@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { main } from "../src/cli.js";
+import { STARTER_IDS } from "../src/constants.js";
 
 describe("CLI", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -14,21 +15,7 @@ describe("CLI", () => {
     expect(await main(["--help"])).toBe(0);
     expect(await main(["--version"])).toBe(0);
     expect(await main(["examples", "list"])).toBe(0);
-    expect(stdout).toHaveBeenCalledWith(
-      `${[
-        "basic-readonly",
-        "operational-action",
-        "scheduled-tenant-job",
-        "database-tenant-records",
-        "forms-workflow",
-        "forms-insights",
-        "service-ingress",
-        "knowledge-publisher",
-        "knowledge-email-processor",
-        "native-workspace",
-        "interaction-policy",
-      ].join("\n")}\n`,
-    );
+    expect(stdout).toHaveBeenCalledWith(`${STARTER_IDS.join("\n")}\n`);
     expect(await main(["examples", "list", "--verbose"])).toBe(0);
     expect(stdout).toHaveBeenCalledWith(
       expect.stringContaining(

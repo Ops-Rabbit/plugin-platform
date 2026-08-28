@@ -1,0 +1,30 @@
+{
+  "formatVersion": 1,
+  "moduleKey": "connection_knowledge_reviews",
+  "starters": [{
+    "starterKey": "knowledge_review",
+    "title": "Knowledge review",
+    "description": "Review generated canonical and structured Knowledge content before publication.",
+    "recordType": "knowledge_review",
+    "badge": "Review",
+    "icon": "book_open",
+    "schema": {
+      "fields": [
+        { "key": "case_id", "label": "Case ID", "type": "text", "required": true, "summaryField": true },
+        { "key": "source_revision", "label": "Source revision", "type": "text", "required": true },
+        { "key": "canonical_markdown", "label": "Canonical Markdown", "type": "textarea", "required": true },
+        { "key": "structured_review", "label": "Structured review JSON", "type": "textarea", "required": true }
+      ],
+      "sections": [{ "key": "review", "label": "Review", "fieldKeys": ["case_id", "source_revision", "canonical_markdown", "structured_review"] }],
+      "actions": [{ "key": "submit", "label": "Submit for review", "kind": "submit" }]
+    },
+    "listConfig": {
+      "columns": [{ "fieldKey": "case_id", "label": "Case" }, { "fieldKey": "source_revision", "label": "Revision" }, { "fieldKey": "system_workflow_stage", "label": "Stage" }],
+      "searchFields": ["case_id", "canonical_markdown"],
+      "filterFields": ["case_id"],
+      "workspace": { "showOnLanding": true, "defaultOnLanding": true },
+      "pageSize": 25,
+      "defaultSort": "updated_at_desc"
+    }
+  }]
+}

@@ -1,0 +1,31 @@
+import type { PluginMaterializedImapConnection } from '@opsrabbit/plugin-sdk';
+
+export type MailboxEnvelope = Readonly<{ messageId: string; subject: string; receivedAt: string; text: string }>;
+export interface MailboxProtocolAdapter {
+  readPage(input: { connection: PluginMaterializedImapConnection; folder: string; limit: number; signal: AbortSignal }): Promise<readonly MailboxEnvelope[]>;
+}
+
+const MAX_MESSAGES = 25;
+const MAX_TEXT_BYTES = 32_000;
+
+/** Executable adapter-boundary example, not a production IMAP implementation. */
+export const mailboxAdapter: MailboxProtocolAdapter = {
+  async readPage({ connection, folder, limit, signal }) {
+    if (signal.aborted) return [];
+    if (!connection.allowedFolders.includes(folder)) throw new Error('Mailbox folder is not allowed by the selected Connection.');
+    const sample = process.env.OPSRABBIT_STARTER_MAILBOX_SAMPLE;
+    if (!sample) return [];
+    const parsed = JSON.parse(sample) as unknown;
+    if (!Array.isArray(parsed)) throw new Error('Mailbox adapter sample must be an array.');
+    return parsed.slice(0, Math.max(1, Math.min(limit, MAX_MESSAGES))).map((item, index) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) throw new Error(`Mailbox envelope ${index} is invalid.`);
+      const value = item as Record<string, unknown>;
+      const field = (key: string, maximum: number) => {
+        const candidate = value[key];
+        if (typeof candidate !== 'string' || candidate.trim() === '' || Buffer.byteLength(candidate) > maximum) throw new Error(`Mailbox envelope ${index} ${key} is invalid.`);
+        return candidate.trim();
+      };
+      return { messageId: field('messageId', 512), subject: field('subject', 1_000), receivedAt: field('receivedAt', 128), text: field('text', MAX_TEXT_BYTES) };
+    });
+  },
+};

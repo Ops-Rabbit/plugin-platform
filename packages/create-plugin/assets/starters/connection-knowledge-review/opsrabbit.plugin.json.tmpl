@@ -1,0 +1,36 @@
+{
+  "id": "{{id}}",
+  "name": "{{displayName}}",
+  "version": "0.1.0",
+  "description": "{{displayName}} governed Connection-to-Knowledge review",
+  "apiVersion": "1.0",
+  "minimumOpsRabbitVersion": "0.16.0",
+  "main": "./dist/index.js",
+  "requiredEntitlements": ["configured_forms"],
+  "settings": [
+    { "key": "menu_title", "label": "Menu title", "type": "string", "default": "{{displayName}}" },
+    { "key": "imap_connection_id", "label": "IMAP Connection", "type": "string", "description": "Select an existing IMAP mailbox Connection.", "required": true },
+    { "key": "workflow_stages", "label": "Workflow stages", "type": "json", "default": [
+      { "key": "awaiting_review", "label": "Awaiting review", "purpose": "Review generated content and evidence.", "owner_mode": "human_only", "human_gate": "Human approval is required before publication.", "form_starter_keys": [], "transition_form_starter_key": null, "allowed_next_stage_keys": ["approved", "rejected"] },
+      { "key": "approved", "label": "Approved", "purpose": "Permit publication of the approved revision.", "owner_mode": "human_only", "human_gate": "Approval records immutable content hashes.", "form_starter_keys": [], "transition_form_starter_key": null, "allowed_next_stage_keys": [] },
+      { "key": "rejected", "label": "Rejected", "purpose": "Retain rejected review history.", "owner_mode": "human_only", "human_gate": "Rejection requires a reviewer.", "form_starter_keys": [], "transition_form_starter_key": null, "allowed_next_stage_keys": [] }
+    ] }
+  ],
+  "navigation": {
+    "kind": "forms_workspace",
+    "moduleKey": "connection_knowledge_reviews",
+    "path": "/apps/connection-knowledge-reviews",
+    "icon": "book_open",
+    "fallbackTitle": "{{displayName}}",
+    "titleSetting": "menu_title",
+    "workflow": { "rootStarterKey": "knowledge_review", "stageModelSetting": "workflow_stages" }
+  },
+  "formStarterPack": { "moduleKey": "connection_knowledge_reviews", "path": "./forms/connection-knowledge-reviews.json" },
+  "capabilities": {
+    "tools": [{ "id": "retrieve-case-context", "risk": "read", "audience": "all", "requiredPermission": "read" }],
+    "actions": [{ "id": "publish-approved-review", "risk": "write", "requiredRole": "admin", "formPlacement": { "moduleKey": "connection_knowledge_reviews", "recordType": "knowledge_review", "intent": "primary" } }],
+    "scheduledJobs": [{ "id": "stage-connection-review" }],
+    "connections": { "selectors": [{ "settingKey": "imap_connection_id", "integrationType": "imap_mailbox", "access": "read", "scheduledJobIds": ["stage-connection-review"] }] },
+    "knowledge": { "read": true, "write": true, "delete": true }
+  }
+}

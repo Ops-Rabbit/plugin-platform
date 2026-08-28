@@ -68,6 +68,23 @@ export interface PluginWidgetCapability {
   id: string;
 }
 
+export interface PluginConnectionSelector {
+  settingKey: string;
+  integrationType: "imap_mailbox";
+  access: "read";
+  actionIds?: string[];
+  scheduledJobIds?: string[];
+}
+
+export interface PluginKnowledgeCapability {
+  /** Search and retrieve plugin-owned Knowledge. */
+  read?: true;
+  /** Create sources, upsert documents, and publish plugin-owned Knowledge. */
+  write?: true;
+  /** Delete documents from plugin-owned Knowledge. Independent of write. */
+  delete?: true;
+}
+
 export interface PluginDeclaredCapabilities {
   dataInsightProvider?: boolean;
   tools?: PluginToolCapability[];
@@ -79,7 +96,8 @@ export interface PluginDeclaredCapabilities {
   tenantRecords?: { collections: string[] };
   database?: { mode: "plugin_schema" };
   objectStore?: { read?: boolean; write?: boolean };
-  knowledge?: { write: true };
+  knowledge?: PluginKnowledgeCapability;
+  connections?: { selectors: PluginConnectionSelector[] };
   knowledgeEmailProcessor?: { schemaVersion: "1" };
   chatTurnAdmission?: { schemaVersion: "1"; scope: "deployment" };
   chatComposerStatus?: { schemaVersion: "1" };

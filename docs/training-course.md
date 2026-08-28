@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.11.1
-and `@opsrabbit/create-plugin` 0.11.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.16.0
+and `@opsrabbit/create-plugin` 0.16.0.
 
 ## Course promise
 
@@ -54,15 +54,16 @@ alone:
 - `packages/plugin-sdk/src/validation/`: runtime and cross-reference checks;
 - `packages/plugin-sdk/schemas/`: published JSON Schemas;
 - `packages/plugin-sdk/src/testing/`: test context and parity assertions;
-- `packages/create-plugin/assets/starters/`: eleven executable references;
+- `packages/create-plugin/assets/starters/`: twelve executable references;
 - `packages/create-plugin/src/constants.ts`: authoritative CLI starter list;
 - `scripts/verify-generated-starters.mjs`: isolated consumer verification;
 - `docs/plugin-contract-v0.2.md` through `v0.15.md`: capability history and host
-  compatibility expectations.
+  compatibility expectations, including the v0.16 generic Connection and
+  Knowledge review boundary.
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.15.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.16.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -126,7 +127,7 @@ commands, and produce a reviewable ZIP.
 npx opsrabbit-plugin examples list --verbose
 ```
 
-The eleven current starter ids are:
+The twelve current starter ids are:
 
 - `basic-readonly`
 - `operational-action`
@@ -137,6 +138,7 @@ The eleven current starter ids are:
 - `service-ingress`
 - `knowledge-publisher`
 - `knowledge-email-processor`
+- `connection-knowledge-review`
 - `native-workspace`
 - `interaction-policy`
 
@@ -728,6 +730,21 @@ grant search access to any user or agent.
 Tests should prove the complete broker call order and fail closed when the
 broker is absent. Production actions that publish Knowledge should require an
 administrator because Knowledge remains a tenant control-plane resource.
+
+### Governed Connection-to-Knowledge review
+
+Generate `connection-knowledge-review` when a plugin must select an existing
+IMAP Connection, invoke a bounded protocol-adapter seam, stage a human review,
+and publish a linked Knowledge family. The executable adapter demonstrates the
+boundary and normalized page limits; it is not a complete IMAP ingestion
+library. `connections.materialize` returns
+invocation-scoped values; never persist or log them. Publication remains a
+separate administrator action and requires immutable approval provenance and
+matching hashes. Revision manifests and delete permission remove obsolete
+semantic siblings. Search reranks bounded competing candidates, then
+`fetchByMetadata` expands the exact source, `case_id`, and revision family. The
+manifest declares Knowledge read, write, and delete separately. The host authorizes Connection use,
+Forms transitions, Knowledge access, retention, indexing, and audit.
 
 ## Required tests
 

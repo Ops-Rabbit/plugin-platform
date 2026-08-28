@@ -20,8 +20,36 @@ describe("createPlugin", () => {
       ),
       "utf8",
     );
-    for (const starter of STARTER_IDS)
-      expect(verifier).toContain(`"${starter}"`);
+    const serializedInventory = verifier.match(
+      /const starterIds = (\[[\s\S]*?\]);/,
+    )?.[1];
+    expect(serializedInventory).toBeDefined();
+    const verifierIds = [
+      ...serializedInventory!.matchAll(/"([a-z0-9-]+)"/g),
+    ].map((match) => match[1]);
+    expect(verifierIds).toEqual([...STARTER_IDS]);
+    const root = join(import.meta.dirname, "..", "..", "..");
+    const reference = await readFile(
+      join(root, "docs", "starter-reference.md"),
+      "utf8",
+    );
+    const course = await readFile(
+      join(root, "docs", "training-course.md"),
+      "utf8",
+    );
+    const createReadme = await readFile(
+      join(root, "packages", "create-plugin", "README.md"),
+      "utf8",
+    );
+    for (const id of STARTER_IDS) {
+      expect(reference).toContain(`\`${id}\``);
+      expect(course).toContain(`- \`${id}\``);
+      expect(createReadme).toContain(`- \`${id}\``);
+    }
+    const documentedCount =
+      STARTER_IDS.length === 12 ? "twelve" : String(STARTER_IDS.length);
+    expect(reference).toContain(`all ${documentedCount}`);
+    expect(course).toContain(`The ${documentedCount} current starter ids`);
   });
 
   it.each(STARTER_IDS)("creates a complete %s repository", async (starter) => {

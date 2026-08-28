@@ -4,8 +4,11 @@ import type {
   PluginLogger,
   TenantRecordStore,
   PluginKnowledgeService,
+  PluginConnectionsService,
+  PluginFormsService,
 } from "../contracts/contexts.js";
 import type { JsonValue } from "../contracts/manifest.js";
+import type { PluginManifest } from "../contracts/manifest.js";
 
 export interface TestLogEntry {
   level: "debug" | "info" | "warn" | "error";
@@ -24,6 +27,8 @@ export function createTestContext(
     signal?: AbortSignal;
     tenantRecords?: TenantRecordStore;
     knowledge?: PluginKnowledgeService;
+    connections?: PluginConnectionsService;
+    forms?: PluginFormsService;
     settings?: Readonly<Record<string, JsonValue>>;
   } = {},
 ): TestContext {
@@ -42,7 +47,106 @@ export function createTestContext(
     ...(options.knowledge === undefined
       ? {}
       : { knowledge: options.knowledge }),
+    ...(options.connections === undefined
+      ? {}
+      : { connections: options.connections }),
+    ...(options.forms === undefined ? {} : { forms: options.forms }),
   };
+}
+
+export type TestInvocation =
+  | { kind: "action"; id: string }
+  | { kind: "scheduledJob"; id: string };
+
+/**
+ * Builds the public service surface authorized by a manifest and invocation.
+ * This is intentionally stricter than createTestContext, which remains a
+ * backwards-compatible low-level injection helper.
+ */
+export function createAuthorizedTestContext(
+  manifest: PluginManifest,
+  invocation: TestInvocation,
+  options: Parameters<typeof createTestContext>[0] = {},
+): TestContext {
+  const {
+    knowledge: suppliedKnowledge,
+    connections: suppliedConnections,
+    ...baseOptions
+  } = options;
+  const declaration = manifest.capabilities.knowledge;
+  const action =
+    invocation.kind === "action"
+      ? manifest.capabilities.actions?.find(
+          (entry) => entry.id === invocation.id,
+        )
+      : undefined;
+  const scheduledJob =
+    invocation.kind === "scheduledJob"
+      ? manifest.capabilities.scheduledJobs?.find(
+          (entry) => entry.id === invocation.id,
+        )
+      : undefined;
+  const invocationDeclared = action !== undefined || scheduledJob !== undefined;
+  const readOnlyInvocation = action?.risk === "read";
+  const rejectMutation = async (): Promise<never> => {
+    throw new Error(
+      "Knowledge mutation is not authorized for this invocation.",
+    );
+  };
+  const knowledge: PluginKnowledgeService | undefined =
+    suppliedKnowledge && invocationDeclared
+      ? {
+          ...(declaration?.read === true
+            ? {
+                search: suppliedKnowledge.search,
+                fetchByMetadata: suppliedKnowledge.fetchByMetadata,
+              }
+            : {}),
+          ...(declaration?.write === true && !readOnlyInvocation
+            ? {
+                createSource: suppliedKnowledge.createSource,
+                upsertDocument: suppliedKnowledge.upsertDocument,
+                publish: suppliedKnowledge.publish,
+              }
+            : declaration?.write === true
+              ? {
+                  createSource: rejectMutation,
+                  upsertDocument: rejectMutation,
+                  publish: rejectMutation,
+                }
+              : {}),
+          ...(declaration?.delete === true && !readOnlyInvocation
+            ? { deleteDocument: suppliedKnowledge.deleteDocument }
+            : declaration?.delete === true
+              ? { deleteDocument: rejectMutation }
+              : {}),
+        }
+      : undefined;
+  const connections: PluginConnectionsService | undefined =
+    suppliedConnections && invocationDeclared
+      ? {
+          materialize: async ({ selector }) => {
+            const allowed = manifest.capabilities.connections?.selectors.some(
+              (declaration) =>
+                declaration.settingKey === selector &&
+                (invocation.kind === "action"
+                  ? declaration.actionIds?.includes(invocation.id)
+                  : declaration.scheduledJobIds?.includes(invocation.id)) ===
+                  true,
+            );
+            if (!allowed)
+              throw new Error(
+                "Connection selector is not authorized for this invocation.",
+              );
+            return suppliedConnections.materialize({ selector });
+          },
+        }
+      : undefined;
+  return createTestContext({
+    ...baseOptions,
+    ...(knowledge === undefined ? {} : { knowledge }),
+    ...(connections === undefined ? {} : { connections }),
+  });
 }
 
 function createCapturingLogger(entries: TestLogEntry[]): PluginLogger {

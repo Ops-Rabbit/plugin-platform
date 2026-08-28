@@ -1,0 +1,74 @@
+import { createHash } from 'node:crypto';
+import { definePlugin, toolResult, type JsonValue, type PluginFormSubmission, type PluginKnowledgeReadDocument } from '@opsrabbit/plugin-sdk';
+import { mailboxAdapter } from './mailbox-adapter.js';
+
+const SOURCE_KEY = 'reviewed-cases';
+type Section = { key: string; title: string; content: string; section: string; applicability?: string; verification: 'verified' | 'diagnostic' };
+type Review = { summary: string; sections: Section[] };
+const required = <T>(value: T | undefined, name: string): T => { if (!value) throw new Error(`${name} capability is unavailable.`); return value; };
+const bounded = (value: unknown, label: string, maximum = 20_000): string => { if (typeof value !== 'string' || !value.trim() || value.length > maximum) throw new Error(`${label} is invalid.`); return value.trim(); };
+const digest = (value: string): string => createHash('sha256').update(value).digest('hex');
+
+function parseReview(value: unknown): Review {
+  const parsed = JSON.parse(typeof value === 'string' ? value : JSON.stringify(value)) as Record<string, unknown>;
+  const summary = bounded(parsed.summary, 'Structured review summary', 4_000);
+  if (!Array.isArray(parsed.sections) || !parsed.sections.length || parsed.sections.length > 16) throw new Error('Structured review sections are invalid.');
+  const sections = parsed.sections.map((item, index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new Error(`Structured review section ${index} is invalid.`);
+    const record = item as Record<string, unknown>;
+    return { key: bounded(record.key, 'Section key', 48).toLowerCase().replace(/[^a-z0-9_-]/g, '-'), title: bounded(record.title, 'Section title', 160), content: bounded(record.content, 'Section content'), section: bounded(record.section, 'Section type', 48), ...(typeof record.applicability === 'string' ? { applicability: bounded(record.applicability, 'Applicability', 2_000) } : {}), verification: record.verification === 'verified' ? 'verified' as const : 'diagnostic' as const };
+  });
+  if (new Set(sections.map(({ key }) => key)).size !== sections.length) throw new Error('Structured review section keys must be unique.');
+  return { summary, sections };
+}
+
+function approved(submission: PluginFormSubmission): boolean {
+  const canonical = typeof submission.values.canonical_markdown === 'string' ? submission.values.canonical_markdown.trim() : '';
+  const structured = typeof submission.values.structured_review === 'string' ? submission.values.structured_review.trim() : JSON.stringify(submission.values.structured_review);
+  const approval = submission.governed_approval;
+  return approval?.transitionType === 'approval' && approval.action === 'approve' && approval.fromStageKey === 'awaiting_review' && approval.toStageKey === 'approved' && approval.approvedContentRevision === submission.values.source_revision && approval.approvedContentHash === digest(canonical) && approval.approvedStructuredReviewHash === digest(structured) && submission.workflow_current_content_hash === digest(canonical) && submission.workflow_current_structured_review_hash === digest(structured);
+}
+
+const metadata = (caseId: string, revision: string, section: string, parent: string, applicability = '', verification = 'diagnostic'): Record<string, JsonValue> => ({ case_id: caseId, source_revision: revision, section, parent_canonical_key: parent, applicability, verification });
+function rank(document: PluginKnowledgeReadDocument, query: string): number {
+  const applicability = String(document.metadata.applicability ?? '').toLowerCase();
+  const terms = query.toLowerCase().split(/\s+/).filter((term) => term.length > 2);
+  return document.score + (document.metadata.verification === 'verified' ? 0.12 : 0) + (terms.some((term) => applicability.includes(term)) ? 0.08 : 0) - (applicability.startsWith('not applicable') ? 0.4 : 0);
+}
+
+export const plugin = definePlugin({
+  scheduledJobs: [{ id: 'stage-connection-review', description: 'Reads one bounded adapter page and stages normalized content.', intervalSeconds: 21600, timeoutSeconds: 120, async run(context) {
+    if (context.signal.aborted) return;
+    const connection = await required(context.connections, 'Connections').materialize({ selector: 'imap_connection_id' });
+    const folder = connection.allowedFolders[0]; if (!folder) throw new Error('Selected IMAP Connection has no allowed folder.');
+    const messages = await mailboxAdapter.readPage({ connection, folder, limit: 25, signal: context.signal });
+    if (!messages.length) return;
+    const revision = digest(JSON.stringify(messages));
+    await required(context.forms, 'Forms').createSubmission({ starterKey: 'knowledge_review', idempotencyKey: `mailbox-page-${revision}`, action: 'submit', values: { case_id: `mailbox-page-${revision.slice(0, 12)}`, source_revision: revision, canonical_markdown: `# Mailbox review\n\n${messages.map((message) => `## ${message.subject}\n\n${message.text}`).join('\n\n')}`, structured_review: JSON.stringify({ summary: `Review ${messages.length} bounded normalized mailbox messages.`, sections: [{ key: 'guidance', title: 'Review guidance', section: 'guidance', content: 'Replace this adapter with bounded protocol-specific extraction.', verification: 'diagnostic' }] }) } });
+    context.logger.info('Staged a bounded mailbox page without persisting credentials.', { messageCount: messages.length });
+  } }],
+  actions: [{ id: 'publish-approved-review', title: 'Publish approved review', description: 'Replaces the approved case family.', risk: 'write', requiredRole: 'admin', formPlacement: { moduleKey: 'connection_knowledge_reviews', recordType: 'knowledge_review', intent: 'primary' }, async run(input: { submission_id?: string }, context) {
+    const forms = required(context.forms, 'Forms'); const knowledge = required(context.knowledge, 'Knowledge');
+    const createSource = required(knowledge.createSource, 'Knowledge write'); const upsert = required(knowledge.upsertDocument, 'Knowledge write'); const publish = required(knowledge.publish, 'Knowledge write'); const search = required(knowledge.search, 'Knowledge read'); const remove = required(knowledge.deleteDocument, 'Knowledge delete');
+    const submission = await forms.getSubmission(bounded(input.submission_id, 'Submission id', 128));
+    if (!submission || !approved(submission)) throw new Error('The current Form revision lacks immutable approval tied to its exact content.');
+    const caseId = bounded(submission.values.case_id, 'Case id', 96); const revision = bounded(submission.values.source_revision, 'Source revision', 128); const canonical = bounded(submission.values.canonical_markdown, 'Canonical Markdown'); const review = parseReview(submission.values.structured_review);
+    const prefix = digest(caseId).slice(0, 20); const canonicalKey = `case_${prefix}_canonical`; const desired = new Set([canonicalKey, `case_${prefix}_summary`, `case_${prefix}_manifest`, ...review.sections.map(({ key }) => `case_${prefix}_${key}`.slice(0, 64))]);
+    await createSource({ key: SOURCE_KEY, name: 'Reviewed cases', description: 'Approved canonical cases and retrieval sections.' });
+    const previous = await search({ query: caseId, filters: { sourceKey: SOURCE_KEY, caseId }, topK: 20 });
+    for (const document of previous.matches) if (!desired.has(document.key)) await remove({ sourceKey: SOURCE_KEY, key: document.key, reason: 'Replaced by an approved revision.' });
+    await upsert({ sourceKey: SOURCE_KEY, key: canonicalKey, title: caseId, content: canonical, contentType: 'text/markdown', revision, metadata: metadata(caseId, revision, 'canonical', canonicalKey) });
+    await upsert({ sourceKey: SOURCE_KEY, key: `case_${prefix}_summary`, title: `${caseId} summary`, content: review.summary, contentType: 'text/markdown', revision, metadata: metadata(caseId, revision, 'summary', canonicalKey) });
+    for (const section of review.sections) await upsert({ sourceKey: SOURCE_KEY, key: `case_${prefix}_${section.key}`.slice(0, 64), title: section.title, content: section.content, contentType: 'text/markdown', revision, metadata: metadata(caseId, revision, section.section, canonicalKey, section.applicability, section.verification) });
+    await upsert({ sourceKey: SOURCE_KEY, key: `case_${prefix}_manifest`, title: `${caseId} revision manifest`, content: JSON.stringify({ case_id: caseId, source_revision: revision, document_keys: [...desired].sort() }), contentType: 'text/plain', revision, metadata: metadata(caseId, revision, 'revision_manifest', canonicalKey) });
+    const publication = await publish(SOURCE_KEY); return { case_id: caseId, source_revision: revision, document_count: desired.size, generation_id: publication.generationId };
+  } }],
+  tools: [{ id: 'retrieve-case-context', description: 'Reranks competing hits and expands the best exact family.', risk: 'read', audience: 'all', requiredPermission: 'read', async run(input: { query?: string }, context) {
+    const query = bounded(input.query, 'Query', 1_000); const knowledge = required(context.knowledge, 'Knowledge'); const search = required(knowledge.search, 'Knowledge read'); const fetch = required(knowledge.fetchByMetadata, 'Knowledge read');
+    const result = await search({ query, filters: { sourceKey: SOURCE_KEY }, topK: 8 }); const hit = [...result.matches].sort((left, right) => rank(right, query) - rank(left, query))[0];
+    if (!hit) return toolResult('No reviewed case matched.', { matches: [] });
+    const caseId = bounded(hit.metadata.case_id, 'Retrieved case id', 96); const revision = bounded(hit.metadata.source_revision, 'Retrieved source revision', 128); const family = await fetch({ sourceKey: SOURCE_KEY, caseId, sourceRevision: revision, limit: 32 });
+    return toolResult(`Expanded reviewed case ${caseId}.`, { case_id: caseId, source_revision: revision, documents: family.documents.slice(0, 32).map((document) => ({ key: document.key, title: document.title, content: document.content, section: document.metadata.section ?? null })) });
+  } }],
+});
+export default plugin;

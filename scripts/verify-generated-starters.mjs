@@ -23,6 +23,7 @@ const starterIds = [
   "service-ingress",
   "knowledge-publisher",
   "knowledge-email-processor",
+  "connection-knowledge-review",
   "native-workspace",
   "interaction-policy",
 ];

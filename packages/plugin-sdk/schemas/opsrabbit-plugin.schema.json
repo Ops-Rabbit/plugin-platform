@@ -619,8 +619,48 @@
         "knowledge": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["write"],
-          "properties": { "write": { "const": true } }
+          "minProperties": 1,
+          "properties": {
+            "read": { "const": true },
+            "write": { "const": true },
+            "delete": { "const": true }
+          }
+        },
+        "connections": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["selectors"],
+          "properties": {
+            "selectors": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 16,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["settingKey", "integrationType", "access"],
+                "properties": {
+                  "settingKey": { "$ref": "#/$defs/settingKey" },
+                  "integrationType": { "const": "imap_mailbox" },
+                  "access": { "const": "read" },
+                  "actionIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 64,
+                    "uniqueItems": true,
+                    "items": { "$ref": "#/$defs/id" }
+                  },
+                  "scheduledJobIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 64,
+                    "uniqueItems": true,
+                    "items": { "$ref": "#/$defs/id" }
+                  }
+                }
+              }
+            }
+          }
         },
         "knowledgeEmailProcessor": {
           "type": "object",

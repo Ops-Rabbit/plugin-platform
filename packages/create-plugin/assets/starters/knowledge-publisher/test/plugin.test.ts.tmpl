@@ -8,6 +8,9 @@ describe('{{id}}', () => {
     const knowledge: PluginKnowledgeService = {
       createSource: vi.fn().mockResolvedValue({ id: 'source-1', key: 'runbooks', name: 'Runbooks' }),
       upsertDocument: vi.fn().mockResolvedValue({ id: 'document-1', key: 'restart', title: 'Restart', contentHash: 'sha256' }),
+      deleteDocument: vi.fn().mockResolvedValue({ deleted: true }),
+      search: vi.fn().mockResolvedValue({ matches: [] }),
+      fetchByMetadata: vi.fn().mockResolvedValue({ documents: [] }),
       publish: vi.fn().mockResolvedValue({ generationId: 'generation-1', documentCount: 1, chunkCount: 2 }),
     };
     const result = await plugin.actions?.[0]?.run({ sourceKey: 'runbooks', sourceName: 'Runbooks', documentKey: 'restart', title: 'Restart', content: '# Restart' }, createTestContext({ tenantId: 'tenant-a', knowledge }));
@@ -18,5 +21,6 @@ describe('{{id}}', () => {
 
   it('fails closed when the host does not supply the declared broker', async () => {
     await expect(plugin.actions?.[0]?.run({ sourceKey: 'runbooks', sourceName: 'Runbooks', documentKey: 'restart', title: 'Restart', content: '# Restart' }, createTestContext())).rejects.toThrow('Knowledge write capability is unavailable.');
+    await expect(plugin.actions?.[0]?.run({ sourceKey: 'runbooks', sourceName: 'Runbooks', documentKey: 'restart', title: 'Restart', content: '# Restart' }, createTestContext({ knowledge: { createSource: vi.fn() } }))).rejects.toThrow('Knowledge write capability is unavailable.');
   });
 });

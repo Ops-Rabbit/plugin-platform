@@ -29,6 +29,7 @@ export interface PluginInvocationContext {
   readonly objectStore?: PluginObjectStore;
   readonly forms?: PluginFormsService;
   readonly knowledge?: PluginKnowledgeService;
+  readonly connections?: PluginConnectionsService;
   /** Available only for host-authorized deployment-admin route/action calls. */
   readonly identityDirectory?: PluginIdentityDirectoryService;
   readonly audit?: PluginAuditService;
@@ -86,8 +87,47 @@ export type PluginKnowledgePublication = Readonly<Record<string, JsonValue>> & {
   readonly chunkCount: number;
 };
 
-/** Host-managed ingestion into a source owned by the invoking plugin. */
-export interface PluginKnowledgeService {
+export interface PluginMaterializedSecret {
+  readonly value: string;
+  /** `file` means the host materialized a file-backed secret for this invocation. */
+  readonly source: "value" | "file";
+}
+
+export interface PluginMaterializedImapConnection {
+  readonly integrationType: "imap_mailbox";
+  readonly host: string;
+  readonly port: number;
+  readonly security: "tls" | "starttls";
+  readonly username: PluginMaterializedSecret;
+  readonly password: PluginMaterializedSecret;
+  readonly allowedFolders: readonly string[];
+  readonly serverName?: string;
+}
+
+/** Host-authorized materialization of the manifest selector bound to this invocation. */
+export interface PluginConnectionsService {
+  materialize(input: {
+    selector: string;
+  }): Promise<PluginMaterializedImapConnection>;
+}
+
+export interface PluginKnowledgeReadFilters {
+  sourceKey?: string;
+  caseId?: string;
+  sourceRevision?: string;
+  section?: string;
+}
+
+export interface PluginKnowledgeReadDocument {
+  readonly key: string;
+  readonly sourceKey: string;
+  readonly title: string;
+  readonly content: string;
+  readonly metadata: Readonly<Record<string, JsonValue>>;
+  readonly score: number;
+}
+
+export interface PluginKnowledgeWriteService {
   createSource(input: {
     key: string;
     name: string;
@@ -104,6 +144,44 @@ export interface PluginKnowledgeService {
     metadata?: Readonly<Record<string, JsonValue>>;
   }): Promise<PluginKnowledgeDocument>;
   publish(sourceKey: string): Promise<PluginKnowledgePublication>;
+}
+
+export interface PluginKnowledgeDeleteService {
+  deleteDocument(input: {
+    sourceKey: string;
+    key: string;
+    reason: string;
+  }): Promise<{ deleted: boolean; key: string }>;
+}
+
+export interface PluginKnowledgeReadService {
+  search(input: {
+    query: string;
+    filters?: PluginKnowledgeReadFilters;
+    /** Defaults to 8; host-enforced maximum is 20. */
+    topK?: number;
+  }): Promise<{ matches: readonly PluginKnowledgeReadDocument[] }>;
+  fetchByMetadata(input: {
+    sourceKey: string;
+    caseId: string;
+    sourceRevision: string;
+    /** Defaults to 20; host-enforced maximum is 32. */
+    limit?: number;
+  }): Promise<{ documents: readonly PluginKnowledgeReadDocument[] }>;
+}
+
+/**
+ * Backward-compatible composite. Hosts should expose only methods authorized by
+ * the manifest capability and invocation risk. New consumers should prefer the
+ * dedicated read/write/delete service interfaces.
+ */
+export interface PluginKnowledgeService {
+  createSource?: PluginKnowledgeWriteService["createSource"];
+  upsertDocument?: PluginKnowledgeWriteService["upsertDocument"];
+  publish?: PluginKnowledgeWriteService["publish"];
+  deleteDocument?: PluginKnowledgeDeleteService["deleteDocument"];
+  search?: PluginKnowledgeReadService["search"];
+  fetchByMetadata?: PluginKnowledgeReadService["fetchByMetadata"];
 }
 
 export interface PluginRouteContext extends PluginInvocationContext {
@@ -209,6 +287,22 @@ export interface PluginFormSubmission {
   readonly recordType: string;
   readonly status: string;
   readonly values: Readonly<Record<string, JsonValue>>;
+  readonly workflow_stage_key?: string | null;
+  readonly governed_approval?: PluginGovernedApproval | null;
+  readonly workflow_current_content_hash?: string;
+  readonly workflow_current_structured_review_hash?: string;
+}
+
+export interface PluginGovernedApproval {
+  readonly transitionId: string;
+  readonly transitionType: "approval";
+  readonly action: "approve";
+  readonly fromStageKey: "awaiting_review";
+  readonly toStageKey: "approved";
+  readonly reviewerUserId: string;
+  readonly approvedContentHash: string;
+  readonly approvedStructuredReviewHash: string;
+  readonly approvedContentRevision: string;
 }
 
 export interface PluginFormsService {

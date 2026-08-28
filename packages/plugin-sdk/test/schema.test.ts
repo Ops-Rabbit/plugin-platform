@@ -296,9 +296,12 @@ describe("published manifest schema", () => {
     }).compile(schema);
     for (const [knowledge, expected] of [
       [{ write: true }, true],
+      [{ read: true }, true],
+      [{ delete: true }, true],
       [{ write: false }, false],
+      [{ read: true, delete: false }, false],
       [{}, false],
-      [{ write: true, read: true }, false],
+      [{ write: true, read: true, delete: true }, true],
     ] as const) {
       const manifest: Record<string, unknown> = structuredClone(valid);
       delete manifest.database;

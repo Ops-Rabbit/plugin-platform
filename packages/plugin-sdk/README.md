@@ -138,6 +138,16 @@ authorization, indexing, retention, and audit; search access and agent-source
 assignment are separate grants. See Plugin Contract 0.9 and the generated
 `knowledge-publisher` starter.
 
+Version 0.16 also supports typed, read-only IMAP Connection selectors through
+`capabilities.connections.selectors`. The host resolves the selected Connection
+only for an authorized invocation and exposes it through
+`context.connections.materialize({ selector })`; plugins must never persist or
+log the returned values. The Knowledge broker adds bounded `search` and
+`fetchByMetadata` reads so a matching semantic section can be expanded to its
+exact approved family. Forms submissions expose immutable approval transition,
+reviewer, revision, and content hashes for publication gates. See Plugin
+Contract 0.16 and the generated `connection-knowledge-review` starter.
+
 ### Knowledge email processors
 
 Plugins that deterministically classify and enrich host-owned IMAP evidence declare

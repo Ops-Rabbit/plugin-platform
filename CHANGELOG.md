@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.16.0 - 2026-08-28
+
+- Add typed, read-only IMAP Connection selectors and invocation-scoped
+  `connections.materialize` access.
+- Add bounded plugin-owned Knowledge deletion, search, and exact metadata-family
+  retrieval contracts.
+- Expose immutable Forms approval provenance and content hashes to publication
+  actions.
+- Add the executable `connection-knowledge-review` adapter-boundary starter,
+  revision cleanup, reranking, packaging coverage, clean-consumer verification,
+  and host-boundary guidance.
+
 ## 0.15.0 - 2026-08-27
 
 - Add host-owned Administration navigation for declarative deployment-admin workspaces.

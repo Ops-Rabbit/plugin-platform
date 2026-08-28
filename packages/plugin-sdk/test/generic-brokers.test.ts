@@ -369,12 +369,16 @@ describe("generic connection and Knowledge contracts", () => {
     expectTypeOf<PluginFormSubmission>().toMatchTypeOf<{
       governed_approval?: {
         transitionType: "approval";
-        action: "approve";
-        fromStageKey: "awaiting_review";
+        action: "approve" | "stage_transition";
+        fromStageKey: "awaiting_review" | "in_review";
         toStageKey: "approved";
         approvedContentHash: string;
       } | null;
       workflow_current_content_hash?: string;
+      workflow_transition_action?: string | null;
+      workflow_transition_type?: string | null;
+      workflow_transition_from_stage_key?: string | null;
+      workflow_transition_to_stage_key?: string | null;
     }>();
   });
 });

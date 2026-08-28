@@ -291,13 +291,22 @@ export interface PluginFormSubmission {
   readonly governed_approval?: PluginGovernedApproval | null;
   readonly workflow_current_content_hash?: string;
   readonly workflow_current_structured_review_hash?: string;
+  readonly workflow_reviewer_user_id?: string | null;
+  readonly workflow_transition_id?: string | null;
+  readonly workflow_transition_action?: string | null;
+  readonly workflow_transition_type?: string | null;
+  readonly workflow_transition_from_stage_key?: string | null;
+  readonly workflow_transition_to_stage_key?: string | null;
+  readonly workflow_approved_content_hash?: string | null;
+  readonly workflow_approved_structured_review_hash?: string | null;
+  readonly workflow_approved_content_revision?: string | null;
 }
 
 export interface PluginGovernedApproval {
   readonly transitionId: string;
   readonly transitionType: "approval";
-  readonly action: "approve";
-  readonly fromStageKey: "awaiting_review";
+  readonly action: "approve" | "stage_transition";
+  readonly fromStageKey: "awaiting_review" | "in_review";
   readonly toStageKey: "approved";
   readonly reviewerUserId: string;
   readonly approvedContentHash: string;

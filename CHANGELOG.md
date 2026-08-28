@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16.1 - 2026-08-28
+
+- Align governed Forms approval provenance with the persisted
+  `stage_transition / approval / in_review / approved` workflow tuple.
+- Expose raw workflow transition and approved-content provenance fields to
+  public plugin Forms consumers.
+
 ## 0.16.0 - 2026-08-28
 
 - Add typed, read-only IMAP Connection selectors and invocation-scoped

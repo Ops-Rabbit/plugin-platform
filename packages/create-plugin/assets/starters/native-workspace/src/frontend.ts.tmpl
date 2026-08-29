@@ -3,8 +3,11 @@ import type { OpsRabbitWorkspaceModule } from "@opsrabbit/plugin-sdk";
 export const mount: OpsRabbitWorkspaceModule["mount"] = (target, context) => {
   const heading = document.createElement("h2");
   const summary = document.createElement("p");
+  const refresh = document.createElement("button");
   heading.textContent = "{{displayName}}";
-  target.append(heading, summary);
+  refresh.type = "button";
+  refresh.textContent = "Refresh";
+  target.append(heading, summary, refresh);
 
   const render = () => {
     summary.textContent = `${context.locale.current} · ${context.theme.current}`;
@@ -17,6 +20,16 @@ export const mount: OpsRabbitWorkspaceModule["mount"] = (target, context) => {
     context.notifications.show({
       type: "error",
       message: String(error),
+    });
+  });
+
+  refresh.addEventListener("click", () => {
+    if (!context.pluginActions) {
+      context.notifications.show({ type: "error", message: "Plugin action access is unavailable." });
+      return;
+    }
+    void context.pluginActions.invoke("refresh-workspace").catch((error: unknown) => {
+      context.notifications.show({ type: "error", message: String(error) });
     });
   });
 

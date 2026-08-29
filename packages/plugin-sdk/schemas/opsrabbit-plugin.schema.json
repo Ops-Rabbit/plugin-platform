@@ -220,7 +220,7 @@
         "mountIsolation": { "const": "shadow_dom" },
         "capabilities": {
           "type": "array",
-          "maxItems": 6,
+          "maxItems": 7,
           "uniqueItems": true,
           "items": {
             "enum": [
@@ -229,9 +229,16 @@
               "forms.submissions.write",
               "forms.attachments",
               "forms.workflow",
-              "forms.actions"
+              "forms.actions",
+              "plugin.actions.invoke"
             ]
           }
+        },
+        "actionIds": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" }
         }
       }
     },
@@ -734,6 +741,39 @@
             "type": "object",
             "properties": { "database": {} },
             "required": ["database"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "frontend": {
+            "type": "object",
+            "properties": {
+              "capabilities": {
+                "type": "array",
+                "contains": { "const": "plugin.actions.invoke" }
+              }
+            },
+            "required": ["capabilities"]
+          }
+        },
+        "required": ["frontend"]
+      },
+      "then": {
+        "properties": {
+          "frontend": {
+            "type": "object",
+            "properties": { "actionIds": { "type": "array", "minItems": 1 } },
+            "required": ["actionIds"]
+          },
+          "capabilities": {
+            "type": "object",
+            "properties": {
+              "actions": { "type": "array", "minItems": 1 }
+            },
+            "required": ["actions"]
           }
         }
       }

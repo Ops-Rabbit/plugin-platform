@@ -1,6 +1,18 @@
 import { definePlugin } from "@opsrabbit/plugin-sdk";
 
 export default definePlugin({
+  actions: [
+    {
+      id: "refresh-workspace",
+      title: "Refresh workspace",
+      description: "Refresh the current plugin workspace.",
+      risk: "read",
+      requiredRole: "operator",
+      async run() {
+        return { refreshed: true };
+      },
+    },
+  ],
   tools: [
     {
       id: "workspace-status",

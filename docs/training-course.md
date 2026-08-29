@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.16.0
-and `@opsrabbit/create-plugin` 0.16.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.17.0
+and `@opsrabbit/create-plugin` 0.17.0.
 
 ## Course promise
 
@@ -63,7 +63,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.16.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.17.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -414,6 +414,14 @@ whose module key matches its navigation; validation fails closed when any of
 those three declarations disagree. The host must still check tenant enablement, package
 generation, module ownership, role, grants, validation, persistence, audit, and
 retention for each request.
+
+When the workspace needs to invoke one of its own declared actions, add
+`plugin.actions.invoke` to `frontend.capabilities` and call
+`context.pluginActions.invoke(actionId, input?)`. The closed broker has no plugin
+or tenant selector: the host binds it to the mounted plugin and current tenant,
+then revalidates session role, action declaration, package generation, runtime
+lifecycle, and audit before dispatch. Test an undeclared action id and expect a
+fail-closed rejection.
 
 Shadow DOM prevents ordinary plugin CSS from leaking into the OpsRabbit shell,
 but same-origin JavaScript remains full-trust browser code. Deployment approval

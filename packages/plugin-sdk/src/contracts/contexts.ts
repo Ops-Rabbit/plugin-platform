@@ -302,17 +302,21 @@ export interface PluginFormSubmission {
   readonly workflow_approved_content_revision?: string | null;
 }
 
-export interface PluginGovernedApproval {
+export type PluginGovernedApproval = {
   readonly transitionId: string;
   readonly transitionType: "approval";
-  readonly action: "approve" | "stage_transition";
-  readonly fromStageKey: "awaiting_review" | "in_review";
   readonly toStageKey: "approved";
   readonly reviewerUserId: string;
   readonly approvedContentHash: string;
   readonly approvedStructuredReviewHash: string;
   readonly approvedContentRevision: string;
-}
+} & (
+  | { readonly action: "approve"; readonly fromStageKey: "awaiting_review" }
+  | {
+      readonly action: "stage_transition";
+      readonly fromStageKey: "awaiting_review" | "in_review";
+    }
+);
 
 export interface PluginFormsService {
   createSubmission(input: {

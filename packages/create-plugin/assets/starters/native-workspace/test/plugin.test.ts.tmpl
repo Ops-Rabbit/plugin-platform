@@ -16,11 +16,20 @@ describe("{{displayName}}", () => {
     });
   });
 
+  it("publishes the action used by its native workspace", async () => {
+    const result = await plugin.actions?.[0]?.run(
+      {},
+      createTestContext({ tenantId: "tenant-a" }),
+    );
+    expect(result).toEqual({ refreshed: true });
+  });
+
   it("mounts and cleans up through the public browser ABI", async () => {
     const target = document.createElement("div");
     const stopLocale = vi.fn();
     const stopTheme = vi.fn();
     const catalog = vi.fn().mockResolvedValue({ definitions: [] });
+    const invoke = vi.fn().mockResolvedValue({ refreshed: true });
     const mounted = mount(target, {
       sdkVersion: "1",
       plugin: { id: "{{id}}", moduleKey: "workspace_records", generation: "generation" },
@@ -34,6 +43,7 @@ describe("{{displayName}}", () => {
       lifecycle: { signal: new AbortController().signal, onCleanup() {} },
       overlayRoot: document.createElement("div"),
       assets: { async url(path) { return path; } },
+      pluginActions: { invoke },
       forms: {
         catalog,
         async definition() {}, async list() {}, async get() {}, async create() {}, async update() {},
@@ -45,6 +55,8 @@ describe("{{displayName}}", () => {
     expect(target.textContent).toContain("{{displayName}}");
     expect(target.textContent).toContain("en · light");
     await vi.waitFor(() => expect(catalog).toHaveBeenCalled());
+    target.querySelector("button")?.click();
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith("refresh-workspace"));
     mounted?.destroy();
     expect(target.childElementCount).toBe(0);
     expect(stopLocale).toHaveBeenCalled();
@@ -65,6 +77,7 @@ describe("{{displayName}}", () => {
       confirmation: { async confirm() { return true; } },
       lifecycle: { signal: new AbortController().signal, onCleanup() {} },
       overlayRoot: document.createElement("div"), assets: { async url(path) { return path; } },
+      pluginActions: { async invoke() {} },
       forms: {
         async catalog() { throw new Error("Catalog denied"); },
         async definition() {}, async list() {}, async get() {}, async create() {}, async update() {},
@@ -74,5 +87,32 @@ describe("{{displayName}}", () => {
       },
     });
     await vi.waitFor(() => expect(show).toHaveBeenCalledWith({ type: "error", message: "Error: Catalog denied" }));
+  });
+
+  it("reports workspace action failures through host notifications", async () => {
+    const target = document.createElement("div");
+    const show = vi.fn();
+    mount(target, {
+      sdkVersion: "1",
+      plugin: { id: "{{id}}", moduleKey: "workspace_records", generation: "generation" },
+      tenant: { id: "tenant-a" },
+      actor: { id: "actor-a", displayName: "Operator", role: "operator", access: {} },
+      locale: { current: "en", subscribe() { return () => undefined; } },
+      theme: { current: "light", subscribe() { return () => undefined; } },
+      navigation: { async go() {} }, notifications: { show },
+      confirmation: { async confirm() { return true; } },
+      lifecycle: { signal: new AbortController().signal, onCleanup() {} },
+      overlayRoot: document.createElement("div"), assets: { async url(path) { return path; } },
+      pluginActions: { async invoke() { throw new Error("Action denied"); } },
+      forms: {
+        async catalog() { return { definitions: [] }; },
+        async definition() {}, async list() {}, async get() {}, async create() {}, async update() {},
+        workflow: { async get() {}, async record() {}, async transition() {} },
+        actions: { async list() {}, async execute() {} },
+        attachments: { async contentUrl() { return ""; }, async text() {} },
+      },
+    });
+    target.querySelector("button")?.click();
+    await vi.waitFor(() => expect(show).toHaveBeenCalledWith({ type: "error", message: "Error: Action denied" }));
   });
 });

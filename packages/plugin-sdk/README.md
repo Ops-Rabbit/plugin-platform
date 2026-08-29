@@ -4,6 +4,12 @@ The SDK includes the `frontend.native_workspace` manifest contract and the
 framework-neutral `OpsRabbitWorkspaceModule` browser ABI. See
 [`plugin-contract-v0.11.md`](../../docs/plugin-contract-v0.11.md) and the
 generated `native-workspace` starter for build and trust-boundary guidance.
+Native workspaces may declare `plugin.actions.invoke` and call
+`context.pluginActions.invoke(actionId, input?)`. This broker can invoke only an
+action declared by the currently mounted plugin; it accepts no plugin or tenant
+override. The host retains live authorization, tenant binding, package-generation
+checks, action validation, execution, and audit.
+See [Plugin Contract 0.17](../../docs/plugin-contract-v0.17.md).
 
 Deployment interaction policies use the versioned `chatTurnAdmission`,
 `chatComposerStatus`, `deploymentAdminWorkspace`, `subjectLifecycle`, and

@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "{{displayName}} precompiled native Forms workspace",
   "apiVersion": "1.0",
-  "minimumOpsRabbitVersion": "0.3.1",
+  "minimumOpsRabbitVersion": "0.3.2",
   "main": "./dist/index.js",
   "navigation": {
     "kind": "forms_workspace",
@@ -27,10 +27,19 @@
     "capabilities": [
       "forms.catalog.read",
       "forms.submissions.read",
-      "forms.submissions.write"
-    ]
+      "forms.submissions.write",
+      "plugin.actions.invoke"
+    ],
+    "actionIds": ["refresh-workspace"]
   },
   "capabilities": {
+    "actions": [
+      {
+        "id": "refresh-workspace",
+        "risk": "read",
+        "requiredRole": "operator"
+      }
+    ],
     "tools": [
       {
         "id": "workspace-status",

@@ -444,7 +444,9 @@ describe("validateManifest", () => {
           "forms.catalog.read",
           "forms.submissions.read",
           "forms.submissions.write",
+          "plugin.actions.invoke",
         ],
+        actionIds: ["restart"],
       },
     };
     expect(validateManifest(manifest)).toEqual({
@@ -452,6 +454,74 @@ describe("validateManifest", () => {
       value: manifest,
       issues: [],
     });
+  });
+
+  it("requires a declared action when a native workspace requests action invocation", () => {
+    const manifest = structuredClone(valid) as unknown as {
+      capabilities: Record<string, unknown>;
+      frontend?: unknown;
+    };
+    delete manifest.capabilities.actions;
+    manifest.frontend = {
+      kind: "native_workspace",
+      entry: "./dist/frontend.js",
+      styles: [],
+      assets: [],
+      sdkVersion: "1",
+      mountIsolation: "shadow_dom",
+      capabilities: ["plugin.actions.invoke"],
+      actionIds: ["missing"],
+    };
+    expect(validateManifest(manifest).issues).toContainEqual(
+      expect.objectContaining({
+        path: "$.frontend.capabilities",
+        code: "invalid",
+      }),
+    );
+  });
+
+  it("requires every frontend action id to reference a declared action", () => {
+    const manifest = structuredClone(valid) as unknown as {
+      frontend?: unknown;
+    };
+    manifest.frontend = {
+      kind: "native_workspace",
+      entry: "./dist/frontend.js",
+      styles: [],
+      assets: [],
+      sdkVersion: "1",
+      mountIsolation: "shadow_dom",
+      capabilities: ["plugin.actions.invoke"],
+      actionIds: ["missing"],
+    };
+    expect(validateManifest(manifest).issues).toContainEqual(
+      expect.objectContaining({
+        path: "$.frontend.actionIds[0]",
+        code: "invalid",
+      }),
+    );
+  });
+
+  it("rejects frontend action ids without the invocation capability", () => {
+    const manifest = structuredClone(valid) as unknown as {
+      frontend?: unknown;
+    };
+    manifest.frontend = {
+      kind: "native_workspace",
+      entry: "./dist/frontend.js",
+      styles: [],
+      assets: [],
+      sdkVersion: "1",
+      mountIsolation: "shadow_dom",
+      capabilities: ["forms.catalog.read"],
+      actionIds: ["restart"],
+    };
+    expect(validateManifest(manifest).issues).toContainEqual(
+      expect.objectContaining({
+        path: "$.frontend.actionIds",
+        code: "invalid",
+      }),
+    );
   });
 
   it("rejects unsafe, incompatible, duplicate, and unowned native workspaces", () => {

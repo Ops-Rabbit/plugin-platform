@@ -8,6 +8,7 @@ export const PLUGIN_FRONTEND_CAPABILITIES = [
   "forms.attachments",
   "forms.workflow",
   "forms.actions",
+  "plugin.actions.invoke",
 ] as const;
 
 export type PluginFrontendCapability =
@@ -21,6 +22,7 @@ export interface PluginNativeWorkspace {
   sdkVersion: typeof PLUGIN_FRONTEND_SDK_VERSION;
   mountIsolation: "shadow_dom";
   capabilities: PluginFrontendCapability[];
+  actionIds?: string[];
 }
 
 export interface OpsRabbitWorkspaceError extends Error {
@@ -57,6 +59,13 @@ export interface OpsRabbitWorkspaceContext {
   overlayRoot: HTMLElement;
   /** Resolve a declared asset to an authenticated, lifecycle-bound object URL. */
   assets: { url(path: string): Promise<string> };
+  /** Invoke a manifest-declared action owned by the currently mounted plugin. */
+  pluginActions?: {
+    invoke(
+      actionId: string,
+      input?: Record<string, JsonValue>,
+    ): Promise<unknown>;
+  };
   forms: {
     catalog(): Promise<unknown>;
     definition(id: string): Promise<unknown>;

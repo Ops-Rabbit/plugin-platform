@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.0 - 2026-08-29
+
+- Add the closed native-workspace `plugin.actions.invoke` capability and typed
+  `context.pluginActions.invoke` broker for current-plugin declared actions.
+- Update the native-workspace starter to demonstrate host-governed action
+  invocation without plugin or tenant overrides.
+
 ## 0.16.1 - 2026-08-28
 
 - Align governed Forms approval provenance with the persisted

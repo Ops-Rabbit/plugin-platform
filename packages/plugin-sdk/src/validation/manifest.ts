@@ -134,6 +134,7 @@ export function validateManifest(
     input.frontend,
     input.navigation,
     input.formStarterPack,
+    input.capabilities,
     issues,
   );
   validateFormStarterPackReference(
@@ -293,6 +294,7 @@ function validateFrontend(
   value: unknown,
   navigationValue: unknown,
   starterPackValue: unknown,
+  capabilitiesValue: unknown,
   issues: ValidationIssue[],
 ): void {
   if (value === undefined) return;
@@ -310,6 +312,7 @@ function validateFrontend(
       "sdkVersion",
       "mountIsolation",
       "capabilities",
+      "actionIds",
     ]),
     "$.frontend",
     issues,
@@ -368,6 +371,67 @@ function validateFrontend(
         PLUGIN_FRONTEND_CAPABILITIES,
         `$.frontend.capabilities[${index}]`,
         issues,
+      );
+    if (
+      value.capabilities.includes("plugin.actions.invoke") &&
+      (!record(capabilitiesValue) ||
+        !Array.isArray(capabilitiesValue.actions) ||
+        capabilitiesValue.actions.length === 0)
+    ) {
+      issues.push(
+        issue(
+          "$.frontend.capabilities",
+          "invalid",
+          "plugin.actions.invoke requires at least one declared plugin action.",
+        ),
+      );
+    }
+  }
+  const declaredActionIds = new Set(
+    record(capabilitiesValue) && Array.isArray(capabilitiesValue.actions)
+      ? capabilitiesValue.actions
+          .filter(record)
+          .map((action) => action.id)
+          .filter((id): id is string => typeof id === "string")
+      : [],
+  );
+  if (value.actionIds !== undefined && !Array.isArray(value.actionIds)) {
+    issues.push(
+      issue(
+        "$.frontend.actionIds",
+        "type",
+        "Frontend actionIds must be an array.",
+      ),
+    );
+  } else if (Array.isArray(value.actionIds)) {
+    uniqueStrings(
+      value.actionIds,
+      "$.frontend.actionIds",
+      issues,
+      /^[a-z][a-z0-9_-]{0,63}$/,
+    );
+    for (const [index, actionId] of value.actionIds.entries()) {
+      if (!declaredActionIds.has(String(actionId)))
+        issues.push(
+          issue(
+            `$.frontend.actionIds[${index}]`,
+            "invalid",
+            "Frontend actionIds must reference a declared plugin action.",
+          ),
+        );
+    }
+  }
+  if (Array.isArray(value.capabilities)) {
+    const invokes = value.capabilities.includes("plugin.actions.invoke");
+    if (
+      invokes !== (Array.isArray(value.actionIds) && value.actionIds.length > 0)
+    )
+      issues.push(
+        issue(
+          "$.frontend.actionIds",
+          "invalid",
+          "Declare non-empty actionIds exactly when plugin.actions.invoke is requested.",
+        ),
       );
   }
   if (!record(navigationValue) || navigationValue.kind !== "forms_workspace")

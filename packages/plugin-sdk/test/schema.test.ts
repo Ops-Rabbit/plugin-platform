@@ -201,6 +201,10 @@ describe("published manifest schema", () => {
     expect(validateManifest(quotationNavigation).ok).toBe(true);
     const nativeWorkspace = {
       ...quotationNavigation,
+      capabilities: {
+        ...valid.capabilities,
+        actions: [{ id: "status", risk: "read", requiredRole: "operator" }],
+      },
       formStarterPack: {
         moduleKey: "quotations",
         path: "./forms/quotations.json",
@@ -212,10 +216,18 @@ describe("published manifest schema", () => {
         assets: ["./dist/assets/**"],
         sdkVersion: "1",
         mountIsolation: "shadow_dom",
-        capabilities: ["forms.catalog.read", "forms.submissions.read"],
+        capabilities: [
+          "forms.catalog.read",
+          "forms.submissions.read",
+          "plugin.actions.invoke",
+        ],
+        actionIds: ["status"],
       },
     };
-    expect(validateSchema(nativeWorkspace)).toBe(true);
+    expect(
+      validateSchema(nativeWorkspace),
+      JSON.stringify(validateSchema.errors),
+    ).toBe(true);
     expect(validateManifest(nativeWorkspace).ok).toBe(true);
     const nativeWorkspaceWithoutStarterPack = {
       ...nativeWorkspace,

@@ -480,6 +480,50 @@ describe("validateManifest", () => {
     );
   });
 
+  it("requires every frontend action id to reference a declared action", () => {
+    const manifest = structuredClone(valid) as unknown as {
+      frontend?: unknown;
+    };
+    manifest.frontend = {
+      kind: "native_workspace",
+      entry: "./dist/frontend.js",
+      styles: [],
+      assets: [],
+      sdkVersion: "1",
+      mountIsolation: "shadow_dom",
+      capabilities: ["plugin.actions.invoke"],
+      actionIds: ["missing"],
+    };
+    expect(validateManifest(manifest).issues).toContainEqual(
+      expect.objectContaining({
+        path: "$.frontend.actionIds[0]",
+        code: "invalid",
+      }),
+    );
+  });
+
+  it("rejects frontend action ids without the invocation capability", () => {
+    const manifest = structuredClone(valid) as unknown as {
+      frontend?: unknown;
+    };
+    manifest.frontend = {
+      kind: "native_workspace",
+      entry: "./dist/frontend.js",
+      styles: [],
+      assets: [],
+      sdkVersion: "1",
+      mountIsolation: "shadow_dom",
+      capabilities: ["forms.catalog.read"],
+      actionIds: ["restart"],
+    };
+    expect(validateManifest(manifest).issues).toContainEqual(
+      expect.objectContaining({
+        path: "$.frontend.actionIds",
+        code: "invalid",
+      }),
+    );
+  });
+
   it("rejects unsafe, incompatible, duplicate, and unowned native workspaces", () => {
     const result = validateManifest({
       ...valid,

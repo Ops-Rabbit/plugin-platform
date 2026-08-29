@@ -781,6 +781,32 @@
     {
       "if": {
         "properties": {
+          "frontend": {
+            "type": "object",
+            "properties": { "actionIds": { "type": "array", "minItems": 1 } },
+            "required": ["actionIds"]
+          }
+        },
+        "required": ["frontend"]
+      },
+      "then": {
+        "properties": {
+          "frontend": {
+            "type": "object",
+            "properties": {
+              "capabilities": {
+                "type": "array",
+                "contains": { "const": "plugin.actions.invoke" }
+              }
+            },
+            "required": ["capabilities"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
           "capabilities": {
             "type": "object",
             "properties": { "database": {} },

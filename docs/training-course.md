@@ -57,9 +57,9 @@ alone:
 - `packages/create-plugin/assets/starters/`: twelve executable references;
 - `packages/create-plugin/src/constants.ts`: authoritative CLI starter list;
 - `scripts/verify-generated-starters.mjs`: isolated consumer verification;
-- `docs/plugin-contract-v0.2.md` through `v0.15.md`: capability history and host
+- `docs/plugin-contract-v0.2.md` through `v0.17.md`: capability history and host
   compatibility expectations, including the v0.16 generic Connection and
-  Knowledge review boundary.
+  Knowledge review boundary and v0.17 native workspace action broker.
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught

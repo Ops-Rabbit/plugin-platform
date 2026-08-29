@@ -80,3 +80,5 @@ plugin-owned source publication.
 The [generic Connection and Knowledge review contract](./docs/plugin-contract-v0.16.md)
 documents typed Connection selection, immutable Forms approval, Knowledge reads,
 and exact case-family expansion.
+The [native workspace action contract](./docs/plugin-contract-v0.17.md) documents
+the generation-fenced, allowlisted current-plugin action broker.

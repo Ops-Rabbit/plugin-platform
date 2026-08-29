@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.1 - 2026-08-29
+
+- Recognize the host's direct `stage_transition / approval / awaiting_review / approved`
+  tuple as governed approval provenance while retaining immutable content hashes,
+  structured-review hashes, reviewer identity, and source-revision binding.
+
 ## 0.17.0 - 2026-08-29
 
 - Add the closed native-workspace `plugin.actions.invoke` capability and typed

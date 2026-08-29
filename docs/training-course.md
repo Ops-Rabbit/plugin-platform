@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.17.0
-and `@opsrabbit/create-plugin` 0.17.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.17.1
+and `@opsrabbit/create-plugin` 0.17.1.
 
 ## Course promise
 
@@ -63,7 +63,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.17.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.17.1, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -854,3 +854,12 @@ A successful learner should be able to say:
 - `docs/plugin-contract-v0.7.md`: Forms Insights workspace;
 - `docs/plugin-contract-v0.9.md`: plugin-owned Knowledge publication;
 - generated starter source and tests: executable source of truth.
+
+## Governed Forms approval tuples
+
+`PluginFormSubmission.governed_approval` is present only for an immutable approval that the host has revalidated immediately before projection to a plugin. The accepted tuples are:
+
+- `action: "approve"`, `fromStageKey: "awaiting_review"`, `toStageKey: "approved"`
+- `action: "stage_transition"`, `fromStageKey: "awaiting_review" | "in_review"`, `toStageKey: "approved"`
+
+Every tuple also requires the approval transition type, transition id, reviewer id, approved content hash, approved structured-review hash, and approved content revision. Missing or mismatched fields fail closed and are projected as `null`; plugins must revalidate the tuple and bind publication to the approved revision.

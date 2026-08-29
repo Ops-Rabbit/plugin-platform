@@ -366,6 +366,9 @@ describe("generic connection and Knowledge contracts", () => {
     expect(validateManifest(candidate).ok).toBe(false);
   });
   it("exports immutable approval fields on Form submissions", () => {
+    type GovernedApproval = NonNullable<
+      PluginFormSubmission["governed_approval"]
+    >;
     expectTypeOf<PluginFormSubmission>().toMatchTypeOf<{
       governed_approval?: {
         transitionType: "approval";
@@ -380,5 +383,35 @@ describe("generic connection and Knowledge contracts", () => {
       workflow_transition_from_stage_key?: string | null;
       workflow_transition_to_stage_key?: string | null;
     }>();
+    expectTypeOf<{
+      transitionId: string;
+      transitionType: "approval";
+      action: "approve";
+      fromStageKey: "awaiting_review";
+      toStageKey: "approved";
+      reviewerUserId: string;
+      approvedContentHash: string;
+      approvedStructuredReviewHash: string;
+      approvedContentRevision: string;
+    }>().toMatchTypeOf<GovernedApproval>();
+    expectTypeOf<{
+      transitionId: string;
+      transitionType: "approval";
+      action: "stage_transition";
+      fromStageKey: "in_review";
+      toStageKey: "approved";
+      reviewerUserId: string;
+      approvedContentHash: string;
+      approvedStructuredReviewHash: string;
+      approvedContentRevision: string;
+    }>().toMatchTypeOf<GovernedApproval>();
+    expectTypeOf<{
+      action: "approve";
+      fromStageKey: "in_review";
+    }>().not.toMatchTypeOf<GovernedApproval>();
+    expectTypeOf<{
+      action: "stage_transition";
+      fromStageKey: "hold";
+    }>().not.toMatchTypeOf<GovernedApproval>();
   });
 });

@@ -17,6 +17,10 @@ const SYSTEM_COLUMNS = new Set([
   "system_submitted_at",
   "system_updated_at",
 ]);
+const SYSTEM_FILTER_FIELDS = new Set([
+  "system_status",
+  "system_workflow_stage",
+]);
 
 export function validateFormStarterPack(input: unknown): {
   ok: boolean;
@@ -463,6 +467,7 @@ function validateListConfig(
         )
       : new Set<string>();
   const allowedColumns = new Set([...fields, ...SYSTEM_COLUMNS]);
+  const allowedFilters = new Set([...fields, ...SYSTEM_FILTER_FIELDS]);
   if (
     !Array.isArray(value.columns) ||
     value.columns.length === 0 ||
@@ -504,7 +509,7 @@ function validateListConfig(
   optionalReferences(
     value.filterFields,
     `${path}.filterFields`,
-    fields,
+    allowedFilters,
     100,
     issues,
   );

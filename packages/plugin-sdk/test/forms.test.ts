@@ -59,6 +59,32 @@ describe("validateFormStarterPack", () => {
     });
   });
 
+  it("allows only host-supported system fields as list filters", () => {
+    const starter = structuredClone(valid.starters[0]!);
+    starter.listConfig.filterFields = [
+      "result",
+      "system_workflow_stage",
+      "system_status",
+    ];
+    expect(validateFormStarterPack({ ...valid, starters: [starter] })).toEqual({
+      ok: true,
+      value: { ...valid, starters: [starter] },
+      issues: [],
+    });
+
+    starter.listConfig.filterFields = ["system_updated_at"];
+    expect(
+      validateFormStarterPack({ ...valid, starters: [starter] }).issues,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "$.starters[0].listConfig.filterFields[0]",
+          code: "invalid",
+        }),
+      ]),
+    );
+  });
+
   it("accepts select fields backed by a plugin option source", () => {
     const starter = structuredClone(valid.starters[0]!);
     starter.schema.fields[1] = {

@@ -348,6 +348,9 @@ declared operator action and scheduled job. Change stable class definitions and
 qualification requirements, then test completed, timeout, and unavailable
 outcomes. Confirm evidence references are limited to supplied ids and preserve
 deterministic qualification or human review before acting on a recommendation.
+Also test that a broker deadline resolves `timeout`, while cancellation of the
+enclosing invocation rejects with the exact `context.signal.reason` and is not
+converted into fallback work.
 
 ---
 

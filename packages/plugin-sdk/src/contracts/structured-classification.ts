@@ -63,6 +63,12 @@ export type PluginStructuredClassificationResultV1 =
 
 /** Optional, host-authorized, tenant-scoped structured-classification broker. */
 export interface PluginStructuredClassificationService {
+  /**
+   * Resolves `timeout` only when the requested or host-enforced broker deadline
+   * expires. If the enclosing plugin invocation is cancelled, this promise
+   * rejects with that invocation context's `signal.reason`; cancellation is
+   * never converted into `timeout` or `unavailable`.
+   */
   classify(
     input: PluginStructuredClassificationInputV1,
   ): Promise<PluginStructuredClassificationResultV1>;

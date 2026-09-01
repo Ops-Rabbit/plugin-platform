@@ -76,11 +76,24 @@ export interface PluginConnectionSelector {
   scheduledJobIds?: string[];
 }
 
-export interface PluginStructuredClassificationCapability {
-  readonly schemaVersion: "1";
-  readonly actionIds?: string[];
-  readonly scheduledJobIds?: string[];
-}
+export type PluginStructuredClassificationBindingIds = readonly [
+  string,
+  ...string[],
+];
+
+/** Bind the broker to at least one declared action or scheduled job. */
+export type PluginStructuredClassificationCapability = Readonly<
+  { schemaVersion: "1" } & (
+    | {
+        actionIds: PluginStructuredClassificationBindingIds;
+        scheduledJobIds?: PluginStructuredClassificationBindingIds;
+      }
+    | {
+        actionIds?: PluginStructuredClassificationBindingIds;
+        scheduledJobIds: PluginStructuredClassificationBindingIds;
+      }
+  )
+>;
 
 export interface PluginKnowledgeCapability {
   /** Search and retrieve plugin-owned Knowledge. */

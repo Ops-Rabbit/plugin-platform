@@ -105,6 +105,24 @@ describe("{{id}}", () => {
       "content exceeds the structured classification byte limit",
     );
   });
+  it("keeps content unchanged when bounded evidence skips oversized leading whitespace", async () => {
+    const classify = vi.fn(
+      async (_input: PluginStructuredClassificationInputV1) => ({
+        status: "timeout" as const,
+      }),
+    );
+    const meaningfulContent = "Endpoint policy did not update.";
+    const content = `${" ".repeat(
+      STRUCTURED_CLASSIFICATION_LIMITS.maximumEvidenceTextBytes + 1,
+    )}${meaningfulContent}`;
+    await plugin.actions?.[0]?.run(
+      { content },
+      createTestContext({ structuredClassification: { classify } }),
+    );
+    const submitted = classify.mock.calls[0]?.[0];
+    expect(submitted?.content).toBe(content);
+    expect(submitted?.evidence[0]?.text).toBe(meaningfulContent);
+  });
   it("classifies scheduled work and records only the protocol status", async () => {
     const classify = vi.fn(async () => ({ status: "timeout" as const }));
     const context = createTestContext({

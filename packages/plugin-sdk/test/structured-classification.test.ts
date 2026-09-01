@@ -76,6 +76,9 @@ describe("structured classification", () => {
         actionIds: Array.from({ length: 65 }, (_, index) => `action-${index}`),
       },
       { schemaVersion: "1", scheduledJobIds: [] },
+      { schemaVersion: "1", actionIds: ["classify"], unexpected: true },
+      { schemaVersion: "1", actionIds: ["classify", "classify"] },
+      { schemaVersion: "1", actionIds: ["Invalid ID"] },
     ];
     for (const structuredClassification of candidates) {
       const candidate = {
@@ -101,6 +104,18 @@ describe("structured classification", () => {
     };
     expect(validateSchema(undeclared)).toBe(true);
     expect(validateManifest(undeclared).ok).toBe(false);
+    const undeclaredJob = {
+      ...manifest,
+      capabilities: {
+        ...manifest.capabilities,
+        structuredClassification: {
+          schemaVersion: "1",
+          scheduledJobIds: ["undeclared-job"],
+        },
+      },
+    };
+    expect(validateSchema(undeclaredJob)).toBe(true);
+    expect(validateManifest(undeclaredJob).ok).toBe(false);
   });
   it("accepts either non-empty declared binding collection", () => {
     const actionOnly = {
@@ -160,6 +175,79 @@ describe("structured classification", () => {
     });
     expect(issues.map(({ code }) => code)).toEqual(
       expect.arrayContaining(["limit", "duplicate"]),
+    );
+  });
+  it("enforces multibyte UTF-8 byte boundaries for request fields", () => {
+    const exact = {
+      ...input,
+      content: "é".repeat(
+        STRUCTURED_CLASSIFICATION_LIMITS.maximumContentBytes / 2,
+      ),
+      instructions: "é".repeat(
+        STRUCTURED_CLASSIFICATION_LIMITS.maximumInstructionsBytes / 2,
+      ),
+      classes: [
+        {
+          ...input.classes[0],
+          label: "é".repeat(80),
+          description: "é".repeat(1_000),
+          qualificationRequirements: ["é".repeat(500)],
+        },
+        input.classes[1],
+      ],
+      evidence: [
+        {
+          id: "message:1",
+          text: "é".repeat(
+            STRUCTURED_CLASSIFICATION_LIMITS.maximumEvidenceTextBytes / 2,
+          ),
+        },
+      ],
+    };
+    expect(validateStructuredClassificationInput(exact)).toEqual([]);
+    const exactPrimaryClass = exact.classes[0];
+    const exactEvidence = exact.evidence[0];
+    const exactRequirement = exactPrimaryClass?.qualificationRequirements[0];
+    if (!exactPrimaryClass || !exactEvidence || !exactRequirement)
+      throw new Error("Expected complete structured-classification fixtures.");
+    const issues = validateStructuredClassificationInput({
+      ...exact,
+      content: `${exact.content}é`,
+      instructions: `${exact.instructions}é`,
+      classes: [
+        {
+          ...exactPrimaryClass,
+          label: `${exactPrimaryClass.label}é`,
+          description: `${exactPrimaryClass.description}é`,
+          qualificationRequirements: [`${exactRequirement}é`],
+        },
+        exact.classes[1],
+      ],
+      evidence: [
+        {
+          id: "message:1",
+          text: `${exactEvidence.text}é`,
+        },
+      ],
+    });
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "$.content", code: "limit" }),
+        expect.objectContaining({ path: "$.instructions", code: "limit" }),
+        expect.objectContaining({ path: "$.classes[0].label", code: "limit" }),
+        expect.objectContaining({
+          path: "$.classes[0].description",
+          code: "limit",
+        }),
+        expect.objectContaining({
+          path: "$.classes[0].qualificationRequirements[0]",
+          code: "limit",
+        }),
+        expect.objectContaining({
+          path: "$.evidence[0].text",
+          code: "limit",
+        }),
+      ]),
     );
   });
   it("rejects malformed top-level input and every bounded collection", () => {
@@ -305,6 +393,52 @@ describe("structured classification", () => {
     ).toContainEqual(
       expect.objectContaining({ path: "$.status", code: "invalid" }),
     );
+    for (const reason of [
+      new String("policy_blocked"),
+      { toString: () => "policy_blocked" },
+    ])
+      expect(
+        validateStructuredClassificationResult(input, {
+          status: "unavailable",
+          reason,
+        }),
+      ).toContainEqual(
+        expect.objectContaining({ path: "$.reason", code: "invalid" }),
+      );
+  });
+  it("enforces multibyte UTF-8 byte boundaries for completed results", () => {
+    const exactReason = "é".repeat(
+      STRUCTURED_CLASSIFICATION_LIMITS.maximumReasonBytes / 2,
+    );
+    const exactMissingEvidence = "é".repeat(500);
+    expect(
+      validateStructuredClassificationResult(input, {
+        status: "completed",
+        recommendedClassKey: "verified_case",
+        confidence: 1,
+        reason: exactReason,
+        evidenceRefs: ["message:1"],
+        missingEvidence: [exactMissingEvidence],
+      }),
+    ).toEqual([]);
+    expect(
+      validateStructuredClassificationResult(input, {
+        status: "completed",
+        recommendedClassKey: "verified_case",
+        confidence: 1,
+        reason: `${exactReason}é`,
+        evidenceRefs: ["message:1"],
+        missingEvidence: [`${exactMissingEvidence}é`],
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "$.reason", code: "limit" }),
+        expect.objectContaining({
+          path: "$.missingEvidence[0]",
+          code: "limit",
+        }),
+      ]),
+    );
   });
   it("rejects oversized and structurally invalid completed output", () => {
     const oversizedRefs = Array.from(
@@ -415,6 +549,48 @@ describe("structured classification", () => {
         kind: "scheduledJob",
         id: "classify-pending",
       }).structuredClassification,
+    ).toBeUndefined();
+  });
+  it("fails closed when authorized harness bindings are malformed", () => {
+    const service = { classify: vi.fn() };
+    for (const structuredClassification of [
+      { schemaVersion: "1", actionIds: "classify" },
+      {
+        schemaVersion: "1",
+        actionIds: { includes: () => true },
+      },
+    ]) {
+      const malformedManifest = {
+        ...manifest,
+        capabilities: {
+          ...manifest.capabilities,
+          structuredClassification,
+        },
+      } as unknown as PluginManifest;
+      expect(
+        createAuthorizedTestContext(
+          malformedManifest,
+          { kind: "action", id: "classify" },
+          { structuredClassification: service },
+        ).structuredClassification,
+      ).toBeUndefined();
+    }
+    const malformedJobManifest = {
+      ...manifest,
+      capabilities: {
+        ...manifest.capabilities,
+        structuredClassification: {
+          schemaVersion: "1",
+          scheduledJobIds: "classify-pending",
+        },
+      },
+    } as unknown as PluginManifest;
+    expect(
+      createAuthorizedTestContext(
+        malformedJobManifest,
+        { kind: "scheduledJob", id: "classify-pending" },
+        { structuredClassification: service },
+      ).structuredClassification,
     ).toBeUndefined();
   });
 });

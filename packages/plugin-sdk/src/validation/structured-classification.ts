@@ -163,8 +163,9 @@ export function validateStructuredClassificationResult(
     const issues: ValidationIssue[] = [];
     exactKeys(result, ["status", "reason"], "$", issues);
     if (
+      typeof result.reason !== "string" ||
       !["not_configured", "policy_blocked", "capacity_unavailable"].includes(
-        String(result.reason),
+        result.reason,
       )
     )
       issues.push(

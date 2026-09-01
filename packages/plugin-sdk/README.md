@@ -177,3 +177,7 @@ supplied class and evidence keys and include confidence, reason, and missing
 evidence. Timeout and unavailability are explicit outcomes. The host owns model
 selection, credentials, policy, authorization, quotas, cancellation, validation,
 and audit; plugins retain deterministic qualification and human-review gates.
+The broker resolves `timeout` for its requested or host-enforced deadline, while
+cancellation of the enclosing invocation rejects with the exact
+`context.signal.reason`. Do not catch and convert invocation cancellation into a
+classification fallback.

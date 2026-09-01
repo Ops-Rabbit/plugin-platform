@@ -25,6 +25,14 @@ references limited to supplied evidence ids, and missing evidence. `timeout` and
 `unavailable` are explicit protocol outcomes. Plugins must preserve deterministic
 or human-review fallback behavior.
 
+Cancellation and deadline expiry are intentionally distinct. Expiry of the
+requested or shorter host-enforced classification deadline resolves
+`{ "status": "timeout" }`. Cancellation of the enclosing action or scheduled-job
+invocation rejects `classify(...)` with the exact `context.signal.reason`; the
+host must not convert invocation cancellation into `timeout` or `unavailable`.
+Plugins may perform ordinary timeout fallback, but must allow invocation
+cancellation to propagate so the host can stop the larger operation.
+
 ## Host authority and lifecycle
 
 The manifest requests access; it does not grant it. The host owns tenant and

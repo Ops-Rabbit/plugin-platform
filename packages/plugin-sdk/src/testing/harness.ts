@@ -152,9 +152,10 @@ export function createAuthorizedTestContext(
     manifest.capabilities.structuredClassification;
   const classificationAllowed =
     invocation.kind === "action"
-      ? classificationDeclaration?.actionIds?.includes(invocation.id) === true
-      : classificationDeclaration?.scheduledJobIds?.includes(invocation.id) ===
-        true;
+      ? Array.isArray(classificationDeclaration?.actionIds) &&
+        classificationDeclaration.actionIds.includes(invocation.id)
+      : Array.isArray(classificationDeclaration?.scheduledJobIds) &&
+        classificationDeclaration.scheduledJobIds.includes(invocation.id);
   const structuredClassification =
     suppliedStructuredClassification &&
     invocationDeclared &&

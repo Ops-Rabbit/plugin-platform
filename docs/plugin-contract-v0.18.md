@@ -20,6 +20,14 @@ zero to 64 evidence items, and a timeout. Each class has a stable key, label,
 description, and qualification requirements. Runtime validation rejects unknown
 fields, duplicate or malformed keys, oversized text, and invalid limits.
 
+Clean consumers and hosts may import the published wire schemas from
+`@opsrabbit/plugin-sdk/structured-classification-request-schema` and
+`@opsrabbit/plugin-sdk/structured-classification-result-schema`. The schemas are
+strict about required and unknown fields and every protocol result variant.
+Runtime validation remains authoritative for UTF-8 byte limits, duplicate class
+or evidence keys, and request-relative class and evidence references that
+standalone JSON Schema cannot express.
+
 Completed results contain a supplied class key, confidence in `[0,1]`, reason,
 references limited to supplied evidence ids, and missing evidence. `timeout` and
 `unavailable` are explicit protocol outcomes. Plugins must preserve deterministic

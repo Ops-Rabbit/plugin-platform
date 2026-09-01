@@ -181,3 +181,10 @@ The broker resolves `timeout` for its requested or host-enforced deadline, while
 cancellation of the enclosing invocation rejects with the exact
 `context.signal.reason`. Do not catch and convert invocation cancellation into a
 classification fallback.
+
+Published request and result JSON Schemas are available from
+`@opsrabbit/plugin-sdk/structured-classification-request-schema` and
+`@opsrabbit/plugin-sdk/structured-classification-result-schema`. JSON Schema
+validates the standalone wire shape; runtime validation additionally enforces
+UTF-8 byte limits, unique class and evidence keys, and request-relative class and
+evidence references.

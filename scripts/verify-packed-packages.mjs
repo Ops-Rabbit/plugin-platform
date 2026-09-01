@@ -52,18 +52,15 @@ try {
     const manifest = JSON.parse(
       await readFile(join(root, packageDirectory, "package.json"), "utf8"),
     );
-    if (
-      manifest.name === "@opsrabbit/plugin-sdk" &&
-      !paths.includes("schemas/opsrabbit-plugin.schema.json")
-    ) {
-      throw new Error("SDK package is missing its public manifest schema");
-    }
-    if (
-      manifest.name === "@opsrabbit/plugin-sdk" &&
-      !paths.includes("schemas/opsrabbit-form-starter-pack.schema.json")
-    ) {
-      throw new Error("SDK package is missing its Forms starter-pack schema");
-    }
+    if (manifest.name === "@opsrabbit/plugin-sdk")
+      for (const schema of [
+        "schemas/opsrabbit-plugin.schema.json",
+        "schemas/opsrabbit-form-starter-pack.schema.json",
+        "schemas/opsrabbit-structured-classification-request.schema.json",
+        "schemas/opsrabbit-structured-classification-result.schema.json",
+      ])
+        if (!paths.includes(schema))
+          throw new Error(`SDK package is missing public schema ${schema}`);
     if (
       manifest.name === "@opsrabbit/create-plugin" &&
       !paths.some((path) => path.startsWith("assets/starters/"))

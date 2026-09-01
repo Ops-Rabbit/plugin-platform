@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.dev/schemas/plugin/v1/opsrabbit-structured-classification-request.schema.json",
+  "title": "OpsRabbit structured-classification request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "content",
+    "instructions",
+    "classes",
+    "evidence",
+    "timeoutMs"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "content": {
+      "type": "string",
+      "pattern": "\\S",
+      "maxLength": 65536
+    },
+    "instructions": {
+      "type": "string",
+      "pattern": "\\S",
+      "maxLength": 8192
+    },
+    "classes": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/class" }
+    },
+    "evidence": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/evidence" }
+    },
+    "timeoutMs": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 120000
+    }
+  },
+  "$defs": {
+    "class": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "description", "qualificationRequirements"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,79}$"
+        },
+        "label": {
+          "type": "string",
+          "pattern": "\\S",
+          "maxLength": 160
+        },
+        "description": {
+          "type": "string",
+          "pattern": "\\S",
+          "maxLength": 2000
+        },
+        "qualificationRequirements": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "string",
+            "pattern": "\\S",
+            "maxLength": 1000
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+        },
+        "text": {
+          "type": "string",
+          "pattern": "\\S",
+          "maxLength": 16384
+        }
+      }
+    }
+  }
+}

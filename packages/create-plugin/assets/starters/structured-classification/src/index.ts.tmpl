@@ -1,0 +1,152 @@
+import {
+  STRUCTURED_CLASSIFICATION_LIMITS,
+  definePlugin,
+  type JsonValue,
+  type PluginInvocationContext,
+  type PluginStructuredClassificationInputV1,
+  type PluginStructuredClassificationResultV1,
+} from "@opsrabbit/plugin-sdk";
+
+const classes = [
+  {
+    key: "verified_case",
+    label: "Verified case",
+    description: "Cause and resolution are proven.",
+    qualificationRequirements: [
+      "Confirmed cause",
+      "Applied remediation",
+      "Successful validation",
+    ],
+  },
+  {
+    key: "diagnostic_signal",
+    label: "Diagnostic signal",
+    description:
+      "Useful evidence exists but the complete resolution is not proven.",
+    qualificationRequirements: [
+      "Technical symptom",
+      "Evidence-backed diagnostic value",
+    ],
+  },
+  {
+    key: "reject",
+    label: "Reject",
+    description: "The item is not reusable technical knowledge.",
+    qualificationRequirements: ["No safe reusable support value"],
+  },
+] as const;
+
+const encoder = new TextEncoder();
+
+function utf8ByteLength(value: string): number {
+  return encoder.encode(value).byteLength;
+}
+
+function boundedUtf8(value: string, maximumBytes: number): string {
+  if (utf8ByteLength(value) <= maximumBytes) return value;
+  let result = "";
+  let bytes = 0;
+  for (const character of value) {
+    const characterBytes = utf8ByteLength(character);
+    if (bytes + characterBytes > maximumBytes) break;
+    result += character;
+    bytes += characterBytes;
+  }
+  return result;
+}
+
+function actionContent(input: unknown): string {
+  if (
+    typeof input !== "object" ||
+    input === null ||
+    Array.isArray(input) ||
+    !("content" in input) ||
+    typeof input.content !== "string"
+  )
+    throw new Error("content must be a string");
+  if (!input.content.trim()) throw new Error("content is required");
+  if (
+    utf8ByteLength(input.content) >
+    STRUCTURED_CLASSIFICATION_LIMITS.maximumContentBytes
+  )
+    throw new Error("content exceeds the structured classification byte limit");
+  return input.content;
+}
+
+function request(content: string): PluginStructuredClassificationInputV1 {
+  return {
+    schemaVersion: "1",
+    content,
+    instructions: "Recommend exactly one class. Never invent evidence.",
+    classes,
+    evidence: [
+      {
+        id: "item-1",
+        text: boundedUtf8(
+          content,
+          STRUCTURED_CLASSIFICATION_LIMITS.maximumEvidenceTextBytes,
+        ),
+      },
+    ],
+    timeoutMs: 30_000,
+  };
+}
+
+async function classify(
+  content: string,
+  context: PluginInvocationContext,
+): Promise<PluginStructuredClassificationResultV1> {
+  if (!context.structuredClassification)
+    return { status: "unavailable", reason: "not_configured" };
+  return context.structuredClassification.classify(request(content));
+}
+
+function classificationJson(
+  result: PluginStructuredClassificationResultV1,
+): JsonValue {
+  if (result.status === "completed")
+    return {
+      status: result.status,
+      recommendedClassKey: result.recommendedClassKey,
+      confidence: result.confidence,
+      reason: result.reason,
+      evidenceRefs: [...result.evidenceRefs],
+      missingEvidence: [...result.missingEvidence],
+    };
+  if (result.status === "unavailable")
+    return { status: result.status, reason: result.reason };
+  return { status: result.status };
+}
+
+export const plugin = definePlugin({
+  actions: [
+    {
+      id: "classify-item",
+      title: "Classify item",
+      risk: "write",
+      requiredRole: "operator",
+      async run(input: unknown, context) {
+        return classificationJson(
+          await classify(actionContent(input), context),
+        );
+      },
+    },
+  ],
+  scheduledJobs: [
+    {
+      id: "classify-pending",
+      description: "Classifies one bounded pending item.",
+      intervalSeconds: 3600,
+      timeoutSeconds: 60,
+      async run(context) {
+        if (context.signal.aborted) return;
+        const result = await classify("Pending support item", context);
+        context.logger.info("classification finished", {
+          status: result.status,
+        });
+      },
+    },
+  ],
+});
+
+export default plugin;

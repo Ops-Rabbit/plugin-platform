@@ -1,0 +1,9 @@
+{
+  "id": "{{id}}", "name": "{{displayName}}", "version": "0.1.0",
+  "description": "{{displayName}} governed structured classification", "apiVersion": "1.0", "main": "./dist/index.js",
+  "capabilities": {
+    "actions": [{ "id": "classify-item", "risk": "write", "requiredRole": "operator" }],
+    "scheduledJobs": [{ "id": "classify-pending" }],
+    "structuredClassification": { "schemaVersion": "1", "actionIds": ["classify-item"], "scheduledJobIds": ["classify-pending"] }
+  }
+}

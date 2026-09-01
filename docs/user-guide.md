@@ -389,6 +389,13 @@ queries, and drill-through links across plugin upgrades.
 
 ## Recommended operating model
 
+For governed semantic recommendations, declare `structuredClassification` with
+the exact action and scheduled-job ids that need it. Supply stable configurable
+class keys, descriptions, qualification requirements, bounded evidence, and a
+deadline. Treat `completed` as a recommendation and route `timeout` or
+`unavailable` to deterministic fallback or human review. Do not store model
+credentials in plugin settings or treat confidence as publication authority.
+
 For production usage:
 
 - install plugins from reviewed releases;

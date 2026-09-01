@@ -76,6 +76,12 @@ export interface PluginConnectionSelector {
   scheduledJobIds?: string[];
 }
 
+export interface PluginStructuredClassificationCapability {
+  readonly schemaVersion: "1";
+  readonly actionIds?: string[];
+  readonly scheduledJobIds?: string[];
+}
+
 export interface PluginKnowledgeCapability {
   /** Search and retrieve plugin-owned Knowledge. */
   read?: true;
@@ -98,6 +104,7 @@ export interface PluginDeclaredCapabilities {
   objectStore?: { read?: boolean; write?: boolean };
   knowledge?: PluginKnowledgeCapability;
   connections?: { selectors: PluginConnectionSelector[] };
+  structuredClassification?: PluginStructuredClassificationCapability;
   knowledgeEmailProcessor?: { schemaVersion: "1" };
   chatTurnAdmission?: { schemaVersion: "1"; scope: "deployment" };
   chatComposerStatus?: { schemaVersion: "1" };

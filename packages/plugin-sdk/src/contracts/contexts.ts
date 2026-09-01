@@ -1,4 +1,5 @@
 import type { JsonValue } from "./manifest.js";
+import type { PluginStructuredClassificationService } from "./structured-classification.js";
 
 export interface PluginActor {
   readonly id: string;
@@ -33,6 +34,8 @@ export interface PluginInvocationContext {
   /** Available only for host-authorized deployment-admin route/action calls. */
   readonly identityDirectory?: PluginIdentityDirectoryService;
   readonly audit?: PluginAuditService;
+  /** Host-governed classifier, exposed only to manifest-bound actions and jobs. */
+  readonly structuredClassification?: PluginStructuredClassificationService;
 }
 
 export interface PluginIdentityDirectoryUser {

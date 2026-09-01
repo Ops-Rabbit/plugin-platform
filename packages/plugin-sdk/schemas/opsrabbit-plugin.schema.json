@@ -669,6 +669,35 @@
             }
           }
         },
+        "structuredClassification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion"],
+          "properties": {
+            "schemaVersion": { "const": "1" },
+            "actionIds": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/id" }
+            },
+            "scheduledJobIds": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/id" }
+            }
+          },
+          "anyOf": [
+            { "properties": { "actionIds": {} }, "required": ["actionIds"] },
+            {
+              "properties": { "scheduledJobIds": {} },
+              "required": ["scheduledJobIds"]
+            }
+          ]
+        },
         "knowledgeEmailProcessor": {
           "type": "object",
           "additionalProperties": false,

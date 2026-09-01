@@ -12,7 +12,7 @@ This repository publishes:
 - [`@opsrabbit/plugin-sdk`](./packages/plugin-sdk): contracts, manifest schema,
   validation, compatibility checks, governed service-plugin contracts, package
   inventory, and an isolated test harness.
-- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, twelve starters,
+- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, thirteen starters,
   reference implementations, generated tests, CI, README, and `AGENTS.md`.
 
 ## Create a plugin
@@ -82,3 +82,5 @@ documents typed Connection selection, immutable Forms approval, Knowledge reads,
 and exact case-family expansion.
 The [native workspace action contract](./docs/plugin-contract-v0.17.md) documents
 the generation-fenced, allowlisted current-plugin action broker.
+The [structured-classification contract](./docs/plugin-contract-v0.18.md)
+documents bounded governed classification for declared actions and scheduled jobs.

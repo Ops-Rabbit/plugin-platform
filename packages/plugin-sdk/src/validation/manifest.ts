@@ -1068,6 +1068,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "objectStore",
     "knowledge",
     "connections",
+    "structuredClassification",
     "knowledgeEmailProcessor",
     "chatTurnAdmission",
     "chatComposerStatus",
@@ -1328,6 +1329,60 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
         });
       }
     }
+  }
+  if (capabilities.structuredClassification !== undefined) {
+    validateSingletonCapability(
+      capabilities.structuredClassification,
+      "structuredClassification",
+      ["schemaVersion", "actionIds", "scheduledJobIds"],
+      issues,
+      (entry) => {
+        if (entry.schemaVersion !== "1")
+          issues.push(
+            issue(
+              "$.capabilities.structuredClassification.schemaVersion",
+              "invalid",
+              "Structured classification schema version must be 1.",
+            ),
+          );
+        const actionIds = boundedBindingIds(
+          entry.actionIds,
+          "$.capabilities.structuredClassification.actionIds",
+          issues,
+        );
+        const jobIds = boundedBindingIds(
+          entry.scheduledJobIds,
+          "$.capabilities.structuredClassification.scheduledJobIds",
+          issues,
+        );
+        if (actionIds.length + jobIds.length === 0)
+          issues.push(
+            issue(
+              "$.capabilities.structuredClassification",
+              "required",
+              "Bind at least one action or scheduled job.",
+            ),
+          );
+        for (const [index, id] of actionIds.entries())
+          if (!capabilities.actions?.some((item) => item.id === id))
+            issues.push(
+              issue(
+                `$.capabilities.structuredClassification.actionIds[${index}]`,
+                "invalid",
+                "Classification action must be declared in capabilities.actions.",
+              ),
+            );
+        for (const [index, id] of jobIds.entries())
+          if (!capabilities.scheduledJobs?.some((item) => item.id === id))
+            issues.push(
+              issue(
+                `$.capabilities.structuredClassification.scheduledJobIds[${index}]`,
+                "invalid",
+                "Classification job must be declared in capabilities.scheduledJobs.",
+              ),
+            );
+      },
+    );
   }
   namedArray(
     capabilities.routes,
@@ -2323,6 +2378,28 @@ function uniqueStrings(
       );
     else seen.add(value);
   });
+}
+
+function boundedBindingIds(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    issues.push(issue(path, "type", "Bindings must be an array."));
+    return [];
+  }
+  if (value.length === 0)
+    issues.push(
+      issue(path, "required", "Bindings must contain at least one id."),
+    );
+  else if (value.length > 64)
+    issues.push(issue(path, "invalid", "Declare at most 64 bindings."));
+  uniqueStrings(value, path, issues, ID);
+  return value.filter(
+    (item): item is string => typeof item === "string" && ID.test(item),
+  );
 }
 function string(
   value: unknown,

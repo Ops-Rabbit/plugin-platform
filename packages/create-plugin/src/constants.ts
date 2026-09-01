@@ -1,5 +1,5 @@
-export const CLI_VERSION = "0.17.2";
-export const SDK_VERSION = "^0.17.2";
+export const CLI_VERSION = "0.18.0";
+export const SDK_VERSION = "^0.18.0";
 export const STARTER_IDS = [
   "basic-readonly",
   "operational-action",
@@ -13,6 +13,7 @@ export const STARTER_IDS = [
   "connection-knowledge-review",
   "native-workspace",
   "interaction-policy",
+  "structured-classification",
 ] as const;
 
 export type StarterId = (typeof STARTER_IDS)[number];
@@ -40,6 +41,8 @@ export const STARTER_DESCRIPTIONS: Record<StarterId, string> = {
     "Precompiled Forms workspace using the versioned browser mount contract.",
   "interaction-policy":
     "Transactional chat admission, composer status, and deployment-admin workspace.",
+  "structured-classification":
+    "Governed structured classification from both an action and a scheduled job.",
 };
 
 export function isStarterId(value: string): value is StarterId {

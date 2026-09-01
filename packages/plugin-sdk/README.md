@@ -166,3 +166,14 @@ falls back to generic email processing when the processor is unavailable.
 Use the `knowledge-email-processor` starter for a conservative implementation that
 preserves evidence and defaults to `general_message` with unknown resolution status.
 `context.classifyWithLlm` is optional and host-managed. Use it only as a bounded fallback after deterministic processing; never require provider credentials in plugin settings, and validate the returned class and status against the plugin's configured allowlist.
+
+### Governed structured classification
+
+Version 0.18 exposes optional `context.structuredClassification` to action and
+scheduled-job ids explicitly bound in `capabilities.structuredClassification`.
+Requests provide bounded content, instructions, configurable stable classes with
+qualification requirements, evidence, and a deadline. Completed results use only
+supplied class and evidence keys and include confidence, reason, and missing
+evidence. Timeout and unavailability are explicit outcomes. The host owns model
+selection, credentials, policy, authorization, quotas, cancellation, validation,
+and audit; plugins retain deterministic qualification and human-review gates.

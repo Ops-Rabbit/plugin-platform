@@ -26,6 +26,7 @@ const starterIds = [
   "connection-knowledge-review",
   "native-workspace",
   "interaction-policy",
+  "structured-classification",
 ];
 await mkdir(tarballDirectory);
 

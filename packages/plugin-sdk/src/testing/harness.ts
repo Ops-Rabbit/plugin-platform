@@ -7,6 +7,7 @@ import type {
   PluginConnectionsService,
   PluginFormsService,
 } from "../contracts/contexts.js";
+import type { PluginStructuredClassificationService } from "../contracts/structured-classification.js";
 import type { JsonValue } from "../contracts/manifest.js";
 import type { PluginManifest } from "../contracts/manifest.js";
 
@@ -29,6 +30,7 @@ export function createTestContext(
     knowledge?: PluginKnowledgeService;
     connections?: PluginConnectionsService;
     forms?: PluginFormsService;
+    structuredClassification?: PluginStructuredClassificationService;
     settings?: Readonly<Record<string, JsonValue>>;
   } = {},
 ): TestContext {
@@ -51,6 +53,9 @@ export function createTestContext(
       ? {}
       : { connections: options.connections }),
     ...(options.forms === undefined ? {} : { forms: options.forms }),
+    ...(options.structuredClassification === undefined
+      ? {}
+      : { structuredClassification: options.structuredClassification }),
   };
 }
 
@@ -71,6 +76,7 @@ export function createAuthorizedTestContext(
   const {
     knowledge: suppliedKnowledge,
     connections: suppliedConnections,
+    structuredClassification: suppliedStructuredClassification,
     ...baseOptions
   } = options;
   const declaration = manifest.capabilities.knowledge;
@@ -142,10 +148,27 @@ export function createAuthorizedTestContext(
           },
         }
       : undefined;
+  const classificationDeclaration =
+    manifest.capabilities.structuredClassification;
+  const classificationAllowed =
+    invocation.kind === "action"
+      ? Array.isArray(classificationDeclaration?.actionIds) &&
+        classificationDeclaration.actionIds.includes(invocation.id)
+      : Array.isArray(classificationDeclaration?.scheduledJobIds) &&
+        classificationDeclaration.scheduledJobIds.includes(invocation.id);
+  const structuredClassification =
+    suppliedStructuredClassification &&
+    invocationDeclared &&
+    classificationAllowed
+      ? suppliedStructuredClassification
+      : undefined;
   return createTestContext({
     ...baseOptions,
     ...(knowledge === undefined ? {} : { knowledge }),
     ...(connections === undefined ? {} : { connections }),
+    ...(structuredClassification === undefined
+      ? {}
+      : { structuredClassification }),
   });
 }
 

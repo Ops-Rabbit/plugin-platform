@@ -1,0 +1,139 @@
+import {
+  STRUCTURED_CLASSIFICATION_LIMITS,
+  type PluginStructuredClassificationInputV1,
+} from "@opsrabbit/plugin-sdk";
+import { createTestContext } from "@opsrabbit/plugin-sdk/testing";
+import { describe, expect, it, vi } from "vitest";
+import { plugin } from "../src/index.js";
+
+describe("{{id}}", () => {
+  it("classifies through the governed broker", async () => {
+    const classify = vi.fn(async () => ({
+      status: "completed" as const,
+      recommendedClassKey: "diagnostic_signal",
+      confidence: 0.8,
+      reason: "Evidence is useful but incomplete.",
+      evidenceRefs: ["item-1"],
+      missingEvidence: ["Validated remediation"],
+    }));
+    await expect(
+      plugin.actions?.[0]?.run(
+        { content: "Endpoint policy did not update." },
+        createTestContext({ structuredClassification: { classify } }),
+      ),
+    ).resolves.toEqual({
+      status: "completed",
+      recommendedClassKey: "diagnostic_signal",
+      confidence: 0.8,
+      reason: "Evidence is useful but incomplete.",
+      evidenceRefs: ["item-1"],
+      missingEvidence: ["Validated remediation"],
+    });
+    expect(classify).toHaveBeenCalledOnce();
+  });
+  it("returns unavailable when the broker is absent", async () => {
+    await expect(
+      plugin.actions?.[0]?.run({ content: "Evidence" }, createTestContext()),
+    ).resolves.toEqual({ status: "unavailable", reason: "not_configured" });
+  });
+  it("preserves governed unavailable and timeout outcomes", async () => {
+    const unavailable = vi.fn(async () => ({
+      status: "unavailable" as const,
+      reason: "capacity_unavailable" as const,
+    }));
+    await expect(
+      plugin.actions?.[0]?.run(
+        { content: "Evidence" },
+        createTestContext({
+          structuredClassification: { classify: unavailable },
+        }),
+      ),
+    ).resolves.toEqual({
+      status: "unavailable",
+      reason: "capacity_unavailable",
+    });
+    const timeout = vi.fn(async () => ({ status: "timeout" as const }));
+    await expect(
+      plugin.actions?.[0]?.run(
+        { content: "Evidence" },
+        createTestContext({ structuredClassification: { classify: timeout } }),
+      ),
+    ).resolves.toEqual({ status: "timeout" });
+  });
+  it("rejects empty action input", async () => {
+    await expect(
+      plugin.actions?.[0]?.run({ content: " " }, createTestContext()),
+    ).rejects.toThrow("content is required");
+  });
+  it.each([null, {}, { content: 1 }, []])(
+    "rejects malformed action input %#",
+    async (input) => {
+      await expect(
+        plugin.actions?.[0]?.run(input, createTestContext()),
+      ).rejects.toThrow("content must be a string");
+    },
+  );
+  it("keeps multibyte content and evidence inside their UTF-8 byte limits", async () => {
+    const classify = vi.fn(
+      async (_input: PluginStructuredClassificationInputV1) => ({
+        status: "timeout" as const,
+      }),
+    );
+    const content = "é".repeat(
+      STRUCTURED_CLASSIFICATION_LIMITS.maximumContentBytes / 2,
+    );
+    await plugin.actions?.[0]?.run(
+      { content },
+      createTestContext({ structuredClassification: { classify } }),
+    );
+    const submitted = classify.mock.calls[0]?.[0];
+    expect(new TextEncoder().encode(submitted?.content).byteLength).toBe(
+      STRUCTURED_CLASSIFICATION_LIMITS.maximumContentBytes,
+    );
+    expect(
+      new TextEncoder().encode(submitted?.evidence[0]?.text).byteLength,
+    ).toBeLessThanOrEqual(
+      STRUCTURED_CLASSIFICATION_LIMITS.maximumEvidenceTextBytes,
+    );
+    expect(submitted?.evidence[0]?.text).not.toBe(content);
+    await expect(
+      plugin.actions?.[0]?.run(
+        { content: `${content}é` },
+        createTestContext({ structuredClassification: { classify } }),
+      ),
+    ).rejects.toThrow(
+      "content exceeds the structured classification byte limit",
+    );
+  });
+  it("keeps content unchanged when bounded evidence skips oversized leading whitespace", async () => {
+    const classify = vi.fn(
+      async (_input: PluginStructuredClassificationInputV1) => ({
+        status: "timeout" as const,
+      }),
+    );
+    const meaningfulContent = "Endpoint policy did not update.";
+    const content = `${" ".repeat(
+      STRUCTURED_CLASSIFICATION_LIMITS.maximumEvidenceTextBytes + 1,
+    )}${meaningfulContent}`;
+    await plugin.actions?.[0]?.run(
+      { content },
+      createTestContext({ structuredClassification: { classify } }),
+    );
+    const submitted = classify.mock.calls[0]?.[0];
+    expect(submitted?.content).toBe(content);
+    expect(submitted?.evidence[0]?.text).toBe(meaningfulContent);
+  });
+  it("classifies scheduled work and records only the protocol status", async () => {
+    const classify = vi.fn(async () => ({ status: "timeout" as const }));
+    const context = createTestContext({
+      structuredClassification: { classify },
+    });
+    await plugin.scheduledJobs?.[0]?.run(context);
+    expect(classify).toHaveBeenCalledOnce();
+    expect(context.logs).toContainEqual({
+      level: "info",
+      message: "classification finished",
+      fields: { status: "timeout" },
+    });
+  });
+});

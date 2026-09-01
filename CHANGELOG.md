@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.18.0 - 2026-09-01
+
+- Add a public governed structured-classification broker for explicitly bound
+  plugin actions and scheduled jobs, with configurable classes, qualification
+  requirements, evidence provenance, bounded requests, and explicit timeout and
+  unavailable outcomes.
+- Add runtime and manifest validation, authorized test-harness support, the
+  executable `structured-classification` starter, clean-consumer inventory, and
+  contract, user-guide, training-course, and release documentation.
+
+## 0.17.2 - 2026-08-30
+
+- Allow Forms starter list filters to reference the supported `system_status`
+  and `system_workflow_stage` fields while continuing to reject unsupported
+  system fields.
+
 ## 0.17.1 - 2026-08-29
 
 - Recognize the host's direct `stage_transition / approval / awaiting_review / approved`

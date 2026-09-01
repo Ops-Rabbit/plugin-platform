@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.17.1
-and `@opsrabbit/create-plugin` 0.17.1.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.18.0
+and `@opsrabbit/create-plugin` 0.18.0.
 
 ## Course promise
 
@@ -54,16 +54,17 @@ alone:
 - `packages/plugin-sdk/src/validation/`: runtime and cross-reference checks;
 - `packages/plugin-sdk/schemas/`: published JSON Schemas;
 - `packages/plugin-sdk/src/testing/`: test context and parity assertions;
-- `packages/create-plugin/assets/starters/`: twelve executable references;
+- `packages/create-plugin/assets/starters/`: thirteen executable references;
 - `packages/create-plugin/src/constants.ts`: authoritative CLI starter list;
 - `scripts/verify-generated-starters.mjs`: isolated consumer verification;
-- `docs/plugin-contract-v0.2.md` through `v0.17.md`: capability history and host
+- `docs/plugin-contract-v0.2.md` through `v0.18.md`: capability history and host
   compatibility expectations, including the v0.16 generic Connection and
-  Knowledge review boundary and v0.17 native workspace action broker.
+  Knowledge review boundary, v0.17 native workspace action broker, and v0.18
+  governed structured-classification broker.
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.17.1, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.18.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -127,7 +128,7 @@ commands, and produce a reviewable ZIP.
 npx opsrabbit-plugin examples list --verbose
 ```
 
-The twelve current starter ids are:
+The thirteen current starter ids are:
 
 - `basic-readonly`
 - `operational-action`
@@ -141,6 +142,7 @@ The twelve current starter ids are:
 - `connection-knowledge-review`
 - `native-workspace`
 - `interaction-policy`
+- `structured-classification`
 
 The `interaction-policy` starter demonstrates a privileged policy boundary.
 Admission runs inside a host-owned transaction with a schema-confined database
@@ -314,6 +316,7 @@ interface PluginInvocationContext {
   readonly objectStore?: PluginObjectStore;
   readonly knowledge?: PluginKnowledgeService;
   readonly forms?: PluginFormsService;
+  readonly structuredClassification?: PluginStructuredClassificationService;
 }
 ```
 
@@ -337,6 +340,17 @@ client or accept credentials. Add tests that:
 Generate `scheduled-tenant-job`. Ensure `context.signal.aborted` is checked
 before work and during long loops. The host owns tenant scheduling, timeouts,
 retry limits, overlap prevention, cancellation, and the system actor.
+
+### Lab C: governed structured classification
+
+Generate `structured-classification`. Review the optional broker in both a
+declared operator action and scheduled job. Change stable class definitions and
+qualification requirements, then test completed, timeout, and unavailable
+outcomes. Confirm evidence references are limited to supplied ids and preserve
+deterministic qualification or human review before acting on a recommendation.
+Also test that a broker deadline resolves `timeout`, while cancellation of the
+enclosing invocation rejects with the exact `context.signal.reason` and is not
+converted into fallback work.
 
 ---
 

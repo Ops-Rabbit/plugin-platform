@@ -30,6 +30,12 @@ Available starters:
 - `connection-knowledge-review`
 - `native-workspace`
 - `interaction-policy`
+- `structured-classification`
+
+`structured-classification` demonstrates an optional host-governed classifier
+from both a declared action and scheduled job. It uses bounded configurable
+classes and evidence, handles explicit unavailability, and never receives model
+credentials or provider-specific errors.
 
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.

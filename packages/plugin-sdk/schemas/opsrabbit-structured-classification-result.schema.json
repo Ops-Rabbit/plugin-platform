@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.dev/schemas/plugin/v1/opsrabbit-structured-classification-result.schema.json",
+  "title": "OpsRabbit structured-classification result v1",
+  "oneOf": [
+    { "$ref": "#/$defs/completed" },
+    { "$ref": "#/$defs/unavailable" },
+    { "$ref": "#/$defs/timeout" }
+  ],
+  "$defs": {
+    "classKey": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,79}$"
+    },
+    "evidenceReference": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "completed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "recommendedClassKey",
+        "confidence",
+        "reason",
+        "evidenceRefs",
+        "missingEvidence"
+      ],
+      "properties": {
+        "status": { "const": "completed" },
+        "recommendedClassKey": { "$ref": "#/$defs/classKey" },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "reason": {
+          "type": "string",
+          "pattern": "\\S",
+          "maxLength": 4096
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/evidenceReference" }
+        },
+        "missingEvidence": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "type": "string",
+            "pattern": "\\S",
+            "maxLength": 1000
+          }
+        }
+      }
+    },
+    "unavailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason"],
+      "properties": {
+        "status": { "const": "unavailable" },
+        "reason": {
+          "enum": ["not_configured", "policy_blocked", "capacity_unavailable"]
+        }
+      }
+    },
+    "timeout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "const": "timeout" }
+      }
+    }
+  }
+}

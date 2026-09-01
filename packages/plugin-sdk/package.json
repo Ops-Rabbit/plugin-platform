@@ -1,6 +1,6 @@
 {
   "name": "@opsrabbit/plugin-sdk",
-  "version": "0.17.2",
+  "version": "0.18.0",
   "description": "Public contracts, validation, and testing utilities for OpsRabbit plugins",
   "type": "module",
   "license": "Apache-2.0",
@@ -35,6 +35,8 @@
       "default": "./dist/packaging/index.js"
     },
     "./manifest-schema": "./schemas/opsrabbit-plugin.schema.json",
+    "./structured-classification-request-schema": "./schemas/opsrabbit-structured-classification-request.schema.json",
+    "./structured-classification-result-schema": "./schemas/opsrabbit-structured-classification-result.schema.json",
     "./form-starter-pack-schema": "./schemas/opsrabbit-form-starter-pack.schema.json",
     "./forms-analytics-catalog-schema": "./schemas/opsrabbit-forms-analytics-catalog.schema.json",
     "./data-insight-template-catalog-schema": "./schemas/opsrabbit-data-insight-template-catalog.schema.json"

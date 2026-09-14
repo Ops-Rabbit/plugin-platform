@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Document the host 0.6.0 `skill_connection_exec` contract for plugins that distribute executable provider skills.
+
 ## 0.18.0 - 2026-09-01
 
 - Add a public governed structured-classification broker for explicitly bound

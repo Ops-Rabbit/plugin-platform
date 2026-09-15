@@ -84,3 +84,6 @@ The [native workspace action contract](./docs/plugin-contract-v0.17.md) document
 the generation-fenced, allowlisted current-plugin action broker.
 The [structured-classification contract](./docs/plugin-contract-v0.18.md)
 documents bounded governed classification for declared actions and scheduled jobs.
+
+The [governed skill Connection execution contract](./docs/host-skill-connection-exec-v1.md)
+documents how host 0.6.0 executes reviewed helpers packaged in attached skills without exposing raw Connection commands.

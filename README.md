@@ -1,5 +1,9 @@
 # OpsRabbit Plugin Platform
 
+See [navigation sections](docs/plugin-navigation-sections-v1.md) for declarative
+Primary, Operations, Control and Platform placement. Placement is not access
+control; the host continues to authorize all resources and actions.
+
 The public SDK includes a V1 `knowledgeEmailProcessor` capability for bounded,
 host-invoked processing of IMAP-derived Knowledge evidence and email-only candidate
 post-processing. It does not grant direct Knowledge storage access.

@@ -1,7 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.19.0 - 2026-09-18
 
+- Add optional `navigation.section` with Primary (default), Operations, Control
+  and Platform placement; strict schema/runtime validation, public enum/types,
+  starter demonstration and compatibility documentation. Placement does not
+  confer permissions or make a Control entry admin-only.
+- Add independent `navigation.adminOnly` for tenant-admin-only menu and workspace
+  viewing; retain separate runtime tool, schedule and Forms authorization.
 - Document the host 0.6.0 `skill_connection_exec` contract for plugins that distribute executable provider skills.
 
 ## 0.18.0 - 2026-09-01

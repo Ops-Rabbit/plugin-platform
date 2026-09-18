@@ -9,6 +9,7 @@ import type { ValidationIssue } from "../contracts/errors.js";
 import {
   PLUGIN_API_VERSION,
   PLUGIN_NAVIGATION_ICONS,
+  PLUGIN_NAVIGATION_SECTIONS,
   type PluginManifest,
 } from "../contracts/manifest.js";
 import {
@@ -129,7 +130,12 @@ export function validateManifest(
     );
   }
   validateSettings(input.settings, issues);
-  validateNavigation(input.navigation, input.settings, issues);
+  validateNavigation(
+    input.navigation,
+    input.settings,
+    input.minimumOpsRabbitVersion,
+    issues,
+  );
   validateFrontend(
     input.frontend,
     input.navigation,
@@ -846,6 +852,7 @@ function validateFormStarterPackReference(
 function validateNavigation(
   value: unknown,
   settingsValue: unknown,
+  minimumOpsRabbitVersion: unknown,
   issues: ValidationIssue[],
 ): void {
   if (value === undefined) return;
@@ -861,6 +868,8 @@ function validateNavigation(
       "path",
       "icon",
       "fallbackTitle",
+      "section",
+      "adminOnly",
       "titleSetting",
       "iconSetting",
       "order",
@@ -892,6 +901,28 @@ function validateNavigation(
     "Use /apps/<module> without traversal or query segments.",
   );
   member(value.icon, PLUGIN_NAVIGATION_ICONS, "$.navigation.icon", issues);
+  if (value.adminOnly !== undefined && typeof value.adminOnly !== "boolean")
+    issues.push(
+      issue("$.navigation.adminOnly", "type", "adminOnly must be a boolean."),
+    );
+  if (value.section !== undefined)
+    member(
+      value.section,
+      PLUGIN_NAVIGATION_SECTIONS,
+      "$.navigation.section",
+      issues,
+    );
+  if (
+    (value.section !== undefined || value.adminOnly !== undefined) &&
+    !hasMinimumVersion(minimumOpsRabbitVersion, 0, 6, 0)
+  )
+    issues.push(
+      issue(
+        "$.minimumOpsRabbitVersion",
+        "unsupported",
+        "navigation.section and navigation.adminOnly require minimumOpsRabbitVersion 0.6.0 or later.",
+      ),
+    );
   string(
     value.fallbackTitle,
     "$.navigation.fallbackTitle",
@@ -2456,6 +2487,23 @@ function safeRoute(value: string): boolean {
     /^\/[A-Za-z0-9._/-]+$/.test(value) &&
     !value.split("/").some((part) => part === "." || part === "..")
   );
+}
+function hasMinimumVersion(
+  value: unknown,
+  major: number,
+  minor: number,
+  patch: number,
+): boolean {
+  if (typeof value !== "string") return false;
+  const parsed = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(value);
+  if (!parsed) return false;
+  const actualMajor = Number(parsed[1] ?? "");
+  const actualMinor = Number(parsed[2] ?? "");
+  const actualPatch = Number(parsed[3] ?? "");
+  if (actualMajor !== major) return actualMajor > major;
+  if (actualMinor !== minor) return actualMinor > minor;
+  if (actualPatch !== patch) return actualPatch > patch;
+  return parsed[4] === undefined;
 }
 function httpUrl(value: string): boolean {
   try {

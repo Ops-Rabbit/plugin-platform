@@ -51,12 +51,25 @@ export const PLUGIN_NAVIGATION_ICONS = [
 ] as const;
 export type PluginNavigationIcon = (typeof PLUGIN_NAVIGATION_ICONS)[number];
 
+export const PLUGIN_NAVIGATION_SECTIONS = [
+  "primary",
+  "operations",
+  "control",
+  "platform",
+] as const;
+export type PluginNavigationSection =
+  (typeof PLUGIN_NAVIGATION_SECTIONS)[number];
+
 export type PluginFormsWorkspaceNavigation = {
   kind: "forms_workspace";
   moduleKey: string;
   path: `/apps/${string}`;
   icon: PluginNavigationIcon;
   fallbackTitle: string;
+  /** Presentation only; defaults to primary. Does not grant resource access. */
+  section?: PluginNavigationSection;
+  /** Tenant-admin-only navigation and workspace viewing; defaults to false. */
+  adminOnly?: boolean;
   titleSetting?: string;
   iconSetting?: string;
   order?: number;

@@ -1,5 +1,9 @@
 # `@opsrabbit/plugin-sdk`
 
+`PluginFormsWorkspaceNavigation.section` and `PLUGIN_NAVIGATION_SECTIONS`
+describe optional Primary, Operations, Control or Platform placement. Omission
+defaults to Primary in supporting hosts. Menu placement does not grant access.
+
 The SDK includes the `frontend.native_workspace` manifest contract and the
 framework-neutral `OpsRabbitWorkspaceModule` browser ABI. See
 [`plugin-contract-v0.11.md`](../../docs/plugin-contract-v0.11.md) and the

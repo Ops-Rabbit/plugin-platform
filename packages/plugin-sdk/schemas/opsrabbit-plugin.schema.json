@@ -151,6 +151,8 @@
           ]
         },
         "fallbackTitle": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "section": { "enum": ["primary", "operations", "control", "platform"] },
+        "adminOnly": { "type": "boolean" },
         "titleSetting": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
@@ -762,6 +764,36 @@
     "database": ["capabilities"]
   },
   "allOf": [
+    {
+      "if": {
+        "required": ["navigation"],
+        "properties": {
+          "navigation": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": { "section": {} },
+                "required": ["section"]
+              },
+              {
+                "type": "object",
+                "properties": { "adminOnly": {} },
+                "required": ["adminOnly"]
+              }
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": ["minimumOpsRabbitVersion"],
+        "properties": {
+          "minimumOpsRabbitVersion": {
+            "type": "string",
+            "pattern": "^(?:0\\.6\\.0|0\\.6\\.[1-9][0-9]*(?:-[0-9A-Za-z.-]+)?|0\\.(?:[7-9]|[1-9][0-9]+)\\.[0-9]+(?:-[0-9A-Za-z.-]+)?|[1-9][0-9]*\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?)$"
+          }
+        }
+      }
+    },
     {
       "if": { "properties": { "database": {} }, "required": ["database"] },
       "then": {

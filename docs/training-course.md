@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.18.0
-and `@opsrabbit/create-plugin` 0.18.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.19.0
+and `@opsrabbit/create-plugin` 0.19.0.
 
 ## Course promise
 
@@ -26,7 +26,7 @@ This course is for TypeScript developers and solution engineers who can read
 - familiarity with tenant-scoped SaaS concepts;
 - an OpsRabbit deployment only for the optional installation lab.
 
-The repository itself uses pnpm 10.12.1. Generated plugins use npm and are
+The repository itself uses pnpm 10.34.0. Generated plugins use npm and are
 deliberately verified outside the platform workspace.
 
 ## Format
@@ -64,7 +64,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.18.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.19.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -398,6 +398,10 @@ advisory UI metadata backed by the same authoritative host invocation checks.
 Generate `forms-workflow` and identify:
 
 - navigation kind `forms_workspace`;
+- optional `navigation.section`: `primary` (default), `operations`, `control`,
+  or `platform`; placement is presentation, not an admin-only access rule;
+- independent `navigation.adminOnly: true` restricts workspace viewing to active
+  tenant administrators; separately declare admin-only control-plane actions;
 - matching navigation and starter-pack module keys;
 - `rootStarterKey` and JSON `stageModelSetting`;
 - optional prefix/digit settings for host-owned numbering;

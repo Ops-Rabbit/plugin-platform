@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "{{displayName}} host-rendered Forms workflow",
   "apiVersion": "1.0",
-  "minimumOpsRabbitVersion": "0.2.0",
+  "minimumOpsRabbitVersion": "0.6.0",
   "main": "./dist/index.js",
   "requiredEntitlements": ["configured_forms"],
   "settings": [
@@ -22,6 +22,7 @@
     { "key": "record_digits", "label": "Record digits", "type": "number", "default": 8, "minimum": 6, "maximum": 12 }
   ],
   "navigation": {
+    "section": "operations",
     "kind": "forms_workspace",
     "moduleKey": "workflow_requests",
     "path": "/apps/workflow-requests",

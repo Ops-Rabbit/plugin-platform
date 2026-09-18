@@ -1,5 +1,9 @@
 # Starter and reference plugins
 
+The `forms-workflow` starter declares `navigation.section: "operations"`.
+See [navigation sections](plugin-navigation-sections-v1.md) for all four groups
+and the release dependency. Host authorization remains independent of placement.
+
 Every starter is a complete executable reference implementation bundled with
 `@opsrabbit/create-plugin`; no private checkout or network template download is
 needed. Run `opsrabbit-plugin examples list` to see the ids and generate one with

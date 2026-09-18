@@ -211,8 +211,9 @@ describe("plugin directory validation", () => {
     });
     const manifestPath = join(target, "opsrabbit.plugin.json");
     const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
-      navigation: { workflow: { rootStarterKey: string } };
+      navigation: { section: string; workflow: { rootStarterKey: string } };
     };
+    expect(manifest.navigation.section).toBe("operations");
     manifest.navigation.workflow.rootStarterKey = "missing_root";
     await writeFile(manifestPath, JSON.stringify(manifest));
     expect((await validatePluginDirectory(target)).issues).toContainEqual(

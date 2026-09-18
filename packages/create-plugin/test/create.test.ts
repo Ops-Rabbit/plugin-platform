@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { appendFile, mkdtemp, readFile } from "node:fs/promises";
+import { appendFile, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -116,6 +116,13 @@ describe("createPlugin", () => {
       output: target,
     });
 
+    const packagePath = join(target, "package.json");
+    const initialPackage = JSON.parse(await readFile(packagePath, "utf8"));
+    initialPackage.config = { version: "2.0.0" };
+    await writeFile(
+      packagePath,
+      JSON.stringify(initialPackage, null, 2) + "\n",
+    );
     git(target, ["init", "--initial-branch=main"]);
     git(target, ["config", "user.name", "Plugin Test"]);
     git(target, ["config", "user.email", "plugin-test@example.com"]);
@@ -150,6 +157,9 @@ describe("createPlugin", () => {
     ) as { version: string };
     expect(manifest.version).toBe("0.1.1");
     expect(packageJson.version).toBe("0.1.1");
+    expect(JSON.parse(await readFile(packagePath, "utf8")).config.version).toBe(
+      "2.0.0",
+    );
     expect(await readFile(join(target, "opsrabbit.plugin.json"), "utf8")).toBe(
       manifestBeforePlanning.replace(
         '"version": "0.1.0"',

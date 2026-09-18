@@ -108,23 +108,19 @@ function parseVersion(input) {
 }
 
 function replaceJsonVersion(source, currentVersion, nextVersion) {
-  const encodedCurrent = JSON.stringify(currentVersion);
   const encodedNext = JSON.stringify(nextVersion);
-  const versionProperty = new RegExp(
-    `("version"\\s*:\\s*)${escapeRegExp(encodedCurrent)}`,
-    "gu",
+  const versionProperty = /("version"\s*:\s*)("(?:[^"\\]|\\.)*")/gu;
+  const matches = [...source.matchAll(versionProperty)].filter(
+    (match) => JSON.parse(match[2]) === currentVersion,
   );
-  const matches = [...source.matchAll(versionProperty)];
   if (matches.length !== 1)
     throw new Error("Expected exactly one JSON version property.");
-  const updated = source.replace(versionProperty, `$1${encodedNext}`);
+  const updated = source.replace(versionProperty, (match, prefix, value) =>
+    JSON.parse(value) === currentVersion ? prefix + encodedNext : match,
+  );
   if (JSON.parse(updated).version !== nextVersion)
     throw new Error("Failed to update the JSON version property.");
   return updated;
-}
-
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
 function git(args) {

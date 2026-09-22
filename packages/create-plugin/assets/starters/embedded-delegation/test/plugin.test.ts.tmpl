@@ -12,6 +12,13 @@ describe('{{id}}', () => {
       kind: 'opsrabbit.tool-result/v1',
       text: 'The verified embedded session is active.',
       value: { widgetId: 'widget-a', active: true },
+      presentation: {
+        clientAction: {
+          target: 'embedded-state',
+          labelKey: 'chat.cta.embedded_state',
+        },
+        suggestedFollowUpIds: ['refresh-embedded-state'],
+      },
     });
     expect(JSON.stringify(context.logs)).not.toContain('opaque-private-reference');
   });

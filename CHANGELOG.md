@@ -4,6 +4,7 @@
 
 - Add a versioned, host-attested `dataInsightAuthorization` invocation context with bounded policy, group subject, mode, dashboard, and namespaced stable-reference fields.
 - Let dashboard templates declare plugin-owned authorization policy keys and stable reference catalogs without granting access; the host remains responsible for actor revalidation, tenant/group membership, grants, audit, and lifecycle.
+- Let plugins supply optional policy labels and descriptions for generic host administration surfaces without making presentation text an authorization input.
 - Add strict runtime and JSON Schema validation, a packaged authorization-context schema, and an executable `forms-insights` starter example.
 
 ## 0.19.0 - 2026-09-18

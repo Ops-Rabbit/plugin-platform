@@ -73,6 +73,10 @@ export type DataInsightTemplateWidget = {
 export type DataInsightTemplateAuthorization = {
   /** Stable plugin-owned policy key; presentation labels must not be used. */
   policy_key: string;
+  /** Plugin-owned presentation label for generic host administration surfaces. */
+  label?: string;
+  /** Optional plugin-owned explanation of the policy's intended audience/scope. */
+  description?: string;
   /** Stable plugin-owned references grouped by bounded, plugin-defined namespaces. */
   references: Readonly<Record<string, readonly string[]>>;
 };

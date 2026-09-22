@@ -34,6 +34,8 @@ const templates = {
       presentation: { show_date_range: true },
       authorization: {
         policy_key: "quality_reviewer",
+        label: "Quality reviewer",
+        description: "Can review the approved quality overview.",
         references: {
           reports: ["quality-summary"],
           metrics: ["record-count"],
@@ -142,6 +144,15 @@ describe("Data Insight public catalog validation", () => {
     expect(ajv.compile(templateSchema)(invalidTemplate)).toBe(false);
     expect(
       validateDataInsightDashboardTemplateCatalog(invalidTemplate).ok,
+    ).toBe(false);
+    const invalidPresentation = structuredClone(templates);
+    invalidPresentation.templates[0]!.authorization!.label = " ";
+    invalidPresentation.templates[0]!.authorization!.description = "x".repeat(
+      1001,
+    );
+    expect(ajv.compile(templateSchema)(invalidPresentation)).toBe(false);
+    expect(
+      validateDataInsightDashboardTemplateCatalog(invalidPresentation).ok,
     ).toBe(false);
   });
 

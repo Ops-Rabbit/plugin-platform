@@ -130,8 +130,10 @@ Schemas are available from
 validation; runtime validation additionally checks duplicate identifiers and
 query/widget references that JSON Schema cannot express.
 
-A template may declare `authorization.policy_key` and bounded, namespaced stable
-`authorization.references`. These are plugin-owned identifiers, not grants. For
+A template may declare `authorization.policy_key`, optional plugin-owned
+presentation text in `authorization.label` and `authorization.description`, and
+bounded, namespaced stable `authorization.references`. Labels and descriptions
+are never authorization inputs, and the identifiers are declarations, not grants. For
 an authorized dashboard, dashboard-chat, or governed resource action, the host
 may provide `context.dataInsightAuthorization` after revalidating the active
 tenant, actor, group membership, dashboard policy, and allowed reference subset.

@@ -58,6 +58,18 @@
       "required": ["policy_key", "references"],
       "properties": {
         "policy_key": { "$ref": "#/$defs/authorizationKey" },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "\\S"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000,
+          "pattern": "\\S"
+        },
         "references": {
           "type": "object",
           "maxProperties": 32,

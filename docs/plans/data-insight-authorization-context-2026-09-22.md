@@ -7,6 +7,7 @@ Business Data Insight plugins need a host-attested, invocation-scoped authorizat
 ## Design
 
 - Add optional template `authorization` metadata containing a stable plugin-owned `policy_key` and bounded namespaced reference arrays. It declares catalog intent and never grants access.
+- Allow optional plugin-owned `label` and `description` presentation metadata so a generic host does not hardcode business-policy names; neither field participates in authorization.
 - Add `context.dataInsightAuthorization` schema version 1. The host supplies it only after revalidating tenant, actor, group membership, dashboard policy, and the allowed subset of plugin-declared references.
 - Use generic reference namespaces rather than business-specific report, metric, entitlement, or persona fields.
 - Export TypeScript types, runtime validation, a JSON Schema, test-harness injection, documentation, and an executable `forms-insights` starter example in SDK/CLI 0.20.0.

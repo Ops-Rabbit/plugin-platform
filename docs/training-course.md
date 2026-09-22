@@ -493,12 +493,13 @@ controls. Every referenced dataset must declare a timestamp
 so Core can add the two range bounds without exceeding the Forms limit.
 
 When a business plugin needs a managed access policy, declare a stable
-`authorization.policy_key` and namespaced stable `authorization.references` on
+`authorization.policy_key`, optional plugin-owned `label` and `description`, and
+namespaced stable `authorization.references` on
 the template. The declaration is not a grant. Core maps it to a host-owned group
 and dashboard policy, revalidates the current actor, and supplies the bounded
 `context.dataInsightAuthorization` attestation only for an authorized dashboard,
 dashboard-chat, or governed resource-action invocation. Plugin execution must
-check both the attested reference and its own catalog; labels and conversation
+check both the attested reference and its own catalog; presentation text and conversation
 bindings are never authorization inputs.
 
 ### Lab: records overview

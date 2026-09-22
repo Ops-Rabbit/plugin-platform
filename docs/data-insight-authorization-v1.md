@@ -2,7 +2,7 @@
 
 Available in `@opsrabbit/plugin-sdk` 0.20.0.
 
-Business plugins may attach an optional `authorization` declaration to a Data Insight dashboard template. `policy_key` and each namespaced reference are stable plugin-owned identifiers. They describe the plugin catalog; they do not grant host access.
+Business plugins may attach an optional `authorization` declaration to a Data Insight dashboard template. `policy_key` and each namespaced reference are stable plugin-owned identifiers. Optional `label` and `description` fields are plugin-owned presentation text for generic host administration surfaces; they are never authorization inputs. The declaration describes the plugin catalog and does not grant host access.
 
 After revalidating the active tenant, actor role, group membership, dashboard policy, and requested references, the host may provide `context.dataInsightAuthorization`:
 

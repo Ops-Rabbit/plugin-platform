@@ -44,6 +44,9 @@ describe("{{displayName}}", () => {
             id: "records-overview",
             authorization: expect.objectContaining({
               policy_key: "records_reviewer",
+              label: "Records reviewer",
+              description:
+                "Can review the approved operational records dashboard.",
               references: expect.objectContaining({
                 metrics: ["record-count", "records-by-category"],
               }),

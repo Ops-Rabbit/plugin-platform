@@ -398,7 +398,7 @@ function validateTemplate(
     } else {
       unknownKeys(
         value.authorization,
-        ["policy_key", "references"],
+        ["policy_key", "label", "description", "references"],
         authorizationPath,
         issues,
       );
@@ -407,6 +407,20 @@ function validateTemplate(
         `${authorizationPath}.policy_key`,
         issues,
       );
+      if (value.authorization.label !== undefined)
+        boundedString(
+          value.authorization.label,
+          `${authorizationPath}.label`,
+          160,
+          issues,
+        );
+      if (value.authorization.description !== undefined)
+        boundedString(
+          value.authorization.description,
+          `${authorizationPath}.description`,
+          1000,
+          issues,
+        );
       validateReferenceMap(
         value.authorization.references,
         `${authorizationPath}.references`,

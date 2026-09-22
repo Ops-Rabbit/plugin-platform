@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.1 - 2026-09-22
+
+- Align the dashboard-template query bound with the existing 40-widget bound so complete plugin-owned dashboards can provide one governed query per widget.
+
 ## 0.21.0 - 2026-09-22
 
 - Let dashboard templates declare plugin-native saved-query references executed through one manifest-declared viewer read action.

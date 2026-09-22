@@ -428,12 +428,12 @@ function validateTemplate(
       );
     }
   }
-  if (!Array.isArray(value.queries) || value.queries.length > 20)
+  if (!Array.isArray(value.queries) || value.queries.length > 40)
     issues.push(
       issue(
         `${path}.queries`,
         "invalid",
-        "queries must contain at most 20 entries.",
+        "queries must contain at most 40 entries.",
       ),
     );
   const queryKeys = new Set<string>();

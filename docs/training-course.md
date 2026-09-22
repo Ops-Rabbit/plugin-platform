@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.19.0
-and `@opsrabbit/create-plugin` 0.19.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.20.0
+and `@opsrabbit/create-plugin` 0.20.0.
 
 ## Course promise
 
@@ -64,7 +64,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.19.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.20.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -492,6 +492,16 @@ controls. Every referenced dataset must declare a timestamp
 `default_time_field`, and every template query must use at most 10 saved filters
 so Core can add the two range bounds without exceeding the Forms limit.
 
+When a business plugin needs a managed access policy, declare a stable
+`authorization.policy_key`, optional plugin-owned `label` and `description`, and
+namespaced stable `authorization.references` on
+the template. The declaration is not a grant. Core maps it to a host-owned group
+and dashboard policy, revalidates the current actor, and supplies the bounded
+`context.dataInsightAuthorization` attestation only for an authorized dashboard,
+dashboard-chat, or governed resource-action invocation. Plugin execution must
+check both the attested reference and its own catalog; presentation text and conversation
+bindings are never authorization inputs.
+
 ### Lab: records overview
 
 Generate `forms-insights` and add:
@@ -503,6 +513,8 @@ Generate `forms-insights` and add:
 5. a metric widget referencing that query;
 6. positive validator tests;
 7. negative tests for an unknown dataset and dangling widget query key.
+8. an authorization policy key and stable metric/report reference namespaces;
+9. a negative `validateDataInsightAuthorizationContext` test for an unlisted reference.
 
 The host validates published Forms references, applies caller grants, executes
 queries, and materializes templates into normal saved queries and editable

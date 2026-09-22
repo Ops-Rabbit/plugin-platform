@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   validateDataInsightDashboardTemplateCatalog,
+  validateDataInsightAuthorizationContext,
   validateFormsAnalyticsCatalog,
 } from "../src/validation/data-insight.js";
 
@@ -31,6 +32,15 @@ const templates = {
       id: "quality-overview",
       title: "Quality overview",
       presentation: { show_date_range: true },
+      authorization: {
+        policy_key: "quality_reviewer",
+        label: "Quality reviewer",
+        description: "Can review the approved quality overview.",
+        references: {
+          reports: ["quality-summary"],
+          metrics: ["record-count"],
+        },
+      },
       queries: [
         {
           key: "by-category",
@@ -85,6 +95,26 @@ describe("Data Insight public catalog validation", () => {
         "utf8",
       ),
     );
+    const authorizationSchema = JSON.parse(
+      await readFile(
+        resolve(
+          import.meta.dirname,
+          "../schemas/opsrabbit-data-insight-authorization-context.schema.json",
+        ),
+        "utf8",
+      ),
+    );
+    const authorization = {
+      schemaVersion: 1,
+      mode: "dashboard_chat",
+      policyKey: "quality_reviewer",
+      dashboardId: "dashboard-1",
+      subject: { type: "group", id: "group-1" },
+      allowedReferences: {
+        reports: ["quality-summary"],
+        metrics: ["record-count"],
+      },
+    };
     expect(ajv.compile(analyticsSchema)(catalog)).toBe(true);
     expect(ajv.compile(templateSchema)(templates)).toBe(true);
     expect(
@@ -94,6 +124,81 @@ describe("Data Insight public catalog validation", () => {
       validateFormsAnalyticsCatalog({ ...catalog, executable: "./query.js" })
         .ok,
     ).toBe(false);
+    expect(ajv.compile(authorizationSchema)(authorization)).toBe(true);
+    expect(validateDataInsightAuthorizationContext(authorization)).toEqual({
+      ok: true,
+      value: authorization,
+      issues: [],
+    });
+    const unicodeAuthorization = {
+      ...authorization,
+      dashboardId: "😀".repeat(200),
+      subject: { type: "group", id: "😀".repeat(200) },
+      allowedReferences: { reports: ["😀".repeat(200)] },
+    } as const;
+    expect(ajv.compile(authorizationSchema)(unicodeAuthorization)).toBe(true);
+    expect(
+      validateDataInsightAuthorizationContext(unicodeAuthorization).ok,
+    ).toBe(true);
+    const invalidAuthorization = {
+      ...authorization,
+      policyKey: `p${"x".repeat(80)}`,
+      allowedReferences: { metrics: [" "] },
+    };
+    expect(ajv.compile(authorizationSchema)(invalidAuthorization)).toBe(false);
+    expect(
+      validateDataInsightAuthorizationContext(invalidAuthorization).ok,
+    ).toBe(false);
+    const blankIdentifiers = {
+      ...authorization,
+      dashboardId: " ",
+      subject: { type: "group", id: " " },
+    };
+    expect(ajv.compile(authorizationSchema)(blankIdentifiers)).toBe(false);
+    expect(validateDataInsightAuthorizationContext(blankIdentifiers).ok).toBe(
+      false,
+    );
+    const invalidTemplate = structuredClone(templates);
+    invalidTemplate.templates[0]!.authorization!.references.metrics = [" "];
+    expect(ajv.compile(templateSchema)(invalidTemplate)).toBe(false);
+    expect(
+      validateDataInsightDashboardTemplateCatalog(invalidTemplate).ok,
+    ).toBe(false);
+    const invalidPresentation = structuredClone(templates);
+    invalidPresentation.templates[0]!.authorization!.label = " ";
+    invalidPresentation.templates[0]!.authorization!.description = "x".repeat(
+      1001,
+    );
+    expect(ajv.compile(templateSchema)(invalidPresentation)).toBe(false);
+    expect(
+      validateDataInsightDashboardTemplateCatalog(invalidPresentation).ok,
+    ).toBe(false);
+  });
+
+  it("rejects malformed or over-broad authorization attestations", () => {
+    expect(
+      validateDataInsightAuthorizationContext({
+        schemaVersion: 2,
+        mode: "admin",
+        policyKey: "Mutable Label",
+        dashboardId: "",
+        subject: { type: "user", id: "" },
+        allowedReferences: {
+          reports: ["duplicate", "duplicate"],
+          "Bad Namespace": [],
+        },
+        tenantId: "must-not-be-overridden",
+      }),
+    ).toMatchObject({
+      ok: false,
+      issues: expect.arrayContaining([
+        expect.objectContaining({ path: "$.schemaVersion" }),
+        expect.objectContaining({ path: "$.mode" }),
+        expect.objectContaining({ path: "$.subject.type" }),
+        expect.objectContaining({ code: "duplicate" }),
+        expect.objectContaining({ code: "unknown-property" }),
+      ]),
+    });
   });
 
   it("rejects duplicate datasets, invalid measure contracts, and unknown properties", () => {

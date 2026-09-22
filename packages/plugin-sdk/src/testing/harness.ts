@@ -8,6 +8,7 @@ import type {
   PluginFormsService,
 } from "../contracts/contexts.js";
 import type { PluginStructuredClassificationService } from "../contracts/structured-classification.js";
+import type { DataInsightAuthorizationContext } from "../contracts/data-insight.js";
 import type { JsonValue } from "../contracts/manifest.js";
 import type { PluginManifest } from "../contracts/manifest.js";
 
@@ -31,6 +32,7 @@ export function createTestContext(
     connections?: PluginConnectionsService;
     forms?: PluginFormsService;
     structuredClassification?: PluginStructuredClassificationService;
+    dataInsightAuthorization?: DataInsightAuthorizationContext;
     settings?: Readonly<Record<string, JsonValue>>;
   } = {},
 ): TestContext {
@@ -56,6 +58,9 @@ export function createTestContext(
     ...(options.structuredClassification === undefined
       ? {}
       : { structuredClassification: options.structuredClassification }),
+    ...(options.dataInsightAuthorization === undefined
+      ? {}
+      : { dataInsightAuthorization: options.dataInsightAuthorization }),
   };
 }
 

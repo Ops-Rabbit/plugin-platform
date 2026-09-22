@@ -1,6 +1,7 @@
 import type { JsonValue } from "./manifest.js";
 
 export const DATA_INSIGHT_TEMPLATE_SCHEMA_VERSION = 1 as const;
+export const DATA_INSIGHT_AUTHORIZATION_SCHEMA_VERSION = 1 as const;
 export const FORMS_ANALYTICS_CATALOG_SCHEMA_VERSION = 1 as const;
 
 export type FormsAnalyticsDimension = {
@@ -69,6 +70,17 @@ export type DataInsightTemplateWidget = {
   position?: Record<string, JsonValue>;
 };
 
+export type DataInsightTemplateAuthorization = {
+  /** Stable plugin-owned policy key; presentation labels must not be used. */
+  policy_key: string;
+  /** Plugin-owned presentation label for generic host administration surfaces. */
+  label?: string;
+  /** Optional plugin-owned explanation of the policy's intended audience/scope. */
+  description?: string;
+  /** Stable plugin-owned references grouped by bounded, plugin-defined namespaces. */
+  references: Readonly<Record<string, readonly string[]>>;
+};
+
 export type DataInsightDashboardTemplate = {
   id: string;
   title: string;
@@ -76,8 +88,23 @@ export type DataInsightDashboardTemplate = {
   suggested_questions?: string[];
   layout?: Record<string, JsonValue>;
   presentation?: { show_date_range?: boolean };
+  authorization?: DataInsightTemplateAuthorization;
   queries: DataInsightTemplateQuery[];
   widgets: DataInsightTemplateWidget[];
+};
+
+/**
+ * Host-attested authorization supplied only after the host revalidates the
+ * actor, tenant, dashboard, subject membership, and plugin-declared references.
+ * A plugin declaration never creates access by itself.
+ */
+export type DataInsightAuthorizationContext = {
+  schemaVersion: typeof DATA_INSIGHT_AUTHORIZATION_SCHEMA_VERSION;
+  mode: "dashboard" | "dashboard_chat" | "resource_action";
+  policyKey: string;
+  dashboardId: string;
+  subject: Readonly<{ type: "group"; id: string }>;
+  allowedReferences: Readonly<Record<string, readonly string[]>>;
 };
 
 export type DataInsightDashboardTemplateCatalog = {

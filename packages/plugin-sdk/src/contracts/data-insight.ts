@@ -39,7 +39,7 @@ export type FormsAnalyticsCatalog = {
   datasets: FormsAnalyticsDataset[];
 };
 
-export type DataInsightTemplateQuery = {
+export type DataInsightFormsTemplateQuery = {
   key: string;
   dataset_id: string;
   name: string;
@@ -47,6 +47,21 @@ export type DataInsightTemplateQuery = {
   semantic_query: Record<string, JsonValue>;
   visualization_hint?: string;
 };
+
+export type DataInsightPluginTemplateQuery = {
+  key: string;
+  name: string;
+  description?: string;
+  plugin_query: {
+    saved_query_id: string;
+    datasource_id?: string;
+  };
+  visualization_hint?: string;
+};
+
+export type DataInsightTemplateQuery =
+  | DataInsightFormsTemplateQuery
+  | DataInsightPluginTemplateQuery;
 
 export type DataInsightTemplateWidgetType =
   | "metric"

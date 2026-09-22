@@ -75,6 +75,54 @@ describe("Data Insight public catalog validation", () => {
     ).toMatchObject({ ok: true, issues: [] });
   });
 
+  it("accepts governed plugin-native saved-query references", () => {
+    const pluginTemplates = structuredClone(templates);
+    const references: Record<string, string[]> =
+      pluginTemplates.templates[0]!.authorization.references;
+    references.saved_queries = ["quality-by-category"];
+    pluginTemplates.templates[0]!.queries = [
+      {
+        key: "by-category",
+        name: "By category",
+        plugin_query: {
+          saved_query_id: "quality-by-category",
+          datasource_id: "quality-db",
+        },
+      },
+    ] as never;
+    expect(
+      validateDataInsightDashboardTemplateCatalog(pluginTemplates),
+    ).toMatchObject({ ok: true, issues: [] });
+  });
+
+  it("rejects mixed and undeclared plugin-native query sources", () => {
+    const mixed = structuredClone(templates);
+    Object.assign(mixed.templates[0]!.queries[0]!, {
+      plugin_query: { saved_query_id: "quality-by-category" },
+    });
+    expect(validateDataInsightDashboardTemplateCatalog(mixed).issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "invalid-source" }),
+      ]),
+    );
+
+    const undeclared = structuredClone(templates);
+    undeclared.templates[0]!.queries = [
+      {
+        key: "native",
+        name: "Native",
+        plugin_query: { saved_query_id: "not-declared" },
+      },
+    ] as never;
+    expect(
+      validateDataInsightDashboardTemplateCatalog(undeclared).issues,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "undeclared-reference" }),
+      ]),
+    );
+  });
+
   it("keeps published schemas aligned with runtime validation", async () => {
     const ajv = new Ajv2020({ allErrors: true, strict: true });
     const analyticsSchema = JSON.parse(

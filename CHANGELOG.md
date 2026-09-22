@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.0 - 2026-09-22
+
+- Let dashboard templates declare plugin-native saved-query references executed through one manifest-declared viewer read action.
+- Let read-only Forms actions map one stable top-level input field to a namespaced Data Insight authorization reference.
+- Require governed plugin-native queries to appear in `authorization.references.saved_queries`; declarations remain non-granting and plugins must repeat attestation and catalog checks.
+- Extend runtime validation, JSON Schema, the executable `forms-insights` starter, documentation, packaging, and clean-consumer coverage.
+
 ## 0.20.0 - 2026-09-22
 
 - Add a versioned, host-attested `dataInsightAuthorization` invocation context with bounded policy, group subject, mode, dashboard, and namespaced stable-reference fields.

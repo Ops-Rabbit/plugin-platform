@@ -95,6 +95,35 @@ describe("Data Insight public catalog validation", () => {
     ).toMatchObject({ ok: true, issues: [] });
   });
 
+  it("allows one bounded query per dashboard widget up to forty entries", () => {
+    const bounded = structuredClone(templates);
+    bounded.templates[0]!.queries = Array.from({ length: 40 }, (_, index) => ({
+      key: `query-${index}`,
+      dataset_id: "quality.records",
+      name: `Query ${index}`,
+      semantic_query: { dimensions: [], measures: ["record_count"] },
+    }));
+    bounded.templates[0]!.widgets[0]!.query_key = "query-0";
+    expect(validateDataInsightDashboardTemplateCatalog(bounded)).toMatchObject({
+      ok: true,
+      issues: [],
+    });
+    bounded.templates[0]!.queries.push({
+      key: "query-40",
+      dataset_id: "quality.records",
+      name: "Query 40",
+      semantic_query: { dimensions: [], measures: ["record_count"] },
+    });
+    expect(validateDataInsightDashboardTemplateCatalog(bounded).issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "$.templates[0].queries",
+          message: "queries must contain at most 40 entries.",
+        }),
+      ]),
+    );
+  });
+
   it("rejects mixed and undeclared plugin-native query sources", () => {
     const mixed = structuredClone(templates);
     Object.assign(mixed.templates[0]!.queries[0]!, {

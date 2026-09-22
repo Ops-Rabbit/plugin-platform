@@ -41,7 +41,7 @@
         "authorization": { "$ref": "#/$defs/authorization" },
         "queries": {
           "type": "array",
-          "maxItems": 20,
+          "maxItems": 40,
           "items": { "$ref": "#/$defs/query" }
         },
         "widgets": {

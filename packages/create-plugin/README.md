@@ -31,11 +31,16 @@ Available starters:
 - `native-workspace`
 - `interaction-policy`
 - `structured-classification`
+- `embedded-delegation`
 
 `structured-classification` demonstrates an optional host-governed classifier
 from both a declared action and scheduled job. It uses bounded configurable
 classes and evidence, handles explicit unavailability, and never receives model
 credentials or provider-specific errors.
+
+`embedded-delegation` demonstrates a read-only embedded tool that receives an
+opaque, expiring per-turn reference from the host and deliberately never returns
+or logs it. It requires host compatibility 0.7.0 and a reviewed managed package.
 
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.

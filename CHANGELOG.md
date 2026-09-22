@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.20.1 - 2026-09-22
+
+- Add the public `embeddedDelegation` capability and an exact `embeddedChat`
+  tool declaration. The opaque per-turn reference is available only to an
+  eligible managed embedded plugin at host compatibility `0.7.0` and must not
+  reach model, client, settings, logs, or tool-result surfaces.
+- Add strict TypeScript, manifest-schema, runtime-registration, testing-harness,
+  documentation, and generated `embedded-delegation` reference coverage.
+- Add manifest-bound embedded client presentation metadata and a typed tool-result
+  sidecar for a fixed client action and bounded follow-up ids. It is validated by
+  the host rather than parsed from model output or treated as a URL.
+
 ## 0.19.0 - 2026-09-18
 
 - Add optional `navigation.section` with Primary (default), Operations, Control

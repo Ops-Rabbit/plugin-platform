@@ -32,6 +32,8 @@ export function createTestContext(
     forms?: PluginFormsService;
     structuredClassification?: PluginStructuredClassificationService;
     settings?: Readonly<Record<string, JsonValue>>;
+    embeddedChat?: { widgetId: string; externalUserId: string };
+    embeddedDelegationId?: string;
   } = {},
 ): TestContext {
   const logs: TestLogEntry[] = [];
@@ -43,6 +45,12 @@ export function createTestContext(
     logger,
     logs,
     settings: options.settings ?? {},
+    ...(options.embeddedChat === undefined
+      ? {}
+      : { embeddedChat: Object.freeze({ ...options.embeddedChat }) }),
+    ...(options.embeddedDelegationId === undefined
+      ? {}
+      : { embeddedDelegationId: options.embeddedDelegationId }),
     ...(options.tenantRecords === undefined
       ? {}
       : { tenantRecords: options.tenantRecords }),

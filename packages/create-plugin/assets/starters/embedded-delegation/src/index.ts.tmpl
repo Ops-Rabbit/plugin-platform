@@ -1,0 +1,29 @@
+import { definePlugin, toolResult } from '@opsrabbit/plugin-sdk';
+
+export const plugin = definePlugin({
+  tools: [
+    {
+      id: 'current-embedded-state',
+      description: 'Reads only the verified embedded-chat state for the active turn.',
+      risk: 'read',
+      audience: 'all',
+      requiredPermission: 'read',
+      embeddedChat: true,
+      async run(_input, context) {
+        if (!context.embeddedChat || !context.embeddedDelegationId)
+          throw new Error('This tool requires an active verified embedded-chat turn.');
+        // Deliberately do not return, log, persist, or display the opaque authority.
+        context.logger.info('embedded state requested', { widgetId: context.embeddedChat.widgetId });
+        return toolResult('The verified embedded session is active.', {
+          widgetId: context.embeddedChat.widgetId,
+          active: true,
+        }, {
+          clientAction: { target: 'embedded-state', labelKey: 'chat.cta.embedded_state' },
+          suggestedFollowUpIds: ['refresh-embedded-state'],
+        });
+      }
+    }
+  ]
+});
+
+export default plugin;

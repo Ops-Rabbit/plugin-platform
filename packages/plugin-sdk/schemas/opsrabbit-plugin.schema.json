@@ -33,11 +33,64 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "risk"],
+      "allOf": [
+        {
+          "if": {
+            "required": ["embeddedPresentation"],
+            "properties": { "embeddedPresentation": true }
+          },
+          "then": {
+            "required": ["embeddedChat"],
+            "properties": { "embeddedChat": { "const": true } }
+          }
+        }
+      ],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "risk": { "$ref": "#/$defs/risk" },
         "audience": { "enum": ["all", "coordinator", "general"] },
-        "requiredPermission": { "enum": ["read", "use", "write", "manage"] }
+        "requiredPermission": { "enum": ["read", "use", "write", "manage"] },
+        "embeddedChat": { "const": true },
+        "embeddedPresentation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "clientAction": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["target", "labelKey"],
+              "properties": {
+                "target": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_.:-]{0,79}$"
+                },
+                "labelKey": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_.:-]{0,79}$"
+                },
+                "resourceRef": { "const": true }
+              }
+            },
+            "suggestedFollowUpIds": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.:-]{0,79}$"
+              }
+            }
+          },
+          "anyOf": [
+            {
+              "required": ["clientAction"],
+              "properties": { "clientAction": true }
+            },
+            {
+              "required": ["suggestedFollowUpIds"],
+              "properties": { "suggestedFollowUpIds": true }
+            }
+          ]
+        }
       }
     },
     "action": {
@@ -705,6 +758,21 @@
           "additionalProperties": false,
           "required": ["schemaVersion"],
           "properties": { "schemaVersion": { "const": "1" } }
+        },
+        "embeddedDelegation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "toolIds"],
+          "properties": {
+            "schemaVersion": { "const": "1" },
+            "toolIds": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/id" }
+            }
+          }
         },
         "chatTurnAdmission": {
           "type": "object",

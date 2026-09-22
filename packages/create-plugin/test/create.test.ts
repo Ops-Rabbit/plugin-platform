@@ -46,8 +46,7 @@ describe("createPlugin", () => {
       expect(course).toContain(`- \`${id}\``);
       expect(createReadme).toContain(`- \`${id}\``);
     }
-    const documentedCount =
-      STARTER_IDS.length === 13 ? "thirteen" : String(STARTER_IDS.length);
+    const documentedCount = String(STARTER_IDS.length);
     expect(reference).toContain(`all ${documentedCount}`);
     expect(course).toContain(`The ${documentedCount} current starter ids`);
   });

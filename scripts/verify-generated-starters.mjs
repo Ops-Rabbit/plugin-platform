@@ -27,6 +27,7 @@ const starterIds = [
   "native-workspace",
   "interaction-policy",
   "structured-classification",
+  "embedded-delegation",
 ];
 await mkdir(tarballDirectory);
 

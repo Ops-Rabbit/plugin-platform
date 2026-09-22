@@ -1,5 +1,5 @@
-export const CLI_VERSION = "0.19.0";
-export const SDK_VERSION = "^0.19.0";
+export const CLI_VERSION = "0.20.1";
+export const SDK_VERSION = "^0.20.1";
 export const STARTER_IDS = [
   "basic-readonly",
   "operational-action",
@@ -14,6 +14,7 @@ export const STARTER_IDS = [
   "native-workspace",
   "interaction-policy",
   "structured-classification",
+  "embedded-delegation",
 ] as const;
 
 export type StarterId = (typeof STARTER_IDS)[number];
@@ -43,6 +44,8 @@ export const STARTER_DESCRIPTIONS: Record<StarterId, string> = {
     "Transactional chat admission, composer status, and deployment-admin workspace.",
   "structured-classification":
     "Governed structured classification from both an action and a scheduled job.",
+  "embedded-delegation":
+    "Read-only embedded-chat tool using opaque, per-turn authority without exposing it.",
 };
 
 export function isStarterId(value: string): value is StarterId {

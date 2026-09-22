@@ -22,10 +22,21 @@ import type {
 
 export const PLUGIN_TOOL_RESULT_KIND = "opsrabbit.tool-result/v1" as const;
 
+/** Host-validated client presentation requested by plugin code, never model text. */
+export interface PluginToolPresentation {
+  readonly clientAction?: Readonly<{
+    target: string;
+    labelKey: string;
+    resourceRef?: string;
+  }>;
+  readonly suggestedFollowUpIds?: readonly string[];
+}
+
 export interface PluginToolResult<TValue extends JsonValue = JsonValue> {
   readonly kind: typeof PLUGIN_TOOL_RESULT_KIND;
   readonly text: string;
   readonly value: TValue;
+  readonly presentation?: PluginToolPresentation;
 }
 
 export type PluginToolOutput = JsonValue | PluginToolResult;
@@ -33,8 +44,31 @@ export type PluginToolOutput = JsonValue | PluginToolResult;
 export function toolResult<TValue extends JsonValue>(
   text: string,
   value: TValue,
+  presentation?: PluginToolPresentation,
 ): PluginToolResult<TValue> {
-  return Object.freeze({ kind: PLUGIN_TOOL_RESULT_KIND, text, value });
+  return Object.freeze({
+    kind: PLUGIN_TOOL_RESULT_KIND,
+    text,
+    value,
+    ...(presentation
+      ? {
+          presentation: Object.freeze({
+            ...(presentation.clientAction
+              ? {
+                  clientAction: Object.freeze({ ...presentation.clientAction }),
+                }
+              : {}),
+            ...(presentation.suggestedFollowUpIds
+              ? {
+                  suggestedFollowUpIds: Object.freeze([
+                    ...presentation.suggestedFollowUpIds,
+                  ]),
+                }
+              : {}),
+          }),
+        }
+      : {}),
+  });
 }
 
 export function isPluginToolResult(value: unknown): value is PluginToolResult {
@@ -45,7 +79,34 @@ export function isPluginToolResult(value: unknown): value is PluginToolResult {
   return (
     candidate.kind === PLUGIN_TOOL_RESULT_KIND &&
     typeof candidate.text === "string" &&
-    Object.hasOwn(candidate, "value")
+    Object.hasOwn(candidate, "value") &&
+    (candidate.presentation === undefined ||
+      isPluginToolPresentation(candidate.presentation))
+  );
+}
+
+function isPluginToolPresentation(
+  value: unknown,
+): value is PluginToolPresentation {
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    return false;
+  const candidate = value as Record<string, unknown>;
+  const action = candidate.clientAction;
+  if (
+    action !== undefined &&
+    (typeof action !== "object" ||
+      action === null ||
+      Array.isArray(action) ||
+      typeof (action as Record<string, unknown>).target !== "string" ||
+      typeof (action as Record<string, unknown>).labelKey !== "string" ||
+      ((action as Record<string, unknown>).resourceRef !== undefined &&
+        typeof (action as Record<string, unknown>).resourceRef !== "string"))
+  )
+    return false;
+  return (
+    candidate.suggestedFollowUpIds === undefined ||
+    (Array.isArray(candidate.suggestedFollowUpIds) &&
+      candidate.suggestedFollowUpIds.every((id) => typeof id === "string"))
   );
 }
 
@@ -58,6 +119,8 @@ export interface ToolDefinition<
   risk: PluginRisk;
   audience?: PluginToolAudience;
   requiredPermission?: PluginPermission;
+  /** Explicit, manifest-matched opt-in for use in embedded chat. */
+  embeddedChat?: true;
   inputSchema?: Readonly<Record<string, unknown>>;
   run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
 }

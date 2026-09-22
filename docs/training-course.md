@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.19.0
-and `@opsrabbit/create-plugin` 0.19.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.20.1
+and `@opsrabbit/create-plugin` 0.20.1.
 
 ## Course promise
 
@@ -54,17 +54,17 @@ alone:
 - `packages/plugin-sdk/src/validation/`: runtime and cross-reference checks;
 - `packages/plugin-sdk/schemas/`: published JSON Schemas;
 - `packages/plugin-sdk/src/testing/`: test context and parity assertions;
-- `packages/create-plugin/assets/starters/`: thirteen executable references;
+- `packages/create-plugin/assets/starters/`: fourteen executable references;
 - `packages/create-plugin/src/constants.ts`: authoritative CLI starter list;
 - `scripts/verify-generated-starters.mjs`: isolated consumer verification;
 - `docs/plugin-contract-v0.2.md` through `v0.18.md`: capability history and host
   compatibility expectations, including the v0.16 generic Connection and
   Knowledge review boundary, v0.17 native workspace action broker, and v0.18
-  governed structured-classification broker.
+  governed structured-classification broker and opaque embedded delegation.
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.19.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.20.1, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -128,7 +128,7 @@ commands, and produce a reviewable ZIP.
 npx opsrabbit-plugin examples list --verbose
 ```
 
-The thirteen current starter ids are:
+The 14 current starter ids are:
 
 - `basic-readonly`
 - `operational-action`
@@ -143,6 +143,7 @@ The thirteen current starter ids are:
 - `native-workspace`
 - `interaction-policy`
 - `structured-classification`
+- `embedded-delegation`
 
 The `interaction-policy` starter demonstrates a privileged policy boundary.
 Admission runs inside a host-owned transaction with a schema-confined database

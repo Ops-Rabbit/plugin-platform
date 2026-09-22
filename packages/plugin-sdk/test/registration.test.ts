@@ -352,4 +352,53 @@ describe("plugin registration", () => {
       issues.filter(({ code }) => code === "invalid-registration"),
     ).toHaveLength(6);
   });
+
+  it("requires embedded-chat registration metadata to match the manifest", () => {
+    const embeddedManifest: PluginManifest = {
+      ...manifest,
+      capabilities: {
+        tools: [{ id: "status", risk: "read", embeddedChat: true }],
+        embeddedDelegation: { schemaVersion: "1", toolIds: ["status"] },
+      },
+    };
+    const issues = validateRegistration(embeddedManifest, {
+      tools: [
+        {
+          ...statusTool,
+          embeddedChat: false as never,
+        },
+      ],
+    });
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "metadata-mismatch" }),
+      ]),
+    );
+  });
+
+  it("preserves only a well-formed structured plugin presentation", () => {
+    const result = toolResult(
+      "Current data",
+      { status: "open" },
+      {
+        clientAction: { target: "bookings", labelKey: "chat.cta.bookings" },
+        suggestedFollowUpIds: ["customer_vehicle_summary"],
+      },
+    );
+    expect(isPluginToolResult(result)).toBe(true);
+    expect(result.presentation).toEqual({
+      clientAction: { target: "bookings", labelKey: "chat.cta.bookings" },
+      suggestedFollowUpIds: ["customer_vehicle_summary"],
+    });
+    expect(
+      isPluginToolResult({
+        kind: PLUGIN_TOOL_RESULT_KIND,
+        text: "x",
+        value: null,
+        presentation: {
+          clientAction: { target: 1, labelKey: "chat.cta.bookings" },
+        },
+      }),
+    ).toBe(false);
+  });
 });

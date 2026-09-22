@@ -978,4 +978,88 @@ describe("validateManifest", () => {
       expect.objectContaining({ path: "$.formStarterPack", code: "invalid" }),
     );
   });
+
+  it("requires embedded delegation to bind declared embedded-chat tools on host 0.7", () => {
+    const manifest = {
+      id: "embedded-delegation-tools",
+      name: "Embedded delegation tools",
+      version: "1.0.0",
+      description: "Opaque per-turn authority for a fixed embedded tool.",
+      apiVersion: "1.0",
+      main: "./dist/index.js",
+      minimumOpsRabbitVersion: "0.7.0",
+      capabilities: {
+        tools: [
+          {
+            id: "load-current-state",
+            risk: "read",
+            embeddedChat: true,
+          },
+        ],
+        embeddedDelegation: {
+          schemaVersion: "1",
+          toolIds: ["load-current-state"],
+        },
+      },
+    };
+    expect(validateManifest(manifest)).toMatchObject({ ok: true, issues: [] });
+
+    const noEmbeddedTool = structuredClone(manifest);
+    noEmbeddedTool.capabilities.tools[0]!.embeddedChat = false as never;
+    expect(validateManifest(noEmbeddedTool).issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "$.capabilities.embeddedDelegation.toolIds[0]",
+        }),
+      ]),
+    );
+
+    expect(
+      validateManifest({
+        ...manifest,
+        minimumOpsRabbitVersion: "0.6.0",
+      }).issues,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "$.minimumOpsRabbitVersion" }),
+      ]),
+    );
+  });
+
+  it("allows presentation only for a declared embedded-chat tool", () => {
+    const manifest = {
+      id: "embedded-presentation",
+      name: "Embedded presentation",
+      version: "1.0.0",
+      description: "Reviewed embedded client affordances.",
+      apiVersion: "1.0",
+      main: "./dist/index.js",
+      capabilities: {
+        tools: [
+          {
+            id: "current-state",
+            risk: "read",
+            embeddedChat: true,
+            embeddedPresentation: {
+              clientAction: {
+                target: "bookings",
+                labelKey: "chat.cta.bookings",
+              },
+              suggestedFollowUpIds: ["show-history"],
+            },
+          },
+        ],
+      },
+    };
+    expect(validateManifest(manifest)).toMatchObject({ ok: true, issues: [] });
+    const invalid = structuredClone(manifest);
+    invalid.capabilities.tools[0]!.embeddedChat = false as never;
+    expect(validateManifest(invalid).issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "$.capabilities.tools[0].embeddedPresentation",
+        }),
+      ]),
+    );
+  });
 });

@@ -16,7 +16,7 @@ This repository publishes:
 - [`@opsrabbit/plugin-sdk`](./packages/plugin-sdk): contracts, manifest schema,
   validation, compatibility checks, governed service-plugin contracts, package
   inventory, and an isolated test harness.
-- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, thirteen starters,
+- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, fourteen starters,
   reference implementations, generated tests, CI, README, and `AGENTS.md`.
 
 ## Create a plugin
@@ -88,6 +88,8 @@ The [native workspace action contract](./docs/plugin-contract-v0.17.md) document
 the generation-fenced, allowlisted current-plugin action broker.
 The [structured-classification contract](./docs/plugin-contract-v0.18.md)
 documents bounded governed classification for declared actions and scheduled jobs.
+The [opaque embedded-delegation contract](./docs/plugin-contract-v0.20.md)
+documents the short-lived embedded-turn reference boundary for approved managed plugins.
 
 The [governed skill Connection execution contract](./docs/host-skill-connection-exec-v1.md)
 documents how host 0.6.0 executes reviewed helpers packaged in attached skills without exposing raw Connection commands.

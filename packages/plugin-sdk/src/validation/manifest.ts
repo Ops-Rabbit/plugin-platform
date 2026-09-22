@@ -153,6 +153,11 @@ export function validateManifest(
   validateCapabilities(input.capabilities, issues);
   validateConnectionSelectors(input.capabilities, input.settings, issues);
   validateInteractionDependencies(input.capabilities, issues);
+  validateEmbeddedDelegationCompatibility(
+    input.capabilities,
+    input.minimumOpsRabbitVersion,
+    issues,
+  );
   if (record(input.capabilities) && Array.isArray(input.capabilities.actions)) {
     for (const [index, action] of input.capabilities.actions.entries()) {
       if (
@@ -294,6 +299,32 @@ function validateInteractionDependencies(
     "localization",
   ]);
   requireCapabilities("subjectLifecycle", ["database", "audit"]);
+  if (value.embeddedDelegation !== undefined && !Array.isArray(value.tools)) {
+    issues.push(
+      issue(
+        "$.capabilities.embeddedDelegation",
+        "invalid",
+        "embeddedDelegation requires at least one declared embedded-chat tool.",
+      ),
+    );
+  }
+}
+
+function validateEmbeddedDelegationCompatibility(
+  capabilities: unknown,
+  minimumOpsRabbitVersion: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (!record(capabilities) || capabilities.embeddedDelegation === undefined)
+    return;
+  if (!hasMinimumVersion(minimumOpsRabbitVersion, 0, 7, 0))
+    issues.push(
+      issue(
+        "$.minimumOpsRabbitVersion",
+        "unsupported",
+        "embeddedDelegation requires minimumOpsRabbitVersion 0.7.0 or later.",
+      ),
+    );
 }
 
 function validateFrontend(
@@ -1101,6 +1132,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "connections",
     "structuredClassification",
     "knowledgeEmailProcessor",
+    "embeddedDelegation",
     "chatTurnAdmission",
     "chatComposerStatus",
     "deploymentAdminWorkspace",
@@ -1115,7 +1147,14 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     capabilities.tools,
     "tools",
     issues,
-    ["id", "risk", "audience", "requiredPermission"],
+    [
+      "id",
+      "risk",
+      "audience",
+      "requiredPermission",
+      "embeddedChat",
+      "embeddedPresentation",
+    ],
     (entry, path) => {
       member(entry.risk, PLUGIN_RISKS, `${path}.risk`, issues);
       optionalMember(
@@ -1130,6 +1169,118 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
         `${path}.requiredPermission`,
         issues,
       );
+      if (entry.embeddedChat !== undefined && entry.embeddedChat !== true)
+        issues.push(
+          issue(
+            `${path}.embeddedChat`,
+            "invalid",
+            "embeddedChat must be explicitly true when declared.",
+          ),
+        );
+      if (entry.embeddedPresentation !== undefined) {
+        if (entry.embeddedChat !== true) {
+          issues.push(
+            issue(
+              `${path}.embeddedPresentation`,
+              "invalid",
+              "embeddedPresentation requires embeddedChat: true.",
+            ),
+          );
+        } else if (!record(entry.embeddedPresentation)) {
+          issues.push(
+            issue(
+              `${path}.embeddedPresentation`,
+              "type",
+              "embeddedPresentation must be an object.",
+            ),
+          );
+        } else {
+          unknownKeys(
+            entry.embeddedPresentation,
+            new Set(["clientAction", "suggestedFollowUpIds"]),
+            `${path}.embeddedPresentation`,
+            issues,
+          );
+          const action = entry.embeddedPresentation.clientAction;
+          if (action !== undefined) {
+            if (!record(action))
+              issues.push(
+                issue(
+                  `${path}.embeddedPresentation.clientAction`,
+                  "type",
+                  "clientAction must be an object.",
+                ),
+              );
+            else {
+              unknownKeys(
+                action,
+                new Set(["target", "labelKey", "resourceRef"]),
+                `${path}.embeddedPresentation.clientAction`,
+                issues,
+              );
+              if (
+                typeof action.target !== "string" ||
+                !SCOPE.test(action.target)
+              )
+                issues.push(
+                  issue(
+                    `${path}.embeddedPresentation.clientAction.target`,
+                    "invalid",
+                    "target must be a safe identifier.",
+                  ),
+                );
+              if (
+                typeof action.labelKey !== "string" ||
+                !SCOPE.test(action.labelKey)
+              )
+                issues.push(
+                  issue(
+                    `${path}.embeddedPresentation.clientAction.labelKey`,
+                    "invalid",
+                    "labelKey must be a safe identifier.",
+                  ),
+                );
+              if (
+                action.resourceRef !== undefined &&
+                action.resourceRef !== true
+              )
+                issues.push(
+                  issue(
+                    `${path}.embeddedPresentation.clientAction.resourceRef`,
+                    "invalid",
+                    "resourceRef must be explicitly true when declared.",
+                  ),
+                );
+            }
+          }
+          if (entry.embeddedPresentation.suggestedFollowUpIds !== undefined) {
+            const ids = boundedBindingIds(
+              entry.embeddedPresentation.suggestedFollowUpIds,
+              `${path}.embeddedPresentation.suggestedFollowUpIds`,
+              issues,
+            );
+            if (ids.length === 0)
+              issues.push(
+                issue(
+                  `${path}.embeddedPresentation.suggestedFollowUpIds`,
+                  "invalid",
+                  "suggestedFollowUpIds must not be empty.",
+                ),
+              );
+          }
+          if (
+            action === undefined &&
+            entry.embeddedPresentation.suggestedFollowUpIds === undefined
+          )
+            issues.push(
+              issue(
+                `${path}.embeddedPresentation`,
+                "invalid",
+                "embeddedPresentation needs a clientAction or suggestedFollowUpIds.",
+              ),
+            );
+        }
+      }
     },
   );
   namedArray(
@@ -1647,6 +1798,40 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
         );
     },
   );
+  validateSingletonCapability(
+    capabilities.embeddedDelegation,
+    "embeddedDelegation",
+    ["schemaVersion", "toolIds"],
+    issues,
+    (entry) => {
+      if (entry.schemaVersion !== "1")
+        issues.push(
+          issue(
+            "$.capabilities.embeddedDelegation.schemaVersion",
+            "invalid",
+            "embeddedDelegation schema version must be 1.",
+          ),
+        );
+      const toolIds = boundedBindingIds(
+        entry.toolIds,
+        "$.capabilities.embeddedDelegation.toolIds",
+        issues,
+      );
+      for (const [index, id] of toolIds.entries()) {
+        const tool = capabilities.tools?.find(
+          (candidate) => candidate.id === id,
+        );
+        if (!tool || tool.embeddedChat !== true)
+          issues.push(
+            issue(
+              `$.capabilities.embeddedDelegation.toolIds[${index}]`,
+              "invalid",
+              "Embedded delegation tools must be declared with embeddedChat: true.",
+            ),
+          );
+      }
+    },
+  );
   const surfaceCount = [
     capabilities.tools,
     capabilities.actions,
@@ -1662,6 +1847,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     !capabilities.objectStore &&
     !capabilities.knowledge &&
     !capabilities.knowledgeEmailProcessor &&
+    !capabilities.embeddedDelegation &&
     !capabilities.chatTurnAdmission &&
     !capabilities.chatComposerStatus &&
     !capabilities.deploymentAdminWorkspace &&

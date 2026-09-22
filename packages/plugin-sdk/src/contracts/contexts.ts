@@ -25,6 +25,12 @@ export interface PluginInvocationContext {
     widgetId: string;
     externalUserId: string;
   }>;
+  /**
+   * Opaque, per-turn authority supplied only to an eligible tool declared by
+   * `capabilities.embeddedDelegation`. It expires with the embedded session.
+   * Never persist, log, display, return, or treat this value as an identity.
+   */
+  readonly embeddedDelegationId?: string;
   readonly tenantRecords?: TenantRecordStore;
   readonly database?: PluginDatabase;
   readonly objectStore?: PluginObjectStore;

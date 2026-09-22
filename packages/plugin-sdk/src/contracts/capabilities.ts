@@ -25,6 +25,31 @@ export interface PluginToolCapability {
   risk: PluginRisk;
   audience?: PluginToolAudience;
   requiredPermission?: PluginPermission;
+  /** Explicitly opt this tool into a verified embedded-chat invocation. */
+  embeddedChat?: true;
+  /** Closed, manifest-reviewed presentation that an embedded tool may request. */
+  embeddedPresentation?: PluginEmbeddedToolPresentationCapability;
+}
+
+export interface PluginEmbeddedToolPresentationCapability {
+  clientAction?: {
+    target: string;
+    labelKey: string;
+    /** Permit one opaque resource-scoped reference for this fixed action. */
+    resourceRef?: true;
+  };
+  suggestedFollowUpIds?: readonly [string, ...string[]];
+}
+
+/**
+ * Requests a short-lived opaque authority reference for the named embedded
+ * tools. The host grants it only for an active, verified embedded turn and
+ * only to a deployment-approved managed package. It is not a user identity,
+ * credential, grant, or reusable bearer token.
+ */
+export interface PluginEmbeddedDelegationCapability {
+  schemaVersion: "1";
+  toolIds: readonly [string, ...string[]];
 }
 
 export interface PluginActionCapability {
@@ -119,6 +144,7 @@ export interface PluginDeclaredCapabilities {
   connections?: { selectors: PluginConnectionSelector[] };
   structuredClassification?: PluginStructuredClassificationCapability;
   knowledgeEmailProcessor?: { schemaVersion: "1" };
+  embeddedDelegation?: PluginEmbeddedDelegationCapability;
   chatTurnAdmission?: { schemaVersion: "1"; scope: "deployment" };
   chatComposerStatus?: { schemaVersion: "1" };
   deploymentAdminWorkspace?: { schemaVersion: "1" };

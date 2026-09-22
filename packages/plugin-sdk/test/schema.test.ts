@@ -348,6 +348,46 @@ describe("published manifest schema", () => {
     }
   });
 
+  it("publishes the strict embedded-delegation declaration", async () => {
+    const schema = JSON.parse(
+      await readFile(
+        resolve(import.meta.dirname, "../schemas/opsrabbit-plugin.schema.json"),
+        "utf8",
+      ),
+    );
+    const validate = new Ajv2020({ allErrors: true, strict: false }).compile(
+      schema,
+    );
+    const validCapability = {
+      schemaVersion: "1",
+      toolIds: ["load-current-state"],
+    };
+    const embeddedManifest = { ...valid };
+    delete (embeddedManifest as { database?: unknown }).database;
+    expect(
+      validate({
+        ...embeddedManifest,
+        capabilities: {
+          tools: [
+            { id: "load-current-state", risk: "read", embeddedChat: true },
+          ],
+          embeddedDelegation: validCapability,
+        },
+      }),
+    ).toBe(true);
+    expect(
+      validate({
+        ...embeddedManifest,
+        capabilities: {
+          tools: [
+            { id: "load-current-state", risk: "read", embeddedChat: true },
+          ],
+          embeddedDelegation: { schemaVersion: "1", toolIds: [], extra: true },
+        },
+      }),
+    ).toBe(false);
+  });
+
   it("publishes the bounded Data Insight workspace shape", async () => {
     const schema = JSON.parse(
       await readFile(

@@ -1,0 +1,9 @@
+{
+  "id": "{{id}}", "name": "{{displayName}}", "version": "0.1.0",
+  "description": "{{displayName}} demonstrates opaque embedded-turn authority", "apiVersion": "1.0", "main": "./dist/index.js",
+  "minimumOpsRabbitVersion": "0.7.0",
+  "capabilities": {
+    "tools": [{ "id": "current-embedded-state", "risk": "read", "audience": "all", "requiredPermission": "read", "embeddedChat": true, "embeddedPresentation": { "clientAction": { "target": "embedded-state", "labelKey": "chat.cta.embedded_state" }, "suggestedFollowUpIds": ["refresh-embedded-state"] } }],
+    "embeddedDelegation": { "schemaVersion": "1", "toolIds": ["current-embedded-state"] }
+  }
+}

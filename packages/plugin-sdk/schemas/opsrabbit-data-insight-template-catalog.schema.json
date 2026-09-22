@@ -96,7 +96,25 @@
     "query": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["key", "dataset_id", "name", "semantic_query"],
+      "required": ["key", "name"],
+      "oneOf": [
+        {
+          "required": ["dataset_id", "semantic_query"],
+          "properties": {
+            "dataset_id": {},
+            "semantic_query": {},
+            "plugin_query": false
+          }
+        },
+        {
+          "required": ["plugin_query"],
+          "properties": {
+            "plugin_query": {},
+            "dataset_id": false,
+            "semantic_query": false
+          }
+        }
+      ],
       "properties": {
         "key": { "$ref": "#/$defs/key" },
         "dataset_id": {
@@ -106,6 +124,25 @@
         "name": { "type": "string", "minLength": 1, "maxLength": 160 },
         "description": { "type": "string" },
         "semantic_query": { "$ref": "#/$defs/jsonObject" },
+        "plugin_query": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["saved_query_id"],
+          "properties": {
+            "saved_query_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "\\S"
+            },
+            "datasource_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "\\S"
+            }
+          }
+        },
         "visualization_hint": { "type": "string" }
       }
     },

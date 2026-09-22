@@ -49,12 +49,13 @@ describe("{{displayName}}", () => {
                 "Can review the approved operational records dashboard.",
               references: expect.objectContaining({
                 metrics: ["record-count", "records-by-category"],
+                saved_queries: ["records-by-category"],
               }),
             }),
             queries: expect.arrayContaining([
               expect.objectContaining({
                 key: "records-by-category",
-                dataset_id: "insights.records",
+                plugin_query: { saved_query_id: "records-by-category" },
               }),
             ]),
             widgets: expect.arrayContaining([
@@ -71,5 +72,73 @@ describe("{{displayName}}", () => {
     expect(validateDataInsightDashboardTemplateCatalog(templates)).toEqual(
       expect.objectContaining({ ok: true, issues: [] }),
     );
+  });
+
+  it("enforces host-attested references in plugin-native queries and governed actions", async () => {
+    const context = createTestContext({
+      tenantId: "tenant-a",
+      dataInsightAuthorization: {
+        schemaVersion: 1,
+        mode: "resource_action",
+        policyKey: "records_reviewer",
+        dashboardId: "dashboard-a",
+        subject: { type: "group", id: "group-a" },
+        allowedReferences: {
+          reports: ["records-overview"],
+          saved_queries: ["records-by-category"],
+        },
+      },
+    });
+    await expect(
+      plugin.actions?.[0]?.run(
+        { saved_query_id: "records-by-category" },
+        context,
+      ),
+    ).resolves.toEqual(expect.objectContaining({ rows: expect.any(Array) }));
+    await expect(
+      plugin.actions?.[1]?.run({ report_id: "records-overview" }, context),
+    ).resolves.toEqual(
+      expect.objectContaining({ report_id: "records-overview" }),
+    );
+    await expect(
+      plugin.actions?.[0]?.run({ saved_query_id: "other" }, context),
+    ).rejects.toThrow("not authorized");
+    await expect(
+      plugin.actions?.[1]?.run({ report_id: "other" }, context),
+    ).rejects.toThrow("not authorized");
+    const staleContext = createTestContext({
+      tenantId: "tenant-a",
+      dataInsightAuthorization: {
+        ...context.dataInsightAuthorization!,
+        allowedReferences: {
+          reports: ["retired-report"],
+          saved_queries: ["retired-query"],
+        },
+      },
+    });
+    await expect(
+      plugin.actions?.[0]?.run(
+        { saved_query_id: "retired-query" },
+        staleContext,
+      ),
+    ).rejects.toThrow("not authorized");
+    await expect(
+      plugin.actions?.[1]?.run({ report_id: "retired-report" }, staleContext),
+    ).rejects.toThrow("not authorized");
+    const contextWithoutAuthorization = createTestContext({
+      tenantId: "tenant-a",
+    });
+    await expect(
+      plugin.actions?.[0]?.run(
+        { saved_query_id: "records-by-category" },
+        contextWithoutAuthorization,
+      ),
+    ).rejects.toThrow("not authorized");
+    await expect(
+      plugin.actions?.[1]?.run(
+        { report_id: "records-overview" },
+        contextWithoutAuthorization,
+      ),
+    ).rejects.toThrow("not authorized");
   });
 });

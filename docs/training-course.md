@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.20.0
-and `@opsrabbit/create-plugin` 0.20.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.21.0
+and `@opsrabbit/create-plugin` 0.21.0.
 
 ## Course promise
 
@@ -64,7 +64,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.20.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.21.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -468,6 +468,7 @@ templates without exposing raw SQL or dashboard persistence.
 "dataInsight": {
   "catalogRoute": "/analytics-catalog",
   "templatesRoute": "/analytics-templates",
+  "pluginQueryAction": "run_insights_query",
   "workspace": {
     "enabledSetting": "insights_enabled",
     "placement": "tab",
@@ -501,6 +502,19 @@ and dashboard policy, revalidates the current actor, and supplies the bounded
 dashboard-chat, or governed resource-action invocation. Plugin execution must
 check both the attested reference and its own catalog; presentation text and conversation
 bindings are never authorization inputs.
+
+A template query may instead declare `plugin_query.saved_query_id` and an
+optional datasource id. The route-owning plugin is implicit, and the manifest
+must name one viewer/read `pluginQueryAction`. When the template is governed,
+the saved-query id must also appear in
+`authorization.references.saved_queries`. The plugin action must reject both a
+missing or mismatched host attestation and an unknown or disabled catalog id.
+
+A read-only Forms action may declare
+`dataInsightAuthorization: { namespace, inputField }`. Core extracts that one
+top-level scalar input, checks it against the active policy namespace, and
+supplies the attestation to the action. This mapping is unavailable to write,
+destructive, deployment-admin, or non-Forms actions.
 
 ### Lab: records overview
 

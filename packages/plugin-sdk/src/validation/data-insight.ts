@@ -449,6 +449,7 @@ function validateTemplate(
         [
           "key",
           "dataset_id",
+          "plugin_query",
           "name",
           "description",
           "semantic_query",
@@ -458,22 +459,84 @@ function validateTemplate(
         issues,
       );
       unique(query.key, `${queryPath}.key`, KEY, queryKeys, issues);
-      if (
-        typeof query.dataset_id !== "string" ||
-        !DATASET_ID.test(query.dataset_id)
-      )
-        issues.push(
-          issue(`${queryPath}.dataset_id`, "invalid", "dataset_id is invalid."),
-        );
-      boundedString(query.name, `${queryPath}.name`, 160, issues);
-      if (!record(query.semantic_query))
+      const hasFormsSource =
+        query.dataset_id !== undefined || query.semantic_query !== undefined;
+      const hasPluginSource = query.plugin_query !== undefined;
+      if (hasFormsSource === hasPluginSource) {
         issues.push(
           issue(
-            `${queryPath}.semantic_query`,
-            "type",
-            "semantic_query must be an object.",
+            queryPath,
+            "invalid-source",
+            "Query must declare exactly one Forms or plugin source.",
           ),
         );
+      } else if (hasFormsSource) {
+        if (
+          typeof query.dataset_id !== "string" ||
+          !DATASET_ID.test(query.dataset_id)
+        )
+          issues.push(
+            issue(
+              `${queryPath}.dataset_id`,
+              "invalid",
+              "dataset_id is invalid.",
+            ),
+          );
+        if (!record(query.semantic_query))
+          issues.push(
+            issue(
+              `${queryPath}.semantic_query`,
+              "type",
+              "semantic_query must be an object.",
+            ),
+          );
+      } else if (!record(query.plugin_query)) {
+        issues.push(
+          issue(
+            `${queryPath}.plugin_query`,
+            "type",
+            "plugin_query must be an object.",
+          ),
+        );
+      } else {
+        unknownKeys(
+          query.plugin_query,
+          ["saved_query_id", "datasource_id"],
+          `${queryPath}.plugin_query`,
+          issues,
+        );
+        boundedString(
+          query.plugin_query.saved_query_id,
+          `${queryPath}.plugin_query.saved_query_id`,
+          200,
+          issues,
+        );
+        if (query.plugin_query.datasource_id !== undefined)
+          boundedString(
+            query.plugin_query.datasource_id,
+            `${queryPath}.plugin_query.datasource_id`,
+            160,
+            issues,
+          );
+        const references =
+          record(value.authorization) && record(value.authorization.references)
+            ? value.authorization.references.saved_queries
+            : undefined;
+        if (
+          value.authorization !== undefined &&
+          (!Array.isArray(references) ||
+            !references.includes(query.plugin_query.saved_query_id))
+        ) {
+          issues.push(
+            issue(
+              `${queryPath}.plugin_query.saved_query_id`,
+              "undeclared-reference",
+              "Governed plugin queries must appear in authorization.references.saved_queries.",
+            ),
+          );
+        }
+      }
+      boundedString(query.name, `${queryPath}.name`, 160, issues);
     });
   if (
     !Array.isArray(value.widgets) ||

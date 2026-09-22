@@ -196,7 +196,9 @@ export function validateRegistration(
         Boolean(declared.deploymentAdminOnly) !==
           Boolean(action.deploymentAdminOnly) ||
         JSON.stringify(declared.formPlacement ?? null) !==
-          JSON.stringify(action.formPlacement ?? null))
+          JSON.stringify(action.formPlacement ?? null) ||
+        JSON.stringify(declared.dataInsightAuthorization ?? null) !==
+          JSON.stringify(action.dataInsightAuthorization ?? null))
     ) {
       issues.push(
         issue(

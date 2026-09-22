@@ -78,6 +78,10 @@ export interface ActionDefinition<
     recordType: string;
     intent: "primary" | "neutral" | "danger";
   };
+  dataInsightAuthorization?: {
+    namespace: string;
+    inputField: string;
+  };
   sampleInput?: Readonly<Record<string, JsonValue>>;
   available?(
     input: TInput,

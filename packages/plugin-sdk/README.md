@@ -142,6 +142,14 @@ Validate hand-built or persisted attestations with
 as `@opsrabbit/plugin-sdk/data-insight-authorization-context-schema`. Plugins
 must still reject references absent from the attestation and their own catalog.
 
+SDK 0.21 also permits a template query to declare
+`plugin_query.saved_query_id` (plus an optional datasource id) when the manifest
+names a viewer/read `dataInsight.pluginQueryAction`. Governed native query ids
+must be listed in `authorization.references.saved_queries`. A read-only Forms
+action may declare `dataInsightAuthorization: { namespace, inputField }` so the
+host can authorize one stable top-level input before invoking the plugin. The
+plugin must repeat both attestation and current-catalog checks.
+
 Plugins may declare `requiredEntitlements` as a bounded list of host-defined
 license keys. The host requires every key before exposing or activating the
 plugin and continues to enforce entitlement state on backend invocation paths;

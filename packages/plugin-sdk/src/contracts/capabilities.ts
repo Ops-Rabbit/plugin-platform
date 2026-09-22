@@ -37,6 +37,10 @@ export interface PluginActionCapability {
     recordType: string;
     intent: "primary" | "neutral" | "danger";
   };
+  dataInsightAuthorization?: {
+    namespace: string;
+    inputField: string;
+  };
 }
 
 export interface PluginScheduledJobCapability {

@@ -101,6 +101,7 @@ export interface PluginManifest {
   dataInsight?: {
     catalogRoute: `/${string}`;
     templatesRoute?: `/${string}`;
+    pluginQueryAction?: string;
     workspace?: {
       enabledSetting?: string;
       placement: "tab" | "menu";

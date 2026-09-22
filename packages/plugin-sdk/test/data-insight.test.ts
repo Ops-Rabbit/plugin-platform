@@ -130,6 +130,16 @@ describe("Data Insight public catalog validation", () => {
       value: authorization,
       issues: [],
     });
+    const unicodeAuthorization = {
+      ...authorization,
+      dashboardId: "😀".repeat(200),
+      subject: { type: "group", id: "😀".repeat(200) },
+      allowedReferences: { reports: ["😀".repeat(200)] },
+    } as const;
+    expect(ajv.compile(authorizationSchema)(unicodeAuthorization)).toBe(true);
+    expect(
+      validateDataInsightAuthorizationContext(unicodeAuthorization).ok,
+    ).toBe(true);
     const invalidAuthorization = {
       ...authorization,
       policyKey: `p${"x".repeat(80)}`,
@@ -139,6 +149,15 @@ describe("Data Insight public catalog validation", () => {
     expect(
       validateDataInsightAuthorizationContext(invalidAuthorization).ok,
     ).toBe(false);
+    const blankIdentifiers = {
+      ...authorization,
+      dashboardId: " ",
+      subject: { type: "group", id: " " },
+    };
+    expect(ajv.compile(authorizationSchema)(blankIdentifiers)).toBe(false);
+    expect(validateDataInsightAuthorizationContext(blankIdentifiers).ok).toBe(
+      false,
+    );
     const invalidTemplate = structuredClone(templates);
     invalidTemplate.templates[0]!.authorization!.references.metrics = [" "];
     expect(ajv.compile(templateSchema)(invalidTemplate)).toBe(false);

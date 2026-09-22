@@ -571,7 +571,7 @@ function validateReferenceMap(
       if (
         typeof reference !== "string" ||
         reference.trim() === "" ||
-        reference.length > 200
+        codePointLength(reference) > 200
       ) {
         issues.push(
           issue(
@@ -618,7 +618,11 @@ function boundedString(
   max: number,
   issues: ValidationIssue[],
 ) {
-  if (typeof value !== "string" || value.trim() === "" || value.length > max)
+  if (
+    typeof value !== "string" ||
+    value.trim() === "" ||
+    codePointLength(value) > max
+  )
     issues.push(
       issue(
         path,
@@ -648,6 +652,9 @@ function authorizationKey(
         `Use a safe lowercase key of at most ${MAX_AUTHORIZATION_KEY_LENGTH} characters.`,
       ),
     );
+}
+function codePointLength(value: string): number {
+  return [...value].length;
 }
 function unique(
   value: unknown,

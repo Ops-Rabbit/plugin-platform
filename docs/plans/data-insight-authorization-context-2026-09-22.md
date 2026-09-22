@@ -26,4 +26,5 @@ The context contains stable identifiers only, no customer rows, query results, c
 
 - `pnpm quality` passes, including 197 SDK tests, 44 CLI tests, package inventory checks, and clean-consumer verification for every generated starter.
 - Autoreview found two P2 schema/runtime parity issues: whitespace-only references and unbounded authorization keys. Both exported schemas now match the runtime's non-whitespace reference rule, and authorization policy/namespace keys are capped at 80 characters in both paths. Focused parity tests cover both cases.
+- Final full-diff review found two further parity edge cases: whitespace-only dashboard/group identifiers and UTF-16 versus JSON Schema Unicode code-point length counting. Schemas now reject blank identifiers, runtime bounds count code points, and regression tests cover 200-character non-BMP values.
 - The contract introduces no customer-data store. Authorization, tenant/group validation, audit, revocation, expiry, and deletion remain host responsibilities; plugin declarations remain non-authoritative catalog metadata.

@@ -20,14 +20,24 @@
       "maxLength": 80,
       "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$"
     },
-    "dashboardId": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "dashboardId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "\\S"
+    },
     "subject": {
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "id"],
       "properties": {
         "type": { "const": "group" },
-        "id": { "type": "string", "minLength": 1, "maxLength": 200 }
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        }
       }
     },
     "allowedReferences": {

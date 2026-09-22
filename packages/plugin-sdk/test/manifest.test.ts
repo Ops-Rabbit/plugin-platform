@@ -706,6 +706,68 @@ describe("validateManifest", () => {
       ]),
     );
   });
+  it("validates plugin query execution and governed action mappings", () => {
+    const accepted = validateManifest({
+      ...valid,
+      dataInsight: {
+        catalogRoute: "/status",
+        templatesRoute: "/insights-templates",
+        pluginQueryAction: "run_query",
+      },
+      capabilities: {
+        ...valid.capabilities,
+        actions: [
+          { id: "run_query", risk: "read", requiredRole: "viewer" },
+          {
+            id: "view_report",
+            risk: "read",
+            requiredRole: "viewer",
+            formPlacement: {
+              moduleKey: "incidents",
+              recordType: "incident",
+              intent: "primary",
+            },
+            dataInsightAuthorization: {
+              namespace: "reports",
+              inputField: "report_id",
+            },
+          },
+        ],
+      },
+    });
+    expect(accepted.issues).toEqual([]);
+
+    const rejected = validateManifest({
+      ...valid,
+      dataInsight: {
+        catalogRoute: "/status",
+        templatesRoute: "/insights-templates",
+        pluginQueryAction: "mutate",
+      },
+      capabilities: {
+        ...valid.capabilities,
+        actions: [
+          {
+            id: "mutate",
+            risk: "write",
+            requiredRole: "operator",
+            dataInsightAuthorization: {
+              namespace: "Reports",
+              inputField: "nested.report",
+            },
+          },
+        ],
+      },
+    });
+    expect(rejected.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "$.dataInsight.pluginQueryAction" }),
+        expect.objectContaining({
+          path: "$.capabilities.actions[0].dataInsightAuthorization",
+        }),
+      ]),
+    );
+  });
   it("accepts separate-menu Insights workspaces without tab preferences", () => {
     expect(
       validateManifest({

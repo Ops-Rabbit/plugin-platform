@@ -1,5 +1,6 @@
 import type { JsonValue } from "./manifest.js";
 import type { PluginStructuredClassificationService } from "./structured-classification.js";
+import type { DataInsightAuthorizationContext } from "./data-insight.js";
 
 export interface PluginActor {
   readonly id: string;
@@ -46,6 +47,8 @@ export interface PluginInvocationContext {
    * cancelled; its own deadline instead resolves an explicit timeout result.
    */
   readonly structuredClassification?: PluginStructuredClassificationService;
+  /** Host-attested Data Insight authorization; absent outside an authorized invocation. */
+  readonly dataInsightAuthorization?: DataInsightAuthorizationContext;
 }
 
 export interface PluginIdentityDirectoryUser {

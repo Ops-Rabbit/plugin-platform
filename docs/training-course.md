@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.20.1
-and `@opsrabbit/create-plugin` 0.20.1.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.21.2
+and `@opsrabbit/create-plugin` 0.21.2.
 
 ## Course promise
 
@@ -64,7 +64,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.20.1, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.21.2, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -324,6 +324,13 @@ interface PluginInvocationContext {
 Optional brokers must be checked and code must fail closed when one is absent.
 
 For chat tool invocations, `conversationBindings` can carry deterministic values selected when an Embedded Chat conversation starts, such as a workspace id. They bypass model argument copying but remain untrusted browser-supplied data. `embeddedChat` is different: it contains the external user and widget identity verified from the signed token. A plugin must validate each requested binding against that verified identity, `tenantId`, and its own authorization source before using it to select customer data. Bindings are absent on other invocation surfaces and must never contain secrets.
+
+An approved managed plugin can additionally declare `embeddedDelegation` for an
+explicitly `embeddedChat` read-only tool. The host may then provide an opaque,
+per-turn reference only after package, tenant, widget, and tool authorization;
+the declaration grants none of that authority. Treat the reference as ephemeral:
+use it only for the documented downstream turn binding, fail closed when absent,
+and never persist, log, return, display, or expose it to model or client code.
 
 ### Lab A: tenant records
 

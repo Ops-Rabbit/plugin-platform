@@ -111,8 +111,33 @@
             "recordType": { "$ref": "#/$defs/settingKey" },
             "intent": { "enum": ["primary", "neutral", "danger"] }
           }
+        },
+        "dataInsightAuthorization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["namespace", "inputField"],
+          "properties": {
+            "namespace": { "$ref": "#/$defs/id" },
+            "inputField": { "$ref": "#/$defs/settingKey" }
+          }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "dataInsightAuthorization": {} },
+            "required": ["dataInsightAuthorization"]
+          },
+          "then": {
+            "properties": {
+              "risk": { "const": "read" },
+              "deploymentAdminOnly": { "not": { "const": true } },
+              "formPlacement": {}
+            },
+            "required": ["formPlacement"]
+          }
+        }
+      ]
     },
     "named": {
       "type": "object",
@@ -425,6 +450,7 @@
           "type": "string",
           "pattern": "^/(?!.*(?:^|/)\\.\\.?/)[A-Za-z0-9._/-]+$"
         },
+        "pluginQueryAction": { "$ref": "#/$defs/id" },
         "workspace": {
           "type": "object",
           "additionalProperties": false,

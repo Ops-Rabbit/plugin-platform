@@ -38,9 +38,10 @@
           "additionalProperties": false,
           "properties": { "show_date_range": { "type": "boolean" } }
         },
+        "authorization": { "$ref": "#/$defs/authorization" },
         "queries": {
           "type": "array",
-          "maxItems": 20,
+          "maxItems": 40,
           "items": { "$ref": "#/$defs/query" }
         },
         "widgets": {
@@ -51,10 +52,69 @@
         }
       }
     },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_key", "references"],
+      "properties": {
+        "policy_key": { "$ref": "#/$defs/authorizationKey" },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "\\S"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000,
+          "pattern": "\\S"
+        },
+        "references": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": { "$ref": "#/$defs/authorizationKey" },
+          "additionalProperties": {
+            "type": "array",
+            "maxItems": 200,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "\\S"
+            }
+          }
+        }
+      }
+    },
+    "authorizationKey": {
+      "type": "string",
+      "maxLength": 80,
+      "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$"
+    },
     "query": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["key", "dataset_id", "name", "semantic_query"],
+      "required": ["key", "name"],
+      "oneOf": [
+        {
+          "required": ["dataset_id", "semantic_query"],
+          "properties": {
+            "dataset_id": {},
+            "semantic_query": {},
+            "plugin_query": false
+          }
+        },
+        {
+          "required": ["plugin_query"],
+          "properties": {
+            "plugin_query": {},
+            "dataset_id": false,
+            "semantic_query": false
+          }
+        }
+      ],
       "properties": {
         "key": { "$ref": "#/$defs/key" },
         "dataset_id": {
@@ -64,6 +124,25 @@
         "name": { "type": "string", "minLength": 1, "maxLength": 160 },
         "description": { "type": "string" },
         "semantic_query": { "$ref": "#/$defs/jsonObject" },
+        "plugin_query": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["saved_query_id"],
+          "properties": {
+            "saved_query_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "\\S"
+            },
+            "datasource_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "\\S"
+            }
+          }
+        },
         "visualization_hint": { "type": "string" }
       }
     },

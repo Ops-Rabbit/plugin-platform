@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.20.1 - 2026-09-22
+## 0.21.2 - 2026-09-22
 
 - Add the public `embeddedDelegation` capability and an exact `embeddedChat`
   tool declaration. The opaque per-turn reference is available only to an
@@ -11,6 +11,24 @@
 - Add manifest-bound embedded client presentation metadata and a typed tool-result
   sidecar for a fixed client action and bounded follow-up ids. It is validated by
   the host rather than parsed from model output or treated as a URL.
+
+## 0.21.1 - 2026-09-22
+
+- Align the dashboard-template query bound with the existing 40-widget bound so complete plugin-owned dashboards can provide one governed query per widget.
+
+## 0.21.0 - 2026-09-22
+
+- Let dashboard templates declare plugin-native saved-query references executed through one manifest-declared viewer read action.
+- Let read-only Forms actions map one stable top-level input field to a namespaced Data Insight authorization reference.
+- Require governed plugin-native queries to appear in `authorization.references.saved_queries`; declarations remain non-granting and plugins must repeat attestation and catalog checks.
+- Extend runtime validation, JSON Schema, the executable `forms-insights` starter, documentation, packaging, and clean-consumer coverage.
+
+## 0.20.0 - 2026-09-22
+
+- Add a versioned, host-attested `dataInsightAuthorization` invocation context with bounded policy, group subject, mode, dashboard, and namespaced stable-reference fields.
+- Let dashboard templates declare plugin-owned authorization policy keys and stable reference catalogs without granting access; the host remains responsible for actor revalidation, tenant/group membership, grants, audit, and lifecycle.
+- Let plugins supply optional policy labels and descriptions for generic host administration surfaces without making presentation text an authorization input.
+- Add strict runtime and JSON Schema validation, a packaged authorization-context schema, and an executable `forms-insights` starter example.
 
 ## 0.19.0 - 2026-09-18
 

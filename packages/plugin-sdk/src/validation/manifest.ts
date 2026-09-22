@@ -580,7 +580,12 @@ function validateDataInsight(
   }
   unknownKeys(
     value,
-    new Set(["catalogRoute", "templatesRoute", "workspace"]),
+    new Set([
+      "catalogRoute",
+      "templatesRoute",
+      "pluginQueryAction",
+      "workspace",
+    ]),
     "$.dataInsight",
     issues,
   );
@@ -617,6 +622,46 @@ function validateDataInsight(
           "$.dataInsight.templatesRoute",
           "invalid",
           "Data Insight templates route must be declared as a read route capability.",
+        ),
+      );
+    }
+  }
+  if (value.pluginQueryAction !== undefined) {
+    string(
+      value.pluginQueryAction,
+      "$.dataInsight.pluginQueryAction",
+      issues,
+      (candidate) => ID.test(candidate),
+      "Use a declared action id.",
+    );
+    const actions =
+      record(capabilitiesValue) && Array.isArray(capabilitiesValue.actions)
+        ? capabilitiesValue.actions
+        : [];
+    const action = actions.find(
+      (candidate) =>
+        record(candidate) && candidate.id === value.pluginQueryAction,
+    );
+    if (
+      !record(action) ||
+      action.risk !== "read" ||
+      action.requiredRole !== "viewer" ||
+      action.deploymentAdminOnly === true
+    ) {
+      issues.push(
+        issue(
+          "$.dataInsight.pluginQueryAction",
+          "invalid",
+          "Plugin query execution must reference a declared viewer read action.",
+        ),
+      );
+    }
+    if (value.templatesRoute === undefined) {
+      issues.push(
+        issue(
+          "$.dataInsight.pluginQueryAction",
+          "invalid",
+          "Plugin query execution requires a templates route.",
         ),
       );
     }
@@ -1357,7 +1402,14 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     capabilities.actions,
     "actions",
     issues,
-    ["id", "risk", "requiredRole", "deploymentAdminOnly", "formPlacement"],
+    [
+      "id",
+      "risk",
+      "requiredRole",
+      "deploymentAdminOnly",
+      "formPlacement",
+      "dataInsightAuthorization",
+    ],
     (entry, path) => {
       member(entry.risk, PLUGIN_RISKS, `${path}.risk`, issues);
       member(entry.requiredRole, PLUGIN_ROLES, `${path}.requiredRole`, issues);
@@ -1407,6 +1459,52 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
             ["primary", "neutral", "danger"] as const,
             `${path}.formPlacement.intent`,
             issues,
+          );
+        }
+      }
+      if (entry.dataInsightAuthorization !== undefined) {
+        const authorizationPath = `${path}.dataInsightAuthorization`;
+        if (!record(entry.dataInsightAuthorization)) {
+          issues.push(
+            issue(
+              authorizationPath,
+              "type",
+              "Data Insight authorization mapping must be an object.",
+            ),
+          );
+        } else {
+          unknownKeys(
+            entry.dataInsightAuthorization,
+            new Set(["namespace", "inputField"]),
+            authorizationPath,
+            issues,
+          );
+          string(
+            entry.dataInsightAuthorization.namespace,
+            `${authorizationPath}.namespace`,
+            issues,
+            (candidate) => ID.test(candidate) && candidate.length <= 80,
+            "Use a bounded lowercase identifier.",
+          );
+          string(
+            entry.dataInsightAuthorization.inputField,
+            `${authorizationPath}.inputField`,
+            issues,
+            (candidate) => COLLECTION.test(candidate) && candidate.length <= 80,
+            "Use a bounded top-level snake_case input field.",
+          );
+        }
+        if (
+          entry.risk !== "read" ||
+          entry.formPlacement === undefined ||
+          entry.deploymentAdminOnly === true
+        ) {
+          issues.push(
+            issue(
+              authorizationPath,
+              "invalid",
+              "Data Insight authorization mappings require a read-only tenant Forms action.",
+            ),
           );
         }
       }

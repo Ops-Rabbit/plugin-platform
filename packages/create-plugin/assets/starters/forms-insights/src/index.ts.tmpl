@@ -16,7 +16,11 @@ const analyticsCatalog = {
       record_type: "insight_record",
       dimensions: [
         { field_key: "category", value_type: "text", sensitivity: "internal" },
-        { field_key: "recorded_at", value_type: "timestamp", sensitivity: "internal" },
+        {
+          field_key: "recorded_at",
+          value_type: "timestamp",
+          sensitivity: "internal",
+        },
       ],
       measures: [
         { key: "record_count", aggregation: "count", unit: "records" },
@@ -41,6 +45,16 @@ const templateCatalog = {
       description: "Caller-visible record totals and category distribution.",
       suggested_questions: ["Which category has the most records?"],
       presentation: { show_date_range: true },
+      authorization: {
+        policy_key: "records_reviewer",
+        label: "Records reviewer",
+        description: "Can review the approved operational records dashboard.",
+        references: {
+          reports: ["records-overview"],
+          metrics: ["record-count", "records-by-category"],
+          saved_queries: ["records-by-category"],
+        },
+      },
       layout: { columns: 12 },
       queries: [
         {
@@ -57,14 +71,8 @@ const templateCatalog = {
         },
         {
           key: "records-by-category",
-          dataset_id: "insights.records",
           name: "Records by category",
-          semantic_query: {
-            dimensions: ["category"],
-            measures: ["record_count"],
-            filters: [],
-            limit: 20,
-          },
+          plugin_query: { saved_query_id: "records-by-category" },
           visualization_hint: "bar",
         },
       ],
@@ -89,7 +97,57 @@ const templateCatalog = {
   ],
 } satisfies DataInsightDashboardTemplateCatalog;
 
+const availableSavedQueryIds = new Set(["records-by-category"]);
+const availableReportIds = new Set(["records-overview"]);
+
 export default definePlugin({
+  actions: [
+    {
+      id: "run_insights_query",
+      title: "Run Insights query",
+      risk: "read",
+      requiredRole: "viewer",
+      async run(input: Record<string, JsonValue>, context) {
+        const savedQueryId = String(input.saved_query_id ?? "");
+        if (
+          !availableSavedQueryIds.has(savedQueryId) ||
+          !context.dataInsightAuthorization?.allowedReferences.saved_queries?.includes(
+            savedQueryId,
+          )
+        ) {
+          throw new Error("Saved query is not authorized for this dashboard.");
+        }
+        return { rows: [{ category: "Example", record_count: 1 }] };
+      },
+    },
+    {
+      id: "view_record_report",
+      title: "View record report",
+      risk: "read",
+      requiredRole: "viewer",
+      formPlacement: {
+        moduleKey: "insight_records",
+        recordType: "insight_record",
+        intent: "primary",
+      },
+      dataInsightAuthorization: {
+        namespace: "reports",
+        inputField: "report_id",
+      },
+      async run(input: Record<string, JsonValue>, context) {
+        const reportId = String(input.report_id ?? "");
+        if (
+          !availableReportIds.has(reportId) ||
+          !context.dataInsightAuthorization?.allowedReferences.reports?.includes(
+            reportId,
+          )
+        ) {
+          throw new Error("Report is not authorized for this policy.");
+        }
+        return { report_id: reportId, rows: [] };
+      },
+    },
+  ],
   routes: [
     {
       path: "/analytics-catalog",

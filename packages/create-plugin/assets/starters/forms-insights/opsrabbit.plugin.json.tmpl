@@ -36,6 +36,7 @@
   "dataInsight": {
     "catalogRoute": "/analytics-catalog",
     "templatesRoute": "/analytics-templates",
+    "pluginQueryAction": "run_insights_query",
     "workspace": {
       "enabledSetting": "insights_enabled",
       "placement": "tab",
@@ -45,6 +46,16 @@
     }
   },
   "capabilities": {
+    "actions": [
+      { "id": "run_insights_query", "risk": "read", "requiredRole": "viewer" },
+      {
+        "id": "view_record_report",
+        "risk": "read",
+        "requiredRole": "viewer",
+        "formPlacement": { "moduleKey": "insight_records", "recordType": "insight_record", "intent": "primary" },
+        "dataInsightAuthorization": { "namespace": "reports", "inputField": "report_id" }
+      }
+    ],
     "routes": [
       { "path": "/analytics-catalog", "requiredRole": "viewer" },
       { "path": "/analytics-templates", "requiredRole": "viewer" }

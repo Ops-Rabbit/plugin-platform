@@ -302,6 +302,57 @@ describe("plugin registration", () => {
     );
   });
 
+  it("requires exact governed Data Insight action mapping", () => {
+    const actionManifest: PluginManifest = {
+      ...manifest,
+      capabilities: {
+        actions: [
+          {
+            id: "view_report",
+            risk: "read",
+            requiredRole: "viewer",
+            formPlacement: {
+              moduleKey: "inspections",
+              recordType: "inspection",
+              intent: "primary",
+            },
+            dataInsightAuthorization: {
+              namespace: "reports",
+              inputField: "report_id",
+            },
+          },
+        ],
+      },
+    };
+    const issues = validateRegistration(actionManifest, {
+      actions: [
+        {
+          id: "view_report",
+          title: "View report",
+          risk: "read",
+          requiredRole: "viewer",
+          formPlacement: {
+            moduleKey: "inspections",
+            recordType: "inspection",
+            intent: "primary",
+          },
+          dataInsightAuthorization: {
+            namespace: "reports",
+            inputField: "other_id",
+          },
+          async run() {
+            return null;
+          },
+        },
+      ],
+    });
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "metadata-mismatch" }),
+      ]),
+    );
+  });
+
   it("validates handler and scheduler runtime requirements", () => {
     const runtimeManifest: PluginManifest = {
       ...manifest,

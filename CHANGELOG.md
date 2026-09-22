@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.20.0 - 2026-09-22
+
+- Add a versioned, host-attested `dataInsightAuthorization` invocation context with bounded policy, group subject, mode, dashboard, and namespaced stable-reference fields.
+- Let dashboard templates declare plugin-owned authorization policy keys and stable reference catalogs without granting access; the host remains responsible for actor revalidation, tenant/group membership, grants, audit, and lifecycle.
+- Add strict runtime and JSON Schema validation, a packaged authorization-context schema, and an executable `forms-insights` starter example.
+
 ## 0.19.0 - 2026-09-18
 
 - Add optional `navigation.section` with Primary (default), Operations, Control

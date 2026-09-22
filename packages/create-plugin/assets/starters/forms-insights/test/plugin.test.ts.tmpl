@@ -42,6 +42,12 @@ describe("{{displayName}}", () => {
         templates: [
           expect.objectContaining({
             id: "records-overview",
+            authorization: expect.objectContaining({
+              policy_key: "records_reviewer",
+              references: expect.objectContaining({
+                metrics: ["record-count", "records-by-category"],
+              }),
+            }),
             queries: expect.arrayContaining([
               expect.objectContaining({
                 key: "records-by-category",

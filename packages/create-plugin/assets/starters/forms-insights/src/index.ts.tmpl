@@ -41,6 +41,13 @@ const templateCatalog = {
       description: "Caller-visible record totals and category distribution.",
       suggested_questions: ["Which category has the most records?"],
       presentation: { show_date_range: true },
+      authorization: {
+        policy_key: "records_reviewer",
+        references: {
+          reports: ["records-overview"],
+          metrics: ["record-count", "records-by-category"],
+        },
+      },
       layout: { columns: 12 },
       queries: [
         {

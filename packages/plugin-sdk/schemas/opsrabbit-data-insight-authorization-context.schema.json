@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.ai/schemas/data-insight-authorization-context-v1.json",
+  "title": "OpsRabbit Data Insight Authorization Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "mode",
+    "policyKey",
+    "dashboardId",
+    "subject",
+    "allowedReferences"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "mode": { "enum": ["dashboard", "dashboard_chat", "resource_action"] },
+    "policyKey": {
+      "type": "string",
+      "maxLength": 80,
+      "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$"
+    },
+    "dashboardId": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "const": "group" },
+        "id": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "allowedReferences": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {
+        "type": "string",
+        "maxLength": 80,
+        "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "maxItems": 200,
+        "uniqueItems": true,
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        }
+      }
+    }
+  }
+}

@@ -130,6 +130,16 @@ Schemas are available from
 validation; runtime validation additionally checks duplicate identifiers and
 query/widget references that JSON Schema cannot express.
 
+A template may declare `authorization.policy_key` and bounded, namespaced stable
+`authorization.references`. These are plugin-owned identifiers, not grants. For
+an authorized dashboard, dashboard-chat, or governed resource action, the host
+may provide `context.dataInsightAuthorization` after revalidating the active
+tenant, actor, group membership, dashboard policy, and allowed reference subset.
+Validate hand-built or persisted attestations with
+`validateDataInsightAuthorizationContext`; the matching JSON Schema is exported
+as `@opsrabbit/plugin-sdk/data-insight-authorization-context-schema`. Plugins
+must still reject references absent from the attestation and their own catalog.
+
 Plugins may declare `requiredEntitlements` as a bounded list of host-defined
 license keys. The host requires every key before exposing or activating the
 plugin and continues to enforce entitlement state on backend invocation paths;

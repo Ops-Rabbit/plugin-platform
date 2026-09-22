@@ -10,6 +10,14 @@ describe("test utilities", () => {
       tenantId: "t-2",
       actor: { id: "operator-1", role: "operator", kind: "user" },
       settings: { limit: 4 },
+      dataInsightAuthorization: {
+        schemaVersion: 1,
+        mode: "dashboard",
+        policyKey: "records_reviewer",
+        dashboardId: "dashboard-1",
+        subject: { type: "group", id: "group-1" },
+        allowedReferences: { metrics: ["record-count"] },
+      },
     });
     context.logger.info("started", { count: 2 });
     context.logger.warn("slow");
@@ -17,6 +25,9 @@ describe("test utilities", () => {
       tenantId: "t-2",
       actor: { id: "operator-1" },
       settings: { limit: 4 },
+      dataInsightAuthorization: expect.objectContaining({
+        policyKey: "records_reviewer",
+      }),
     });
     expect(context.logs).toEqual([
       { level: "info", message: "started", fields: { count: 2 } },

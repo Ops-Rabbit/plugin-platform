@@ -38,6 +38,7 @@
           "additionalProperties": false,
           "properties": { "show_date_range": { "type": "boolean" } }
         },
+        "authorization": { "$ref": "#/$defs/authorization" },
         "queries": {
           "type": "array",
           "maxItems": 20,
@@ -50,6 +51,35 @@
           "items": { "$ref": "#/$defs/widget" }
         }
       }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_key", "references"],
+      "properties": {
+        "policy_key": { "$ref": "#/$defs/authorizationKey" },
+        "references": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": { "$ref": "#/$defs/authorizationKey" },
+          "additionalProperties": {
+            "type": "array",
+            "maxItems": 200,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "\\S"
+            }
+          }
+        }
+      }
+    },
+    "authorizationKey": {
+      "type": "string",
+      "maxLength": 80,
+      "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$"
     },
     "query": {
       "type": "object",

@@ -1,6 +1,7 @@
 import type { ValidationIssue } from "../contracts/errors.js";
 import type {
   DataInsightDashboardTemplateCatalog,
+  DataInsightAuthorizationContext,
   FormsAnalyticsCatalog,
 } from "../contracts/data-insight.js";
 import type { ValidationResult } from "./manifest.js";
@@ -26,6 +27,62 @@ const AGGREGATIONS = new Set([
   "sum_divide",
   "ratio_percent",
 ]);
+const AUTHORIZATION_MODES = new Set([
+  "dashboard",
+  "dashboard_chat",
+  "resource_action",
+]);
+const MAX_REFERENCE_NAMESPACES = 32;
+const MAX_REFERENCES_PER_NAMESPACE = 200;
+const MAX_AUTHORIZATION_KEY_LENGTH = 80;
+
+export function validateDataInsightAuthorizationContext(
+  input: unknown,
+): ValidationResult<DataInsightAuthorizationContext> {
+  const issues: ValidationIssue[] = [];
+  if (!record(input))
+    return failed("$", "Authorization context must be an object.");
+  unknownKeys(
+    input,
+    [
+      "schemaVersion",
+      "mode",
+      "policyKey",
+      "dashboardId",
+      "subject",
+      "allowedReferences",
+    ],
+    "$",
+    issues,
+  );
+  if (input.schemaVersion !== 1)
+    issues.push(
+      issue(
+        "$.schemaVersion",
+        "unsupported",
+        "Supported authorization schema is 1.",
+      ),
+    );
+  member(input.mode, AUTHORIZATION_MODES, "$.mode", issues);
+  authorizationKey(input.policyKey, "$.policyKey", issues);
+  boundedString(input.dashboardId, "$.dashboardId", 200, issues);
+  if (!record(input.subject)) {
+    issues.push(issue("$.subject", "type", "subject must be an object."));
+  } else {
+    unknownKeys(input.subject, ["type", "id"], "$.subject", issues);
+    if (input.subject.type !== "group")
+      issues.push(
+        issue(
+          "$.subject.type",
+          "invalid",
+          "Only group subjects are supported.",
+        ),
+      );
+    boundedString(input.subject.id, "$.subject.id", 200, issues);
+  }
+  validateReferenceMap(input.allowedReferences, "$.allowedReferences", issues);
+  return result(input, issues);
+}
 
 export function validateFormsAnalyticsCatalog(
   input: unknown,
@@ -291,6 +348,7 @@ function validateTemplate(
       "suggested_questions",
       "layout",
       "presentation",
+      "authorization",
       "queries",
       "widgets",
     ],
@@ -329,6 +387,31 @@ function validateTemplate(
           ),
         );
       }
+    }
+  }
+  if (value.authorization !== undefined) {
+    const authorizationPath = `${path}.authorization`;
+    if (!record(value.authorization)) {
+      issues.push(
+        issue(authorizationPath, "type", "authorization must be an object."),
+      );
+    } else {
+      unknownKeys(
+        value.authorization,
+        ["policy_key", "references"],
+        authorizationPath,
+        issues,
+      );
+      authorizationKey(
+        value.authorization.policy_key,
+        `${authorizationPath}.policy_key`,
+        issues,
+      );
+      validateReferenceMap(
+        value.authorization.references,
+        `${authorizationPath}.references`,
+        issues,
+      );
     }
   }
   if (!Array.isArray(value.queries) || value.queries.length > 20)
@@ -433,6 +516,71 @@ function validateTemplate(
     });
 }
 
+function validateReferenceMap(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+) {
+  if (!record(value)) {
+    issues.push(issue(path, "type", "references must be an object."));
+    return;
+  }
+  const entries = Object.entries(value);
+  if (entries.length > MAX_REFERENCE_NAMESPACES) {
+    issues.push(
+      issue(
+        path,
+        "invalid",
+        `references supports at most ${MAX_REFERENCE_NAMESPACES} namespaces.`,
+      ),
+    );
+  }
+  for (const [namespace, references] of entries) {
+    const namespacePath = `${path}.${namespace}`;
+    authorizationKey(namespace, namespacePath, issues);
+    if (
+      !Array.isArray(references) ||
+      references.length > MAX_REFERENCES_PER_NAMESPACE
+    ) {
+      issues.push(
+        issue(
+          namespacePath,
+          "invalid",
+          `Each reference namespace supports at most ${MAX_REFERENCES_PER_NAMESPACE} entries.`,
+        ),
+      );
+      continue;
+    }
+    const seen = new Set<string>();
+    references.forEach((reference, index) => {
+      const referencePath = `${namespacePath}[${index}]`;
+      if (
+        typeof reference !== "string" ||
+        reference.trim() === "" ||
+        reference.length > 200
+      ) {
+        issues.push(
+          issue(
+            referencePath,
+            "invalid",
+            "Reference must be a non-empty string of at most 200 characters.",
+          ),
+        );
+      } else if (seen.has(reference)) {
+        issues.push(
+          issue(
+            referencePath,
+            "duplicate",
+            "Reference values must be unique within a namespace.",
+          ),
+        );
+      } else {
+        seen.add(reference);
+      }
+    });
+  }
+}
+
 function result<T>(
   input: unknown,
   issues: ValidationIssue[],
@@ -468,6 +616,24 @@ function boundedString(
 function key(value: unknown, path: string, issues: ValidationIssue[]) {
   if (typeof value !== "string" || !KEY.test(value))
     issues.push(issue(path, "invalid", "Use a safe lowercase key."));
+}
+function authorizationKey(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+) {
+  if (
+    typeof value !== "string" ||
+    value.length > MAX_AUTHORIZATION_KEY_LENGTH ||
+    !KEY.test(value)
+  )
+    issues.push(
+      issue(
+        path,
+        "invalid",
+        `Use a safe lowercase key of at most ${MAX_AUTHORIZATION_KEY_LENGTH} characters.`,
+      ),
+    );
 }
 function unique(
   value: unknown,

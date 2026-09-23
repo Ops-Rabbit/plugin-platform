@@ -8,7 +8,8 @@ embedded turn.
 
 ## Declaration
 
-Declare every eligible read-only tool explicitly in both places:
+Declare the plugin-level capability. Agent configuration, not this manifest,
+decides which tools the model can call:
 
 ```json
 {
@@ -18,8 +19,7 @@ Declare every eligible read-only tool explicitly in both places:
       {
         "id": "current-state",
         "risk": "read",
-        "embeddedChat": true,
-        "embeddedPresentation": {
+        "clientPresentation": {
           "clientAction": {
             "target": "records",
             "labelKey": "chat.cta.records"
@@ -28,20 +28,22 @@ Declare every eligible read-only tool explicitly in both places:
         }
       }
     ],
-    "embeddedDelegation": {
-      "schemaVersion": "1",
-      "toolIds": ["current-state"]
-    }
+    "embeddedDelegation": { "schemaVersion": "1" }
   }
 }
 ```
 
-The runtime registration repeats `embeddedChat: true`. The SDK rejects a
-manifest that binds an unknown or non-embedded tool, and rejects registration
-metadata that differs from its manifest. Use the executable
-`embedded-delegation` starter as the minimum reference.
+The runtime registration does not repeat any embedded-chat flag. The host gives
+the plugin delegation context only after its managed-package, trust, tenant,
+and active-session checks succeed. Tool selection is performed once, by the
+configured agent. Use the executable `embedded-delegation` starter as the
+minimum reference.
 
-`embeddedPresentation` is optional and declarative. A plugin may return the
+matching `toolResult(text, value, presentation)` after a successful call; the
+host accepts it only when it exactly matches the reviewed manifest declaration.
+`clientPresentation` is optional and declarative. A plugin may return the
+matching `toolResult(text, value, presentation)` after a successful call; the
+host accepts it only when it exactly matches the reviewed manifest declaration.
 matching `toolResult(text, value, presentation)` after a successful call; the
 host accepts it only when it exactly matches the reviewed manifest declaration.
 It then emits a structured client event, never a link parsed from model text.
@@ -52,8 +54,8 @@ the manifest's fixed action explicitly allows one.
 ## Authority boundary
 
 The host may supply `context.embeddedDelegationId` only when all of these are
-true: an Embedded Chat turn is active and verified; the tool is declared in the
-capability; the package was deployed through managed package intake; the
+true: an Embedded Chat turn is active and verified; the package declares the
+capability and was deployed through managed package intake; the
 deployment administrator explicitly accepted its in-process trust boundary;
 and the current package/tenant/tool authorization checks pass. A declaration
 does not grant any of this authority.
@@ -73,7 +75,7 @@ validation, actor revalidation, and audit.
 ## Host responsibility
 
 The host owns package approval, package digest selection, tenant enablement,
-current agent/tool/thread permissions, embedded-widget verification, expiry,
+current agent/thread permissions, embedded-widget verification, expiry,
 revocation, cancellation, and suppression of the field from client and model
 surfaces. The plugin owns only its downstream protocol and must fail closed if
 the reference is absent. Neither plugin settings nor an approved package grants

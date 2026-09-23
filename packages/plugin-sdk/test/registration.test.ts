@@ -404,27 +404,20 @@ describe("plugin registration", () => {
     ).toHaveLength(6);
   });
 
-  it("requires embedded-chat registration metadata to match the manifest", () => {
+  it("does not use plugin registration metadata to authorize agent tool exposure", () => {
     const embeddedManifest: PluginManifest = {
       ...manifest,
       capabilities: {
-        tools: [{ id: "status", risk: "read", embeddedChat: true }],
-        embeddedDelegation: { schemaVersion: "1", toolIds: ["status"] },
+        tools: [{ id: "status", risk: "read", audience: "all", requiredPermission: "read" }],
+        embeddedDelegation: { schemaVersion: "1" },
       },
     };
     const issues = validateRegistration(embeddedManifest, {
       tools: [
-        {
-          ...statusTool,
-          embeddedChat: false as never,
-        },
+        statusTool,
       ],
     });
-    expect(issues).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: "metadata-mismatch" }),
-      ]),
-    );
+    expect(issues).toEqual([]);
   });
 
   it("preserves only a well-formed structured plugin presentation", () => {

@@ -119,8 +119,6 @@ export interface ToolDefinition<
   risk: PluginRisk;
   audience?: PluginToolAudience;
   requiredPermission?: PluginPermission;
-  /** Explicit, manifest-matched opt-in for use in embedded chat. */
-  embeddedChat?: true;
   inputSchema?: Readonly<Record<string, unknown>>;
   run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
 }

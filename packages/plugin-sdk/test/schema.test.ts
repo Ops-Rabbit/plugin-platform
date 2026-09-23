@@ -358,19 +358,13 @@ describe("published manifest schema", () => {
     const validate = new Ajv2020({ allErrors: true, strict: false }).compile(
       schema,
     );
-    const validCapability = {
-      schemaVersion: "1",
-      toolIds: ["load-current-state"],
-    };
+    const validCapability = { schemaVersion: "1" };
     const embeddedManifest = { ...valid };
     delete (embeddedManifest as { database?: unknown }).database;
     expect(
       validate({
         ...embeddedManifest,
         capabilities: {
-          tools: [
-            { id: "load-current-state", risk: "read", embeddedChat: true },
-          ],
           embeddedDelegation: validCapability,
         },
       }),
@@ -379,10 +373,7 @@ describe("published manifest schema", () => {
       validate({
         ...embeddedManifest,
         capabilities: {
-          tools: [
-            { id: "load-current-state", risk: "read", embeddedChat: true },
-          ],
-          embeddedDelegation: { schemaVersion: "1", toolIds: [], extra: true },
+          embeddedDelegation: { schemaVersion: "1", extra: true },
         },
       }),
     ).toBe(false);

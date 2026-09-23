@@ -161,8 +161,7 @@ export function validateRegistration(
       (declared.risk !== tool.risk ||
         (declared.audience ?? "all") !== (tool.audience ?? "all") ||
         (declared.requiredPermission ?? "use") !==
-          (tool.requiredPermission ?? "use") ||
-        Boolean(declared.embeddedChat) !== Boolean(tool.embeddedChat))
+          (tool.requiredPermission ?? "use"))
     ) {
       issues.push(
         issue(

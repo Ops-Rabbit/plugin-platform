@@ -25,13 +25,11 @@ export interface PluginToolCapability {
   risk: PluginRisk;
   audience?: PluginToolAudience;
   requiredPermission?: PluginPermission;
-  /** Explicitly opt this tool into a verified embedded-chat invocation. */
-  embeddedChat?: true;
-  /** Closed, manifest-reviewed presentation that an embedded tool may request. */
-  embeddedPresentation?: PluginEmbeddedToolPresentationCapability;
+  /** Closed, manifest-reviewed presentation a tool may request. This never authorizes tool exposure. */
+  clientPresentation?: PluginClientPresentationCapability;
 }
 
-export interface PluginEmbeddedToolPresentationCapability {
+export interface PluginClientPresentationCapability {
   clientAction?: {
     target: string;
     labelKey: string;
@@ -42,14 +40,12 @@ export interface PluginEmbeddedToolPresentationCapability {
 }
 
 /**
- * Requests a short-lived opaque authority reference for the named embedded
- * tools. The host grants it only for an active, verified embedded turn and
- * only to a deployment-approved managed package. It is not a user identity,
- * credential, grant, or reusable bearer token.
+ * Declares that a reviewed managed package can consume a short-lived opaque
+ * authority reference during an active, verified embedded turn. This is a
+ * plugin capability, not a tool allowlist or an authorization grant.
  */
 export interface PluginEmbeddedDelegationCapability {
   schemaVersion: "1";
-  toolIds: readonly [string, ...string[]];
 }
 
 export interface PluginActionCapability {

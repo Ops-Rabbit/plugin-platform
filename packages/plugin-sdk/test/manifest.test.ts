@@ -1041,40 +1041,20 @@ describe("validateManifest", () => {
     );
   });
 
-  it("requires embedded delegation to bind declared embedded-chat tools on host 0.7", () => {
+  it("accepts a plugin-level embedded delegation capability on host 0.7", () => {
     const manifest = {
       id: "embedded-delegation-tools",
       name: "Embedded delegation tools",
       version: "1.0.0",
-      description: "Opaque per-turn authority for a fixed embedded tool.",
+      description: "Opaque per-turn authority for an eligible managed plugin.",
       apiVersion: "1.0",
       main: "./dist/index.js",
       minimumOpsRabbitVersion: "0.7.0",
       capabilities: {
-        tools: [
-          {
-            id: "load-current-state",
-            risk: "read",
-            embeddedChat: true,
-          },
-        ],
-        embeddedDelegation: {
-          schemaVersion: "1",
-          toolIds: ["load-current-state"],
-        },
+        embeddedDelegation: { schemaVersion: "1" },
       },
     };
     expect(validateManifest(manifest)).toMatchObject({ ok: true, issues: [] });
-
-    const noEmbeddedTool = structuredClone(manifest);
-    noEmbeddedTool.capabilities.tools[0]!.embeddedChat = false as never;
-    expect(validateManifest(noEmbeddedTool).issues).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          path: "$.capabilities.embeddedDelegation.toolIds[0]",
-        }),
-      ]),
-    );
 
     expect(
       validateManifest({
@@ -1088,7 +1068,7 @@ describe("validateManifest", () => {
     );
   });
 
-  it("allows presentation only for a declared embedded-chat tool", () => {
+  it("allows manifest-reviewed client presentation without authorizing tool exposure", () => {
     const manifest = {
       id: "embedded-presentation",
       name: "Embedded presentation",
@@ -1101,8 +1081,7 @@ describe("validateManifest", () => {
           {
             id: "current-state",
             risk: "read",
-            embeddedChat: true,
-            embeddedPresentation: {
+            clientPresentation: {
               clientAction: {
                 target: "bookings",
                 labelKey: "chat.cta.bookings",
@@ -1115,11 +1094,11 @@ describe("validateManifest", () => {
     };
     expect(validateManifest(manifest)).toMatchObject({ ok: true, issues: [] });
     const invalid = structuredClone(manifest);
-    invalid.capabilities.tools[0]!.embeddedChat = false as never;
+    invalid.capabilities.tools[0]!.clientPresentation = {} as never;
     expect(validateManifest(invalid).issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          path: "$.capabilities.tools[0].embeddedPresentation",
+          path: "$.capabilities.tools[0].clientPresentation",
         }),
       ]),
     );

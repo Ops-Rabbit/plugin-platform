@@ -299,15 +299,6 @@ function validateInteractionDependencies(
     "localization",
   ]);
   requireCapabilities("subjectLifecycle", ["database", "audit"]);
-  if (value.embeddedDelegation !== undefined && !Array.isArray(value.tools)) {
-    issues.push(
-      issue(
-        "$.capabilities.embeddedDelegation",
-        "invalid",
-        "embeddedDelegation requires at least one declared embedded-chat tool.",
-      ),
-    );
-  }
 }
 
 function validateEmbeddedDelegationCompatibility(
@@ -1197,8 +1188,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
       "risk",
       "audience",
       "requiredPermission",
-      "embeddedChat",
-      "embeddedPresentation",
+      "clientPresentation",
     ],
     (entry, path) => {
       member(entry.risk, PLUGIN_RISKS, `${path}.risk`, issues);
@@ -1214,44 +1204,28 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
         `${path}.requiredPermission`,
         issues,
       );
-      if (entry.embeddedChat !== undefined && entry.embeddedChat !== true)
-        issues.push(
-          issue(
-            `${path}.embeddedChat`,
-            "invalid",
-            "embeddedChat must be explicitly true when declared.",
-          ),
-        );
-      if (entry.embeddedPresentation !== undefined) {
-        if (entry.embeddedChat !== true) {
+      if (entry.clientPresentation !== undefined) {
+        if (!record(entry.clientPresentation)) {
           issues.push(
             issue(
-              `${path}.embeddedPresentation`,
-              "invalid",
-              "embeddedPresentation requires embeddedChat: true.",
-            ),
-          );
-        } else if (!record(entry.embeddedPresentation)) {
-          issues.push(
-            issue(
-              `${path}.embeddedPresentation`,
+              `${path}.clientPresentation`,
               "type",
-              "embeddedPresentation must be an object.",
+              "clientPresentation must be an object.",
             ),
           );
         } else {
           unknownKeys(
-            entry.embeddedPresentation,
+            entry.clientPresentation,
             new Set(["clientAction", "suggestedFollowUpIds"]),
-            `${path}.embeddedPresentation`,
+            `${path}.clientPresentation`,
             issues,
           );
-          const action = entry.embeddedPresentation.clientAction;
+          const action = entry.clientPresentation.clientAction;
           if (action !== undefined) {
             if (!record(action))
               issues.push(
                 issue(
-                  `${path}.embeddedPresentation.clientAction`,
+                  `${path}.clientPresentation.clientAction`,
                   "type",
                   "clientAction must be an object.",
                 ),
@@ -1260,7 +1234,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
               unknownKeys(
                 action,
                 new Set(["target", "labelKey", "resourceRef"]),
-                `${path}.embeddedPresentation.clientAction`,
+                `${path}.clientPresentation.clientAction`,
                 issues,
               );
               if (
@@ -1269,7 +1243,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
               )
                 issues.push(
                   issue(
-                    `${path}.embeddedPresentation.clientAction.target`,
+                    `${path}.clientPresentation.clientAction.target`,
                     "invalid",
                     "target must be a safe identifier.",
                   ),
@@ -1280,7 +1254,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
               )
                 issues.push(
                   issue(
-                    `${path}.embeddedPresentation.clientAction.labelKey`,
+                    `${path}.clientPresentation.clientAction.labelKey`,
                     "invalid",
                     "labelKey must be a safe identifier.",
                   ),
@@ -1291,23 +1265,23 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
               )
                 issues.push(
                   issue(
-                    `${path}.embeddedPresentation.clientAction.resourceRef`,
+                    `${path}.clientPresentation.clientAction.resourceRef`,
                     "invalid",
                     "resourceRef must be explicitly true when declared.",
                   ),
                 );
             }
           }
-          if (entry.embeddedPresentation.suggestedFollowUpIds !== undefined) {
+          if (entry.clientPresentation.suggestedFollowUpIds !== undefined) {
             const ids = boundedBindingIds(
-              entry.embeddedPresentation.suggestedFollowUpIds,
-              `${path}.embeddedPresentation.suggestedFollowUpIds`,
+              entry.clientPresentation.suggestedFollowUpIds,
+              `${path}.clientPresentation.suggestedFollowUpIds`,
               issues,
             );
             if (ids.length === 0)
               issues.push(
                 issue(
-                  `${path}.embeddedPresentation.suggestedFollowUpIds`,
+                  `${path}.clientPresentation.suggestedFollowUpIds`,
                   "invalid",
                   "suggestedFollowUpIds must not be empty.",
                 ),
@@ -1315,13 +1289,13 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
           }
           if (
             action === undefined &&
-            entry.embeddedPresentation.suggestedFollowUpIds === undefined
+            entry.clientPresentation.suggestedFollowUpIds === undefined
           )
             issues.push(
               issue(
-                `${path}.embeddedPresentation`,
+                `${path}.clientPresentation`,
                 "invalid",
-                "embeddedPresentation needs a clientAction or suggestedFollowUpIds.",
+                "clientPresentation needs a clientAction or suggestedFollowUpIds.",
               ),
             );
         }
@@ -1899,7 +1873,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
   validateSingletonCapability(
     capabilities.embeddedDelegation,
     "embeddedDelegation",
-    ["schemaVersion", "toolIds"],
+    ["schemaVersion"],
     issues,
     (entry) => {
       if (entry.schemaVersion !== "1")
@@ -1910,24 +1884,6 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
             "embeddedDelegation schema version must be 1.",
           ),
         );
-      const toolIds = boundedBindingIds(
-        entry.toolIds,
-        "$.capabilities.embeddedDelegation.toolIds",
-        issues,
-      );
-      for (const [index, id] of toolIds.entries()) {
-        const tool = capabilities.tools?.find(
-          (candidate) => candidate.id === id,
-        );
-        if (!tool || tool.embeddedChat !== true)
-          issues.push(
-            issue(
-              `$.capabilities.embeddedDelegation.toolIds[${index}]`,
-              "invalid",
-              "Embedded delegation tools must be declared with embeddedChat: true.",
-            ),
-          );
-      }
     },
   );
   const surfaceCount = [

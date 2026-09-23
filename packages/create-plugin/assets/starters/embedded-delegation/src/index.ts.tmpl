@@ -8,7 +8,6 @@ export const plugin = definePlugin({
       risk: 'read',
       audience: 'all',
       requiredPermission: 'read',
-      embeddedChat: true,
       async run(_input, context) {
         if (!context.embeddedChat || !context.embeddedDelegationId)
           throw new Error('This tool requires an active verified embedded-chat turn.');

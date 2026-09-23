@@ -1183,13 +1183,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     capabilities.tools,
     "tools",
     issues,
-    [
-      "id",
-      "risk",
-      "audience",
-      "requiredPermission",
-      "clientPresentation",
-    ],
+    ["id", "risk", "audience", "requiredPermission", "clientPresentation"],
     (entry, path) => {
       member(entry.risk, PLUGIN_RISKS, `${path}.risk`, issues);
       optionalMember(

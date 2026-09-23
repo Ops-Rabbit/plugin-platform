@@ -408,14 +408,19 @@ describe("plugin registration", () => {
     const embeddedManifest: PluginManifest = {
       ...manifest,
       capabilities: {
-        tools: [{ id: "status", risk: "read", audience: "all", requiredPermission: "read" }],
+        tools: [
+          {
+            id: "status",
+            risk: "read",
+            audience: "all",
+            requiredPermission: "read",
+          },
+        ],
         embeddedDelegation: { schemaVersion: "1" },
       },
     };
     const issues = validateRegistration(embeddedManifest, {
-      tools: [
-        statusTool,
-      ],
+      tools: [statusTool],
     });
     expect(issues).toEqual([]);
   });

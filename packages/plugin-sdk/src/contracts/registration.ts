@@ -22,10 +22,28 @@ import type {
 
 export const PLUGIN_TOOL_RESULT_KIND = "opsrabbit.tool-result/v1" as const;
 
+/**
+ * Host-validated presentation metadata from trusted plugin code.
+ *
+ * This is deliberately separate from the agent-visible text. A supporting host
+ * may turn it into native UI events only after applying its own target allowlist
+ * and current-user authorization. It is never an executable URL or an
+ * authorization grant.
+ */
+export interface PluginToolPresentation {
+  readonly clientAction?: Readonly<{
+    target: string;
+    labelKey: string;
+    resourceRef?: string;
+  }>;
+  readonly suggestedFollowUpIds?: readonly string[];
+}
+
 export interface PluginToolResult<TValue extends JsonValue = JsonValue> {
   readonly kind: typeof PLUGIN_TOOL_RESULT_KIND;
   readonly text: string;
   readonly value: TValue;
+  readonly presentation?: PluginToolPresentation;
 }
 
 export type PluginToolOutput = JsonValue | PluginToolResult;
@@ -33,8 +51,35 @@ export type PluginToolOutput = JsonValue | PluginToolResult;
 export function toolResult<TValue extends JsonValue>(
   text: string,
   value: TValue,
+  presentation?: PluginToolPresentation,
 ): PluginToolResult<TValue> {
-  return Object.freeze({ kind: PLUGIN_TOOL_RESULT_KIND, text, value });
+  if (presentation !== undefined && !isPluginToolPresentation(presentation))
+    throw new TypeError("Plugin tool presentation is invalid.");
+  return Object.freeze({
+    kind: PLUGIN_TOOL_RESULT_KIND,
+    text,
+    value,
+    ...(presentation === undefined
+      ? {}
+      : {
+          presentation: Object.freeze({
+            ...(presentation.clientAction === undefined
+              ? {}
+              : {
+                  clientAction: Object.freeze({
+                    ...presentation.clientAction,
+                  }),
+                }),
+            ...(presentation.suggestedFollowUpIds === undefined
+              ? {}
+              : {
+                  suggestedFollowUpIds: Object.freeze([
+                    ...presentation.suggestedFollowUpIds,
+                  ]),
+                }),
+          }),
+        }),
+  });
 }
 
 export function isPluginToolResult(value: unknown): value is PluginToolResult {
@@ -45,7 +90,60 @@ export function isPluginToolResult(value: unknown): value is PluginToolResult {
   return (
     candidate.kind === PLUGIN_TOOL_RESULT_KIND &&
     typeof candidate.text === "string" &&
-    Object.hasOwn(candidate, "value")
+    Object.hasOwn(candidate, "value") &&
+    (candidate.presentation === undefined ||
+      isPluginToolPresentation(candidate.presentation))
+  );
+}
+
+const CLIENT_ACTION_TARGET = /^[a-z][a-z0-9_-]{0,79}$/u;
+const CLIENT_ACTION_LABEL_KEY = /^[a-z][a-z0-9_.-]{0,79}$/u;
+const CLIENT_ACTION_RESOURCE_REF = /^[A-Za-z0-9_-]{1,160}$/u;
+const SUGGESTED_FOLLOW_UP_ID = /^[a-z][a-z0-9_]{0,79}$/u;
+const MAX_SUGGESTED_FOLLOW_UPS = 6;
+
+export function isPluginToolPresentation(
+  value: unknown,
+): value is PluginToolPresentation {
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    return false;
+  const candidate = value as Record<string, unknown>;
+  if (
+    Object.keys(candidate).some(
+      (key) => key !== "clientAction" && key !== "suggestedFollowUpIds",
+    )
+  )
+    return false;
+  const action = candidate.clientAction;
+  const followUps = candidate.suggestedFollowUpIds;
+  if (action === undefined && followUps === undefined) return false;
+  if (action !== undefined) {
+    if (typeof action !== "object" || action === null || Array.isArray(action))
+      return false;
+    const actionRecord = action as Record<string, unknown>;
+    if (
+      Object.keys(actionRecord).some(
+        (key) =>
+          key !== "target" && key !== "labelKey" && key !== "resourceRef",
+      ) ||
+      typeof actionRecord.target !== "string" ||
+      !CLIENT_ACTION_TARGET.test(actionRecord.target) ||
+      typeof actionRecord.labelKey !== "string" ||
+      !CLIENT_ACTION_LABEL_KEY.test(actionRecord.labelKey) ||
+      (actionRecord.resourceRef !== undefined &&
+        (typeof actionRecord.resourceRef !== "string" ||
+          !CLIENT_ACTION_RESOURCE_REF.test(actionRecord.resourceRef)))
+    )
+      return false;
+  }
+  return (
+    followUps === undefined ||
+    (Array.isArray(followUps) &&
+      followUps.length <= MAX_SUGGESTED_FOLLOW_UPS &&
+      followUps.every(
+        (id) => typeof id === "string" && SUGGESTED_FOLLOW_UP_ID.test(id),
+      ) &&
+      new Set(followUps).size === followUps.length)
   );
 }
 

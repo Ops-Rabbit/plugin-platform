@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.22.0 - 2026-09-23
+
+- Add an optional, bounded `presentation` sidecar to a tagged plugin tool
+  result. It can request a named native client action and/or a small set of
+  opaque suggested-question ids without encoding a URL, model instruction, or
+  authorization decision.
+- Keep presentation host-controlled: the host validates its own per-surface
+  action and tool allowlists, rechecks the active user before rendering or
+  executing anything, and ignores unsupported metadata.
+- Add contract validation, reference guidance, and release coverage. Existing
+  plugins using `toolResult(text, value)` remain wire-compatible.
+
 ## 0.21.1 - 2026-09-22
 
 - Align the dashboard-template query bound with the existing 40-widget bound so complete plugin-owned dashboards can provide one governed query per widget.

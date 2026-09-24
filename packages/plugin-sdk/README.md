@@ -67,10 +67,33 @@ Use `@opsrabbit/plugin-sdk/testing` for an in-memory invocation context and
 contract assertions. Use `@opsrabbit/plugin-sdk/packaging` for deterministic
 package inventories and digests.
 
-`toolResult(text, value)` preserves a concise agent-visible message alongside a
-structured JSON value. Its tagged shape is recognized by the host without
-guessing based on ordinary business fields. Returning an ordinary JSON value
-remains supported and the host serializes it as the tool message.
+`toolResult(text, value, presentation?)` preserves a concise agent-visible
+message alongside a structured JSON value. Its tagged shape is recognized by
+the host without guessing based on ordinary business fields. The optional
+presentation sidecar is for native, host-generated UI only:
+
+```ts
+return toolResult(
+  "Vehicle information is ready.",
+  { vehicleId: "V100" },
+  {
+    clientAction: {
+      target: "vehicle_summary",
+      labelKey: "chat.cta.vehicle_summary",
+      resourceRef: "V100",
+    },
+    suggestedFollowUpIds: ["vehicle_service_history", "vehicle_parts"],
+  },
+);
+```
+
+`target`, `labelKey`, `resourceRef`, and follow-up ids are strictly bounded
+identifiers. They are not URLs, executable code, authorization grants, or model
+text. A host may emit a native event only after it validates the plugin result
+and its own current-user/surface allowlists; unsupported values must be ignored.
+The optional sidecar has no manifest declaration, so existing plugins using
+`toolResult(text, value)` remain compatible. Returning an ordinary JSON value
+also remains supported. See [Plugin Contract 0.22](../../docs/plugin-contract-v0.22.md).
 
 The SDK intentionally contains no OpsRabbit backend, authentication, database,
 runner, licensing, or deployment implementation. Capability declarations are

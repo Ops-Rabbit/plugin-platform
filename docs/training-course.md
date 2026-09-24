@@ -1,7 +1,7 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.21.1
-and `@opsrabbit/create-plugin` 0.21.1.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.22.0
+and `@opsrabbit/create-plugin` 0.22.0.
 
 ## Course promise
 
@@ -64,7 +64,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.21.1, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.22.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---
@@ -219,6 +219,33 @@ The manifest must declare the same id and security metadata:
 
 `toolResult(text, value)` provides concise agent-visible text and a structured
 JSON value. An ordinary JSON return is also valid.
+
+### Optional native next steps
+
+SDK 0.22 adds an optional third `presentation` argument to `toolResult`. It is
+for a plugin to request a **named** native next step after a successful read;
+it is never a link, browser command, or model instruction.
+
+```ts
+return toolResult(
+  "Status summary is ready.",
+  { service, status: "unknown" },
+  {
+    clientAction: {
+      target: "service_status",
+      labelKey: "chat.cta.service_status",
+    },
+    suggestedFollowUpIds: ["status-details"],
+  },
+);
+```
+
+The SDK accepts only bounded identifiers and at most six unique follow-up ids.
+The host independently checks its active surface, configured agent, client
+target allowlist, and current user authorization before it emits a native event.
+If any check fails, the host ignores the presentation and retains the ordinary
+tool result; it must never execute a value from the model or turn it into a URL.
+See [Plugin Contract 0.22](./plugin-contract-v0.22.md).
 
 ### Checkpoint
 

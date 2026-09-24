@@ -144,6 +144,72 @@ describe("plugin registration", () => {
     expect(isPluginToolResult(null)).toBe(false);
   });
 
+  it("preserves bounded presentation metadata from plugin code", () => {
+    const result = toolResult(
+      "Current vehicle information is ready.",
+      { vehicle: "V100" },
+      {
+        clientAction: {
+          target: "vehicle_summary",
+          labelKey: "chat.cta.vehicle_summary",
+          resourceRef: "V100",
+        },
+        suggestedFollowUpIds: ["vehicle_service_history", "vehicle_parts"],
+      },
+    );
+
+    expect(result.presentation).toEqual({
+      clientAction: {
+        target: "vehicle_summary",
+        labelKey: "chat.cta.vehicle_summary",
+        resourceRef: "V100",
+      },
+      suggestedFollowUpIds: ["vehicle_service_history", "vehicle_parts"],
+    });
+    expect(Object.isFrozen(result.presentation)).toBe(true);
+    expect(Object.isFrozen(result.presentation?.clientAction)).toBe(true);
+    expect(Object.isFrozen(result.presentation?.suggestedFollowUpIds)).toBe(
+      true,
+    );
+    expect(isPluginToolResult(result)).toBe(true);
+  });
+
+  it("rejects malformed or unbounded presentation metadata", () => {
+    const malformed = {
+      kind: PLUGIN_TOOL_RESULT_KIND,
+      text: "x",
+      value: null,
+      presentation: {
+        clientAction: {
+          target: "https://unsafe.example",
+          labelKey: "chat.cta.x",
+        },
+      },
+    };
+    expect(isPluginToolResult(malformed)).toBe(false);
+    expect(() => toolResult("x", null, {})).toThrow(
+      "Plugin tool presentation is invalid.",
+    );
+    expect(() =>
+      toolResult("x", null, {
+        suggestedFollowUpIds: ["one", "one"],
+      }),
+    ).toThrow("Plugin tool presentation is invalid.");
+    expect(() =>
+      toolResult("x", null, {
+        suggestedFollowUpIds: [
+          "one",
+          "two",
+          "three",
+          "four",
+          "five",
+          "six",
+          "seven",
+        ],
+      }),
+    ).toThrow("Plugin tool presentation is invalid.");
+  });
+
   it("rejects undeclared and missing registrations", () => {
     expect(
       validateRegistration(manifest, {

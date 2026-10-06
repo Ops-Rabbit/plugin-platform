@@ -1,4 +1,7 @@
 export * from "./contracts/capabilities.js";
+export * from "./contracts/channel-approvals.js";
+export * from "./validation/channel-approvals.js";
+export * from "./validation/channel-approval-cleanup.js";
 export * from "./contracts/contexts.js";
 export * from "./contracts/data-insight.js";
 export * from "./contracts/errors.js";

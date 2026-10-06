@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "cleanupId",
+    "claimToken",
+    "deliveryId",
+    "externalConversationKey",
+    "workspaceId",
+    "botUserId",
+    "messageId",
+    "receiptMessageId",
+    "uncertain"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1"
+    },
+    "cleanupId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "claimToken": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "deliveryId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "externalConversationKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "workspaceId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "botUserId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "messageId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "receiptMessageId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "uncertain": {
+      "type": "boolean"
+    }
+  }
+}

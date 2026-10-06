@@ -5,6 +5,8 @@
 - Add channel approval delivery/state contracts, stable external actor attribution,
   one-time decision validation and equivalent published JSON Schema.
 - Add an executable reference and outside-workspace packed consumer verification.
+- Add separately leased parent-deletion cleanup work, minimal-locator validation
+  and durable deleted/already-absent outcomes for both the card and receipt.
 - Define host authorization, atomic audit, fenced delivery recovery and parent
   lifecycle responsibilities. SDK and CLI release versions are aligned at 0.23.0.
 

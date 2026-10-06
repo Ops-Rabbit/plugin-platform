@@ -8,6 +8,11 @@ authorization, audit, persistence and execution; provider adapters verify their
 authenticated interaction and current human conversation access. See the
 [contract](https://github.com/Ops-Rabbit/plugin-platform/blob/main/docs/plugin-contract-v0.23.md).
 This capability requires SDK 0.23.0 and a supporting host.
+Parent deletion uses separately leased `ChannelApprovalCleanupV1` tombstones,
+`claimCleanups`, `completeCleanup` and `failCleanup`. Cleanup removes both card
+and receipt without posting deleted review content. The SDK exports its strict
+validator and `@opsrabbit/plugin-sdk/channel-approval-cleanup-schema`; cleanup
+failures cannot be acknowledged as successful removal.
 
 `PluginFormsWorkspaceNavigation.section` and `PLUGIN_NAVIGATION_SECTIONS`
 describe optional Primary, Operations, Control or Platform placement. Omission

@@ -1,11 +1,76 @@
 import assert from "node:assert/strict";
-import { isChannelApprovalDecision } from "@opsrabbit/plugin-sdk";
+import {
+  isChannelApprovalDecision,
+  isChannelApprovalCleanup,
+} from "@opsrabbit/plugin-sdk";
 import decisionSchema from "@opsrabbit/plugin-sdk/channel-approval-decision-schema" with { type: "json" };
+import cleanupSchema from "@opsrabbit/plugin-sdk/channel-approval-cleanup-schema" with { type: "json" };
 
 assert.deepEqual(decisionSchema.properties.decision.enum, [
   "allow-once",
   "deny",
 ]);
+assert.equal(Object.hasOwn(cleanupSchema.properties, "command"), false);
+
+// This reference verifies consumer behavior with host/provider stubs. It does
+// not prove a host's authorization, leases, atomic audit or concurrency logic.
+// Provider.remove must verify the installation/author, returning already_absent
+// only for definitive absence; lack of access is a failure, never absence.
+export async function cleanup(service, provider) {
+  const work = await service.claimCleanups();
+  const failures = [];
+  for (const item of work) {
+    if (!isChannelApprovalCleanup(item))
+      throw new TypeError("Invalid channel approval cleanup.");
+    try {
+      const recovered = item.uncertain ? await provider.recover(item) : null;
+      if (
+        item.uncertain &&
+        !isChannelApprovalCleanup({
+          ...item,
+          messageId: recovered?.messageId,
+          receiptMessageId: recovered?.receiptMessageId,
+        })
+      )
+        throw new TypeError("Invalid recovered cleanup locators.");
+      let deleted = false;
+      for (const messageId of new Set([
+        item.messageId,
+        item.receiptMessageId,
+        recovered?.messageId ?? null,
+        recovered?.receiptMessageId ?? null,
+      ])) {
+        if (messageId === null) continue;
+        const outcome = await provider.remove({
+          workspaceId: item.workspaceId,
+          botUserId: item.botUserId,
+          externalConversationKey: item.externalConversationKey,
+          messageId,
+        });
+        if (outcome !== "deleted" && outcome !== "already_absent")
+          throw new TypeError("Invalid provider cleanup outcome.");
+        deleted ||= outcome === "deleted";
+      }
+      await service.completeCleanup({
+        cleanupId: item.cleanupId,
+        claimToken: item.claimToken,
+        outcome: deleted ? "deleted" : "already_absent",
+      });
+    } catch (error) {
+      await service.failCleanup({
+        cleanupId: item.cleanupId,
+        claimToken: item.claimToken,
+        code: "provider_error",
+      });
+      failures.push(error);
+    }
+  }
+  if (failures.length)
+    throw new AggregateError(
+      failures,
+      "Channel cleanup requires reconciliation.",
+    );
+}
 
 // A provider adapter supplies these fields only after checking its authenticated
 // interaction, active human actor and current conversation access.
@@ -66,3 +131,41 @@ const loser = await decide(
 );
 assert.equal(loser.changed, false);
 assert.equal(loser.text, "approved by Reviewer (U2)");
+
+const cleanupWork = {
+  schemaVersion: "1",
+  cleanupId: "cleanup-1",
+  claimToken: "lease-1",
+  deliveryId: "delivery-1",
+  externalConversationKey: "C1:123.456",
+  workspaceId: "T1",
+  botUserId: "UBOT",
+  messageId: "123.457",
+  receiptMessageId: "123.458",
+  uncertain: false,
+};
+const removed = [];
+const completed = [];
+await cleanup(
+  {
+    async claimCleanups() {
+      return [cleanupWork];
+    },
+    async completeCleanup(value) {
+      completed.push(value);
+    },
+    async failCleanup() {
+      assert.fail("Successful cleanup must not fail.");
+    },
+  },
+  {
+    async remove(locator) {
+      removed.push(locator.messageId);
+      return "deleted";
+    },
+  },
+);
+assert.deepEqual(removed, ["123.457", "123.458"]);
+assert.deepEqual(completed, [
+  { cleanupId: "cleanup-1", claimToken: "lease-1", outcome: "deleted" },
+]);

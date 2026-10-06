@@ -51,6 +51,23 @@ export interface ChannelApprovalDecisionV1 {
   decision: "allow-once" | "deny";
 }
 
+/** Parent-deletion work contains locators only, never the deleted review content. */
+export interface ChannelApprovalCleanupV1 {
+  schemaVersion: typeof CHANNEL_APPROVAL_VERSION;
+  cleanupId: string;
+  claimToken: string;
+  deliveryId: string;
+  externalConversationKey: string;
+  workspaceId: string;
+  botUserId: string;
+  messageId: string | null;
+  receiptMessageId: string | null;
+  /** Recover possible unacknowledged posts before acknowledging cleanup. */
+  uncertain: boolean;
+}
+
+export type ChannelApprovalCleanupOutcomeV1 = "deleted" | "already_absent";
+
 export interface ChannelApprovalServiceV1 {
   readonly schemaVersion: typeof CHANNEL_APPROVAL_VERSION;
   /** Called only after provider authentication verifies the installation. */
@@ -73,6 +90,20 @@ export interface ChannelApprovalServiceV1 {
     code: "provider_error" | "missing_scope";
     /** True if a remote post may have succeeded without a durable local record. */
     uncertain: boolean;
+  }): Promise<void>;
+  /** Leased cleanup tombstones survive parent deletion until a durable outcome. */
+  claimCleanups(): Promise<ChannelApprovalCleanupV1[]>;
+  /** Both the card and receipt must be removed/absent before acknowledging. */
+  completeCleanup(input: {
+    cleanupId: string;
+    claimToken: string;
+    outcome: ChannelApprovalCleanupOutcomeV1;
+  }): Promise<void>;
+  /** Failure never becomes successful cleanup or permission to repost content. */
+  failCleanup(input: {
+    cleanupId: string;
+    claimToken: string;
+    code: "provider_error" | "missing_scope" | "installation_unavailable";
   }): Promise<void>;
   /**
    * Provider adapter MUST verify authenticated interaction provenance, active

@@ -31,3 +31,31 @@ Release-version changes have independent reviews; the missing public schema
 export was added and the packed consumer imports that subpath. Publication and PR
 checks are not yet claimed. Host design and authorization/lifecycle matrix are in
 `gaurav-exp/docs/plans/slack-inbound-approvals-2026-10-06.md`.
+
+## Deep pre-merge review
+
+The user requested another thorough review of PR #55 before merge. At reviewed
+head 5dc7b6c, hosted quality had succeeded. Two independent scopes and autoreview
+covered the full SDK candidate. The independent lifecycle review found a valid
+gap: deletion cleanup was promised but absent from the protocol.
+
+Added separate locator-only cleanup work, claim/completion/failure methods,
+deleted/already-absent outcomes, strict runtime/JSON Schema validation, schema
+export, packed reference and lifecycle/training documentation. Follow-up review
+found known message IDs could be overwritten by recovery; the reference now
+removes the union of known and recovered IDs. That regression was reproduced
+against the pre-fix recovery logic, then passed with the fix restored.
+
+Focused suites pass 56 cases with 100% line/branch coverage for both validators.
+The reference verifies SDK consumer behavior with stubs, not real host atomic
+audit, concurrent decisions, lease fencing or Slack authorization/deletion. Those
+remain required production integration checks during host implementation.
+
+Final full `pnpm quality` passed after both fixes, including the packed consumer
+and all thirteen generated starters. The pinned strict full-repository Semgrep
+scan passed with zero findings, warnings or errors. Both independent reviewers
+confirmed their findings were addressed with no remaining actionable issues.
+Final autoreview completed with only the repeated end-anchor claim: an explicit
+Node test of the built decision and cleanup validators rejects LF, CR, U+2028 and
+U+2029, consistent with the passing runtime/AJV cases. This finding is invalid;
+the tool did not give a clean verdict, and that distinction is retained here.

@@ -32,7 +32,22 @@ inbounds. Provider errors do not reverse durable decisions.
 Delivery records inherit their approval/thread parent lifecycle. External identity
 audit belongs to protected host audit retention. Plugins must not duplicate full
 arguments or profile data in their own stores. Parent deletion invalidates all
-resolution authority; external message cleanup has durable observable outcomes.
+resolution authority and atomically stages a host-owned cleanup tombstone before
+removing the delivery. It contains only installation/conversation/message locators,
+correlation id and uncertainty, not deleted review content. Tombstones survive
+parent deletion under the host's classified, bounded cleanup lifecycle. Do not
+cascade pending cleanup with its deleted parent or protected identity audit.
+
+`claimCleanups` is separate from `claimDeliveries`: deletion must never render or
+post a replacement card. The host fences delivery against cleanup and accounts for
+in-flight/unknown provider writes before final acknowledgement. The adapter recovers
+possible unacknowledged posts by correlation, verifies installation/author, and
+removes both the card and receipt. Only then may `completeCleanup` report `deleted`
+or definitive `already_absent`. Missing permissions, inaccessible conversations,
+failed/partial readback and provider errors are failures, not proof of absence.
+`failCleanup` retains the work and diagnostics for bounded retry or visible terminal
+failure; it must never re-enable delivery or erase uncertainty. Expiry/cancellation
+normally update the existing card, whereas parent deletion claims cleanup work.
 External exports and provider backups are outside the local deletion guarantee.
 
 The TypeScript contract and runtime decision validator are exported at package
@@ -40,7 +55,13 @@ root. `CHANNEL_APPROVAL_DECISION_SCHEMA` is the equivalent draft-2020-12 JSON
 Schema for packaging and consumer validation. Unknown privilege-bearing fields,
 missing actor identity and unsupported decisions fail closed. The host must
 validate input before querying an approval, then authorize the matching delivery.
+`CHANNEL_APPROVAL_CLEANUP_SCHEMA` and `validateChannelApprovalCleanup` validate
+minimal cleanup work and reject embedded review content or caller-selected scope.
+Both JSON artifacts have public package export subpaths.
 
 See the executable reference `reference/channel-approvals.mjs` for independent
-actor attribution and winner handling. Hosts without this capability cannot
+actor attribution, canonical-result rendering and removal without reposting. Its
+host/provider stubs illustrate consumer behavior; they do not establish real host
+authorization, lease fencing, concurrent state transitions or atomic audit. Those
+require integration tests in each supporting host. Hosts without this capability cannot
 silently resolve as a system user; adapters must report unavailable support.

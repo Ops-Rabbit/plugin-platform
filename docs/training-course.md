@@ -16,6 +16,11 @@ a lost response, and why an acknowledged decision cannot be reversed by a failed
 Slack display update. Do not import host internals, create an unclassified plugin
 store or use a system-actor bypass when a host lacks the capability. Package
 release and supporting-host implementation are prerequisites for using it live.
+For parent deletion, stage a minimal host-owned cleanup tombstone atomically,
+fence old delivery work and remove both the card and decision receipt. The separate
+cleanup lease reports removal or definitive absence; provider/access errors retain
+observable failed work. The consumer reference uses stubs and is not evidence of
+a host's actual authorization, atomic audit or concurrent lifecycle implementation.
 
 An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.23.0
 and `@opsrabbit/create-plugin` 0.23.0.

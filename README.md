@@ -88,6 +88,9 @@ The [native workspace action contract](./docs/plugin-contract-v0.17.md) document
 the generation-fenced, allowlisted current-plugin action broker.
 The [structured-classification contract](./docs/plugin-contract-v0.18.md)
 documents bounded governed classification for declared actions and scheduled jobs.
+The [channel approval contract](./docs/plugin-contract-v0.23.md)
+defines instance-scoped delivery, external human attribution and one-time decisions
+for supporting hosts in SDK 0.23.0.
 The [Data Insight authorization context](./docs/data-insight-authorization-v1.md)
 documents plugin-owned policy/reference declarations and host-attested invocation scope.
 

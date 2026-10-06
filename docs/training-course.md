@@ -1,7 +1,24 @@
 # Building Governed OpsRabbit Plugins
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.22.0
-and `@opsrabbit/create-plugin` 0.22.0.
+## Channel approval capability
+
+The [channel approval contract](plugin-contract-v0.23.md) adds an optional
+instance-scoped host capability. Channel adapters authenticate the provider
+interaction and verify an active human with current conversation access. The host
+checks tenant, installation, inbound, thread/turn and current service-principal
+authority, then atomically stores decision and external actor audit before resume.
+Stable workspace/user IDs identify the approver; mutable display names are only
+supplementary evidence. Offer one-time approve/reject, never a saved policy rule.
+
+Exercise `packages/plugin-sdk/reference/channel-approvals.mjs` through the packed
+outside-workspace consumer check. Discuss why a remote post can succeed despite
+a lost response, and why an acknowledged decision cannot be reversed by a failed
+Slack display update. Do not import host internals, create an unclassified plugin
+store or use a system-actor bypass when a host lacks the capability. Package
+release and supporting-host implementation are prerequisites for using it live.
+
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.23.0
+and `@opsrabbit/create-plugin` 0.23.0.
 
 ## Course promise
 
@@ -64,7 +81,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.22.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.23.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---

@@ -29,6 +29,10 @@ const starterIds = [
   "structured-classification",
 ];
 await mkdir(tarballDirectory);
+execFileSync("node", ["scripts/verify-channel-approval-consumer.mjs"], {
+  cwd: root,
+  stdio: "inherit",
+});
 
 try {
   const sdk = pack("packages/plugin-sdk");

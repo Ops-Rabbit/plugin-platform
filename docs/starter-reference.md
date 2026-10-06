@@ -1,5 +1,11 @@
 # Starter and reference plugins
 
+The proposed channel approval reference is
+`packages/plugin-sdk/reference/channel-approvals.mjs`. It exercises stable external
+human attribution and first-writer decision handling against the packed public SDK
+in `scripts/verify-channel-approval-consumer.mjs`. It is a supporting-host adapter
+reference, not a new generated starter or an arbitrary approval resolver.
+
 The `forms-workflow` starter declares `navigation.section: "operations"`.
 See [navigation sections](plugin-navigation-sections-v1.md) for all four groups
 and the release dependency. Host authorization remains independent of placement.

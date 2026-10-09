@@ -1,5 +1,11 @@
 # `@opsrabbit/plugin-sdk`
 
+SDK 0.24.0 adds optional tool progress through `run(input, context, onUpdate?)`.
+Use `onUpdate?.({ text: 'Checking data' })` for bounded plain partial output;
+existing two-argument handlers remain compatible. A supporting host validates
+updates and streams them only during that execution, with normal authorization
+and approval. See [tool execution updates](../../docs/plugin-contract-v0.24.md).
+
 The `ChannelApprovalServiceV1` capability delivers one-time human
 decisions to supporting channel hosts. `ChannelApprovalDecisionV1`,
 `validateChannelApprovalDecision` and `CHANNEL_APPROVAL_DECISION_SCHEMA` preserve

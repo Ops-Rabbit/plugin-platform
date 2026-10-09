@@ -1,8 +1,15 @@
 import { createTestContext } from '@opsrabbit/plugin-sdk/testing';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { plugin } from '../src/index.js';
 
 describe('{{id}}', () => {
+  it('reports progress separately from its final result', async () => {
+    const onUpdate = vi.fn();
+    const result = await plugin.tools?.[0]?.run({}, createTestContext(), onUpdate);
+    expect(onUpdate.mock.calls).toEqual([[{ text: 'Checking service status' }]]);
+    expect(result).toHaveProperty('kind', 'opsrabbit.tool-result/v1');
+  });
+
   it('returns only the active tenant context', async () => {
     const context = createTestContext({ tenantId: 'tenant-a' });
     const result = await plugin.tools?.[0]?.run({ service: 'api' }, context);

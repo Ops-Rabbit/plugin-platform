@@ -1,5 +1,17 @@
 # Building Governed OpsRabbit Plugins
 
+## Tool execution progress (SDK 0.24.0)
+
+Tool handlers may accept an optional third `onUpdate` argument. Emit
+`onUpdate?.({ text: 'Checking available case data' })` during work, then return
+the usual final result. The `basic-readonly` starter tests both callback-present
+and callback-absent execution. Older hosts may omit the callback, so optional
+chaining is required. Text must be nonblank and at most 4096 Unicode code points;
+updates cannot contain UI actions or identities. They do not bypass approval or
+permissions and stop on completion, failure or cancellation. Keep honoring
+`context.signal`. Public widgets retain their output filtering policy.
+See [the contract and host responsibilities](plugin-contract-v0.24.md).
+
 ## Channel approval capability
 
 The [channel approval contract](plugin-contract-v0.23.md) adds an optional

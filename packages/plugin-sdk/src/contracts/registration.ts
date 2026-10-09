@@ -13,6 +13,7 @@ import type {
   PluginRouteContext,
 } from "./contexts.js";
 import type { JsonValue } from "./manifest.js";
+import type { PluginToolUpdateCallback } from "./tool-update.js";
 import type { KnowledgeEmailProcessorDefinitionV1 } from "./knowledge-email-processor.js";
 import type {
   ChatComposerStatusDefinitionV1,
@@ -157,7 +158,11 @@ export interface ToolDefinition<
   audience?: PluginToolAudience;
   requiredPermission?: PluginPermission;
   inputSchema?: Readonly<Record<string, unknown>>;
-  run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
+  run(
+    input: TInput,
+    context: PluginInvocationContext,
+    onUpdate?: PluginToolUpdateCallback,
+  ): Promise<TOutput>;
 }
 
 export interface ActionDefinition<

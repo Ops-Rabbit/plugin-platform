@@ -1,6 +1,6 @@
 {
   "name": "@opsrabbit/plugin-sdk",
-  "version": "0.23.0",
+  "version": "0.24.0",
   "description": "Public contracts, validation, and testing utilities for OpsRabbit plugins",
   "type": "module",
   "license": "Apache-2.0",
@@ -42,7 +42,8 @@
     "./form-starter-pack-schema": "./schemas/opsrabbit-form-starter-pack.schema.json",
     "./forms-analytics-catalog-schema": "./schemas/opsrabbit-forms-analytics-catalog.schema.json",
     "./data-insight-template-catalog-schema": "./schemas/opsrabbit-data-insight-template-catalog.schema.json",
-    "./data-insight-authorization-context-schema": "./schemas/opsrabbit-data-insight-authorization-context.schema.json"
+    "./data-insight-authorization-context-schema": "./schemas/opsrabbit-data-insight-authorization-context.schema.json",
+    "./tool-update-schema": "./schemas/opsrabbit-tool-update.schema.json"
   },
   "scripts": {
     "build": "node ../../scripts/clean-directory.mjs dist && tsc -p tsconfig.build.json",

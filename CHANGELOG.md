@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.0 - Unreleased
+
+- Add optional execution-scoped `onUpdate` to public tool handlers, preserving
+  existing handlers and final results.
+- Export bounded plain-text update types, runtime validation and matching JSON
+  Schema; no approval bypass, extra manifest flag or status tool is required.
+- Demonstrate progress and absent-callback compatibility in `basic-readonly`.
+- Align SDK, CLI and generated consumer version inventory at 0.24.0.
+
 ## 0.23.0 - 2026-10-06
 
 - Add channel approval delivery/state contracts, stable external actor attribution,

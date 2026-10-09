@@ -48,6 +48,11 @@ export interface PluginToolResult<TValue extends JsonValue = JsonValue> {
 
 export type PluginToolOutput = JsonValue | PluginToolResult;
 
+/** Optional execution-scoped partial output using the existing tool result contract. */
+export type PluginToolUpdateCallback = (
+  partialResult: PluginToolOutput,
+) => void;
+
 export function toolResult<TValue extends JsonValue>(
   text: string,
   value: TValue,
@@ -157,7 +162,11 @@ export interface ToolDefinition<
   audience?: PluginToolAudience;
   requiredPermission?: PluginPermission;
   inputSchema?: Readonly<Record<string, unknown>>;
-  run(input: TInput, context: PluginInvocationContext): Promise<TOutput>;
+  run(
+    input: TInput,
+    context: PluginInvocationContext,
+    onUpdate?: PluginToolUpdateCallback,
+  ): Promise<TOutput>;
 }
 
 export interface ActionDefinition<

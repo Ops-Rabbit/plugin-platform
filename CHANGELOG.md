@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.0 - Unreleased
+
+- Add optional execution-scoped `onUpdate` to public tool handlers, preserving
+  existing handlers and final results.
+- Reuse the existing `PluginToolOutput` contract for partial results; no new
+  payload, schema, validation API, manifest flag or status tool is required.
+- Demonstrate progress and absent-callback compatibility in `basic-readonly`.
+- Align SDK, CLI and generated consumer version inventory at 0.24.0.
+
 ## 0.23.0 - 2026-10-06
 
 - Add channel approval delivery/state contracts, stable external actor attribution,

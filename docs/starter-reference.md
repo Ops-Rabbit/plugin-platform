@@ -1,5 +1,8 @@
 # Starter and reference plugins
 
+The `basic-readonly` starter demonstrates optional `onUpdate` progress using the
+existing tool output format.
+
 The proposed channel approval reference is
 `packages/plugin-sdk/reference/channel-approvals.mjs`. It exercises stable external
 human attribution and first-writer decision handling against the packed public SDK

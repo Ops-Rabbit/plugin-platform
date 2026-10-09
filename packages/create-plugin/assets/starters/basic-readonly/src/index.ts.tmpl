@@ -8,8 +8,9 @@ export const plugin = definePlugin({
       risk: 'read',
       audience: 'all',
       requiredPermission: 'read',
-      async run(input: { service?: string }, context) {
+      async run(input: { service?: string }, context, onUpdate) {
         const service = input.service ?? 'all';
+        onUpdate?.('Checking service status');
         context.logger.info('status summary requested', { service });
         return toolResult(
           `Service ${service} status is unknown for tenant ${context.tenantId}.`,

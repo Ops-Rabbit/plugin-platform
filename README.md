@@ -1,5 +1,10 @@
 # OpsRabbit Plugin Platform
 
+SDK 0.24.0 adds optional [tool execution updates](./docs/plugin-contract-v0.24.md)
+through `onUpdate`, reusing the existing tool output contract with unchanged handlers and no
+extra model-invoked status tool. The `basic-readonly` starter includes an executable
+example. Production host integration requires the published SDK release.
+
 See [navigation sections](docs/plugin-navigation-sections-v1.md) for declarative
 Primary, Operations, Control and Platform placement. Placement is not access
 control; the host continues to authorize all resources and actions.

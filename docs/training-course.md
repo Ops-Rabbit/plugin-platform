@@ -1,5 +1,15 @@
 # Building Governed OpsRabbit Plugins
 
+## Tool execution progress (SDK 0.24.0)
+
+Tool handlers may accept an optional third `onUpdate` argument. Emit
+`onUpdate?.('Checking available case data')` during work, then return the usual
+final result. Partial output uses the existing `PluginToolOutput` contract.
+The `basic-readonly` starter tests both callback-present and callback-absent
+execution. Updates stop on completion, failure or cancellation; normal approval,
+authorization and output policies remain in force. Keep honoring `context.signal`.
+See [the contract and host responsibilities](plugin-contract-v0.24.md).
+
 ## Channel approval capability
 
 The [channel approval contract](plugin-contract-v0.23.md) adds an optional
@@ -22,8 +32,8 @@ cleanup lease reports removal or definitive absence; provider/access errors reta
 observable failed work. The consumer reference uses stubs and is not evidence of
 a host's actual authorization, atomic audit or concurrent lifecycle implementation.
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.23.0
-and `@opsrabbit/create-plugin` 0.23.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.24.0
+and `@opsrabbit/create-plugin` 0.24.0.
 
 ## Course promise
 
@@ -86,7 +96,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.23.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.24.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---

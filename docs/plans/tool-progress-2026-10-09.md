@@ -28,8 +28,8 @@ publication followed by its dependency and frozen-lockfile update.
 
 The minimal implementation passed `pnpm quality`: formatting, lint, boundaries,
 type checks, 262 SDK tests, 44 CLI tests, coverage, builds, package inventory and
-all generated starters as packed outside-workspace consumers. Registration line
-coverage is 89.7%; CLI constants and the generated basic-readonly implementation
+all generated starters as packed outside-workspace consumers. Changed registration contract line
+coverage is 94.11%; CLI constants and the generated basic-readonly implementation
 are 100%. The exact host-pinned Semgrep 1.179.0 image/rules/strict flags passed the
 full SDK repository with zero findings or warnings. Independent review and final
 autoreview of the complete staged candidate returned no actionable P0–P2 findings.

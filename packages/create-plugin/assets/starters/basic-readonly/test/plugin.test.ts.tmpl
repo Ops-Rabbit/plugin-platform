@@ -6,7 +6,7 @@ describe('{{id}}', () => {
   it('reports progress separately from its final result', async () => {
     const onUpdate = vi.fn();
     const result = await plugin.tools?.[0]?.run({}, createTestContext(), onUpdate);
-    expect(onUpdate.mock.calls).toEqual([[{ text: 'Checking service status' }]]);
+    expect(onUpdate.mock.calls).toEqual([['Checking service status']]);
     expect(result).toHaveProperty('kind', 'opsrabbit.tool-result/v1');
   });
 

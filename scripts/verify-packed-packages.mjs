@@ -60,7 +60,6 @@ try {
         "schemas/opsrabbit-structured-classification-result.schema.json",
         "schemas/opsrabbit-channel-approval-decision.schema.json",
         "schemas/opsrabbit-channel-approval-cleanup.schema.json",
-        "schemas/opsrabbit-tool-update.schema.json",
       ])
         if (!paths.includes(schema))
           throw new Error(`SDK package is missing public schema ${schema}`);

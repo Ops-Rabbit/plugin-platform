@@ -7,6 +7,69 @@ import {
   toolResult,
 } from "../src/contracts/registration.js";
 import { validateRegistration } from "../src/validation/registration.js";
+import { createTestContext } from "../src/testing/harness.js";
+import type { PluginToolOutput } from "../src/contracts/registration.js";
+
+it("keeps existing two-argument handlers compatible with a supplied update sink", async () => {
+  const plugin = definePlugin({
+    tools: [
+      {
+        id: "legacy",
+        description: "Legacy",
+        risk: "read",
+        async run(_input, context) {
+          return { tenantId: context.tenantId };
+        },
+      },
+    ],
+  });
+  const updates: PluginToolOutput[] = [];
+  expect(
+    await plugin.tools![0]!.run(
+      {},
+      createTestContext({ tenantId: "tenant-a" }),
+      (update) => updates.push(update),
+    ),
+  ).toEqual({ tenantId: "tenant-a" });
+  expect(updates).toEqual([]);
+});
+
+it("accepts optional partial output in the existing string and tagged-result formats", async () => {
+  const plugin = definePlugin({
+    tools: [
+      {
+        id: "inspect",
+        description: "Inspect",
+        risk: "read",
+        async run(_input, _context, onUpdate) {
+          onUpdate?.("Checking data");
+          onUpdate?.(toolResult("Processing", { processed: 1 }));
+          return toolResult("Complete", { count: 2 });
+        },
+      },
+    ],
+  });
+  const updates: PluginToolOutput[] = [];
+  const result = await plugin.tools![0]!.run(
+    {},
+    createTestContext(),
+    (update) => updates.push(update),
+  );
+  expect(updates).toEqual([
+    "Checking data",
+    {
+      kind: "opsrabbit.tool-result/v1",
+      text: "Processing",
+      value: { processed: 1 },
+    },
+  ]);
+  expect(result).toEqual({
+    kind: "opsrabbit.tool-result/v1",
+    text: "Complete",
+    value: { count: 2 },
+  });
+  expect(await plugin.tools![0]!.run({}, createTestContext())).toEqual(result);
+});
 
 const manifest: PluginManifest = {
   id: "tools",

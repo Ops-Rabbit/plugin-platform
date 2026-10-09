@@ -13,7 +13,6 @@ import type {
   PluginRouteContext,
 } from "./contexts.js";
 import type { JsonValue } from "./manifest.js";
-import type { PluginToolUpdateCallback } from "./tool-update.js";
 import type { KnowledgeEmailProcessorDefinitionV1 } from "./knowledge-email-processor.js";
 import type {
   ChatComposerStatusDefinitionV1,
@@ -48,6 +47,11 @@ export interface PluginToolResult<TValue extends JsonValue = JsonValue> {
 }
 
 export type PluginToolOutput = JsonValue | PluginToolResult;
+
+/** Optional execution-scoped partial output using the existing tool result contract. */
+export type PluginToolUpdateCallback = (
+  partialResult: PluginToolOutput,
+) => void;
 
 export function toolResult<TValue extends JsonValue>(
   text: string,

@@ -10,7 +10,7 @@ export const plugin = definePlugin({
       requiredPermission: 'read',
       async run(input: { service?: string }, context, onUpdate) {
         const service = input.service ?? 'all';
-        onUpdate?.({ text: 'Checking service status' });
+        onUpdate?.('Checking service status');
         context.logger.info('status summary requested', { service });
         return toolResult(
           `Service ${service} status is unknown for tenant ${context.tenantId}.`,

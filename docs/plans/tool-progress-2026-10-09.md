@@ -1,49 +1,42 @@
 # Tool execution progress
 
-Add optional execution-scoped third `onUpdate` argument, strict plain-text update
-contract/schema, starter and packed consumer verification. Existing plugin handlers,
-manifest apiVersion, final results and host approval/authorization remain unchanged.
-No new manifest capability, store, identity or retention class.
+## Minimal scope
 
-Authorization: host gates tool execution by actor/tenant/grants and original call;
-update fields cannot select recipients or grant privileges. Lifecycle: existing
-turn/execution output ownership, retention and parent deletion; callback closes on
-settlement or cancellation. No separate durable progress history.
+Add optional third `onUpdate` argument to `ToolDefinition.run`, using the existing
+`PluginToolOutput` contract and existing host result conversion. Existing handlers,
+final results and manifest schemas are unchanged. No new payload/schema/validator,
+UI, status tool, background job, resource or store. Update the executable
+basic-readonly starter and SDK/CLI release inventory to 0.24.0.
 
-Host integration is in `/Users/aaic/work/gaurav-exp`, documented in
-`docs/plans/plugin-tool-progress-2026-10-09.md`, including reviewed prior art from
-`applied-ai-consulting/claude-code` (`develop:Tool.ts`) and `openai/codex`
-(`main:codex-rs/core/src/unified_exec/process_manager.rs`). Adopt separate progress
-and completion with abort context; reject application internals and process/job
-polling for this additive callback.
+Host approval, actor, tenant and resource gates remain mandatory. Callbacks belong
+to the original invocation and close before conversion on completion, failure or
+cancellation. Existing output protection, authorized stream/replay and parent-event
+retention/deletion apply. No duplicate progress history or new grant/audit mutation.
 
-SDK/CLI release inventory: 0.24.0, both package manifests, CLI/SDK generated version
-constants, public root exports, `./tool-update-schema` export, schema pack inventory,
-basic-readonly starter and clean consumer script. Training course gains the callback
-example and explicit host compatibility/lifecycle guidance. Publication is required
-before host production integration can be considered complete.
+Reviewed prior art: `applied-ai-consulting/claude-code` `develop:Tool.ts` and
+`openai/codex` `main:codex-rs/core/src/unified_exec/process_manager.rs`. Adopt separate
+progress and completion with abort context; reject application-specific rendering
+and process/job polling. Host integration plan contains the authorization matrix
+and lifecycle inventory.
 
-## Verification and reviews
+SDK and CLI manifests/constants move together to 0.24.0. Training course, starter
+reference and contract guide updated. Generated starter verification consumes
+packed SDK/CLI outside the workspace. Production host integration requires SDK
+publication followed by its dependency and frozen-lockfile update.
 
-- `pnpm quality` passed: formatting, lint, package boundaries, SDK/CLI type checks,
-  coverage suites (276 SDK tests, 44 CLI tests), builds, pack inventories, packed
-  public progress/schema consumer, and all generated starters outside the workspace.
-- Fresh V8 line coverage: tool-update contract 100%, registration 89.7%, CLI
-  constants 100%; the generated basic-readonly implementation is 100% covered.
-- Exact host-pinned Semgrep 1.179.0 image and strict flags passed for the full SDK
-  repository, exit 0 with no findings or warnings. Mounted linked-worktree Git
-  metadata read-only so the scanner can honor checked-in ignore rules; no new
-  exclusions or weakened settings. An initial scan without that metadata scanned
-  ignored generated coverage assets; the corrected scan completed cleanly.
-- Independent SDK/consumer/documentation review found no remaining actionable
-  issues. A suspected missing consumer gate was disproved by the existing parent
-  verifier invocation and its successful execution.
-- Repository-required autoreview of the complete proposed changes returned
-  `scoped-clean` through P2. Training course and starter reference updated.
-- Host integration separately passed 149 deterministic tests, changed-file line
-  coverage above 85%, type checks against the development SDK and quality lint.
-  This does not establish published-package production compatibility.
+## Verification and review
 
-SDK 0.24.0 remains unpublished. Ready-for-review SDK PR is the release prerequisite;
-host dependency/lockfile update and production verification must follow publication.
-No paid CI or npm publication was manually started.
+The minimal implementation passed `pnpm quality`: formatting, lint, boundaries,
+type checks, 262 SDK tests, 44 CLI tests, coverage, builds, package inventory and
+all generated starters as packed outside-workspace consumers. Registration line
+coverage is 89.7%; CLI constants and the generated basic-readonly implementation
+are 100%. The exact host-pinned Semgrep 1.179.0 image/rules/strict flags passed the
+full SDK repository with zero findings or warnings. Independent review and final
+autoreview of the complete staged candidate returned no actionable P0–P2 findings.
+Training inventory now matches 0.24.0; capability-introduction versions stay intact.
+
+Host source is isolated and release-dependent: its normal installed 0.23.0 cannot
+typecheck the new callback contract. Autoreview correctly identified that as a
+publication/dependency blocker, so no host PR is ready. SDK publication must precede
+the host dependency/lockfile update and normal verification. No paid CI or npm
+publication was manually started.

@@ -1,7 +1,7 @@
 # OpsRabbit Plugin Platform
 
 SDK 0.24.0 adds optional [tool execution updates](./docs/plugin-contract-v0.24.md)
-through `onUpdate`, with bounded plain text, unchanged existing handlers, and no
+through `onUpdate`, reusing the existing tool output contract with unchanged handlers and no
 extra model-invoked status tool. The `basic-readonly` starter includes an executable
 example. Production host integration requires the published SDK release.
 

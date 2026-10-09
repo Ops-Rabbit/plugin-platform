@@ -11,7 +11,6 @@ export * from "./contracts/manifest.js";
 export * from "./contracts/knowledge-email-processor.js";
 export * from "./contracts/interaction-policy.js";
 export * from "./contracts/registration.js";
-export * from "./contracts/tool-update.js";
 export * from "./contracts/structured-classification.js";
 export * from "./validation/compatibility.js";
 export * from "./validation/data-insight.js";

@@ -759,6 +759,12 @@
           "required": ["read"],
           "properties": { "read": { "const": true } }
         },
+        "personaHost": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion"],
+          "properties": { "schemaVersion": { "const": "1" } }
+        },
         "audit": {
           "type": "object",
           "additionalProperties": false,

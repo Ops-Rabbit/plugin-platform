@@ -1,5 +1,9 @@
 # Building Governed OpsRabbit Plugins
 
+## Persona host helpers (SDK 0.25.0)
+
+The reviewed Data Insight SQL provider declares `capabilities.personaHost: { schemaVersion: "1" }` and checks `context.host` before calling any helper. Group listing returns only active tenant groups; user listing and dashboard materialization require a current signed-in tenant admin at the host. Walk through the [typed executable reference](../packages/plugin-sdk/test/fixtures/persona-host-reference.ts) and its missing-capability/group tests. A manifest declaration never grants authority, and this optional service is unavailable to ordinary generated starter ids. The host owns policy audit, rollback, revocation, and dashboard deletion. Use the published SDK and a compatible host release; a local type extension is not a public plugin contract.
+
 ## Tool execution progress (SDK 0.24.0)
 
 Tool handlers may accept an optional third `onUpdate` argument. Emit
@@ -32,8 +36,8 @@ cleanup lease reports removal or definitive absence; provider/access errors reta
 observable failed work. The consumer reference uses stubs and is not evidence of
 a host's actual authorization, atomic audit or concurrent lifecycle implementation.
 
-An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.24.0
-and `@opsrabbit/create-plugin` 0.24.0.
+An instructor-ready, source-backed course for `@opsrabbit/plugin-sdk` 0.25.0
+and `@opsrabbit/create-plugin` 0.25.0.
 
 ## Course promise
 
@@ -96,7 +100,7 @@ alone:
 
 The contract-history documents explain why features exist. Current SDK types,
 validators, schemas, generated starters, and tests decide the syntax taught
-here. The public SDK and create-plugin CLI are version 0.24.0, and the manifest `apiVersion` is
+here. The public SDK and create-plugin CLI are version 0.25.0, and the manifest `apiVersion` is
 `1.0`; those are separate version axes.
 
 ---

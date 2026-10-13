@@ -1,6 +1,6 @@
 # `@opsrabbit/plugin-sdk`
 
-SDK 0.24.0 adds optional tool progress through `run(input, context, onUpdate?)`.
+SDK 0.25.0 adds optional, versioned persona host helpers for the reviewed Data Insight SQL provider. See [persona host helpers](../../docs/persona-host-v1.md). SDK 0.24.0 added optional tool progress through `run(input, context, onUpdate?)`.
 Use `onUpdate?.('Checking data')` with the existing `PluginToolOutput` contract;
 existing two-argument handlers remain compatible. Supporting hosts forward updates
 only during that authorized execution. See [the contract](../../docs/plugin-contract-v0.24.md).

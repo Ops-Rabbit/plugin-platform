@@ -1,6 +1,6 @@
 # OpsRabbit Plugin Platform
 
-SDK 0.24.0 adds optional [tool execution updates](./docs/plugin-contract-v0.24.md)
+SDK 0.25.0 adds versioned [persona host helpers](./docs/persona-host-v1.md) for the reviewed Data Insight SQL provider. SDK 0.24.0 added optional [tool execution updates](./docs/plugin-contract-v0.24.md)
 through `onUpdate`, reusing the existing tool output contract with unchanged handlers and no
 extra model-invoked status tool. The `basic-readonly` starter includes an executable
 example. Production host integration requires the published SDK release.

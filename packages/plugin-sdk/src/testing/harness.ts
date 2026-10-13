@@ -6,6 +6,7 @@ import type {
   PluginKnowledgeService,
   PluginConnectionsService,
   PluginFormsService,
+  PluginPersonaHostService,
 } from "../contracts/contexts.js";
 import type { PluginStructuredClassificationService } from "../contracts/structured-classification.js";
 import type { DataInsightAuthorizationContext } from "../contracts/data-insight.js";
@@ -31,6 +32,7 @@ export function createTestContext(
     knowledge?: PluginKnowledgeService;
     connections?: PluginConnectionsService;
     forms?: PluginFormsService;
+    host?: Partial<PluginPersonaHostService>;
     structuredClassification?: PluginStructuredClassificationService;
     dataInsightAuthorization?: DataInsightAuthorizationContext;
     settings?: Readonly<Record<string, JsonValue>>;
@@ -55,6 +57,7 @@ export function createTestContext(
       ? {}
       : { connections: options.connections }),
     ...(options.forms === undefined ? {} : { forms: options.forms }),
+    ...(options.host === undefined ? {} : { host: options.host }),
     ...(options.structuredClassification === undefined
       ? {}
       : { structuredClassification: options.structuredClassification }),
@@ -82,6 +85,7 @@ export function createAuthorizedTestContext(
     knowledge: suppliedKnowledge,
     connections: suppliedConnections,
     structuredClassification: suppliedStructuredClassification,
+    host: suppliedHost,
     ...baseOptions
   } = options;
   const declaration = manifest.capabilities.knowledge;
@@ -169,6 +173,12 @@ export function createAuthorizedTestContext(
       : undefined;
   return createTestContext({
     ...baseOptions,
+    ...(suppliedHost &&
+    invocationDeclared &&
+    manifest.id === "data_insight_sql" &&
+    manifest.capabilities.personaHost?.schemaVersion === "1"
+      ? { host: suppliedHost }
+      : {}),
     ...(knowledge === undefined ? {} : { knowledge }),
     ...(connections === undefined ? {} : { connections }),
     ...(structuredClassification === undefined

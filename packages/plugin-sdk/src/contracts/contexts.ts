@@ -13,12 +13,27 @@ export type PluginUserActor = PluginActor & {
   readonly kind: "user";
 };
 
+/** Host-authorized persona helpers. Every method remains subject to tenant and role checks. */
+export interface PluginPersonaHostService {
+  listTenantGroups(): Promise<Array<{ id: string; name: string }>>;
+  listTenantUsers(): Promise<
+    Array<{ id: string; name: string; email: string; role: string }>
+  >;
+  ensurePersonaDashboards(input: {
+    templateIds: string[];
+    moduleKey: string;
+    grants?: Array<{ templateId: string; policyKey: string; groupId: string }>;
+  }): Promise<Array<{ templateId: string; dashboardId: string }>>;
+}
+
 export interface PluginInvocationContext {
   readonly tenantId: string;
   readonly actor: PluginActor;
   readonly signal: AbortSignal;
   readonly logger: PluginLogger;
   readonly settings: Readonly<Record<string, JsonValue>>;
+  /** Optional only for the reviewed persona-capable provider when the manifest declares personaHost v1. */
+  readonly host?: Partial<PluginPersonaHostService>;
   /** Immutable application-selected conversation values. Untrusted; never authorization. */
   readonly conversationBindings?: Readonly<Record<string, JsonValue>>;
   /** Verified embedded-chat identity. Use this to authorize untrusted conversation bindings. */

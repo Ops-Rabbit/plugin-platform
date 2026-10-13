@@ -190,6 +190,28 @@ function first(value: unknown, key: string): MutableObject {
 }
 
 describe("validateManifest", () => {
+  it("accepts only the versioned persona host declaration", () => {
+    const declared = {
+      ...valid,
+      capabilities: {
+        ...valid.capabilities,
+        personaHost: { schemaVersion: "1" },
+      },
+    };
+    expect(validateManifest(declared).ok).toBe(true);
+    for (const personaHost of [
+      {},
+      { schemaVersion: "2" },
+      { schemaVersion: "1", extra: true },
+    ]) {
+      expect(
+        validateManifest({
+          ...declared,
+          capabilities: { ...valid.capabilities, personaHost },
+        }).ok,
+      ).toBe(false);
+    }
+  });
   it("accepts a deployment interaction policy surface", () => {
     const manifest = {
       ...valid,

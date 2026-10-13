@@ -1150,6 +1150,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "chatComposerStatus",
     "deploymentAdminWorkspace",
     "identityDirectory",
+    "personaHost",
     "audit",
     "subjectLifecycle",
     "localization",
@@ -1585,6 +1586,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     ["chatTurnAdmission", capabilities.chatTurnAdmission],
     ["chatComposerStatus", capabilities.chatComposerStatus],
     ["deploymentAdminWorkspace", capabilities.deploymentAdminWorkspace],
+    ["personaHost", capabilities.personaHost],
     ["localization", capabilities.localization],
   ] as const)
     validateSingletonCapability(
@@ -1764,6 +1766,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     !capabilities.chatComposerStatus &&
     !capabilities.deploymentAdminWorkspace &&
     !capabilities.identityDirectory &&
+    !capabilities.personaHost &&
     !capabilities.audit &&
     !capabilities.subjectLifecycle &&
     !capabilities.localization

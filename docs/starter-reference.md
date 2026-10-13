@@ -1,5 +1,7 @@
 # Starter and reference plugins
 
+The versioned persona host helpers in SDK 0.25.0 are documented in [Persona host helpers v1](persona-host-v1.md) with an executable typed reference. Generated starter ids do not receive this reviewed-provider-only service.
+
 The `basic-readonly` starter demonstrates optional `onUpdate` progress using the
 existing tool output format.
 

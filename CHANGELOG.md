@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.0 - Unreleased
+
+- Add a versioned, optional persona host contract for the reviewed Data Insight SQL provider, with active tenant group/user directory and host-managed dashboard policy materialization.
+- Validate the `personaHost` manifest declaration in TypeScript runtime validation and published JSON Schema; add a typed executable reference and test harness coverage.
+- Keep tenant/role authorization, policy writes, audit, and dashboard lifecycle in the host. Align SDK and CLI release versions at 0.25.0.
+
 ## 0.24.0 - Unreleased
 
 - Add optional execution-scoped `onUpdate` to public tool handlers, preserving

@@ -38,6 +38,32 @@ const valid = {
 };
 
 describe("published manifest schema", () => {
+  it("matches runtime validation for persona host declarations", async () => {
+    const schema = JSON.parse(
+      await readFile(
+        resolve(import.meta.dirname, "../schemas/opsrabbit-plugin.schema.json"),
+        "utf8",
+      ),
+    );
+    const validateSchema = new Ajv2020({
+      allErrors: true,
+      strict: true,
+    }).compile(schema);
+    for (const personaHost of [
+      { schemaVersion: "1" },
+      {},
+      { schemaVersion: "2" },
+      { schemaVersion: "1", extra: true },
+    ]) {
+      const candidate = {
+        ...valid,
+        capabilities: { ...valid.capabilities, personaHost },
+      };
+      expect(Boolean(validateSchema(candidate))).toBe(
+        validateManifest(candidate).ok,
+      );
+    }
+  });
   it("compiles and agrees with runtime validation for supported and rejected manifests", async () => {
     const schema = JSON.parse(
       await readFile(

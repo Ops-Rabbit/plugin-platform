@@ -2,9 +2,48 @@ import { describe, expect, it } from "vitest";
 import type { PluginManifest } from "../src/contracts/manifest.js";
 import { PluginValidationError } from "../src/contracts/errors.js";
 import { assertValidPlugin } from "../src/testing/assertions.js";
-import { createTestContext } from "../src/testing/harness.js";
+import {
+  createAuthorizedTestContext,
+  createTestContext,
+} from "../src/testing/harness.js";
 
 describe("test utilities", () => {
+  it("exposes persona helpers only for the declared reviewed provider", () => {
+    const host = {
+      listTenantGroups: async () => [{ id: "group-1", name: "Reviewers" }],
+    };
+    const manifest = {
+      id: "data_insight_sql",
+      capabilities: {
+        actions: [{ id: "configure", risk: "write", requiredRole: "admin" }],
+        personaHost: { schemaVersion: "1" },
+      },
+    } as PluginManifest;
+    expect(
+      createAuthorizedTestContext(
+        manifest,
+        { kind: "action", id: "configure" },
+        { host },
+      ).host,
+    ).toBe(host);
+    expect(
+      createAuthorizedTestContext(
+        { ...manifest, id: "other-provider" },
+        { kind: "action", id: "configure" },
+        { host },
+      ).host,
+    ).toBeUndefined();
+    expect(
+      createAuthorizedTestContext(
+        {
+          ...manifest,
+          capabilities: { actions: manifest.capabilities.actions! },
+        },
+        { kind: "action", id: "configure" },
+        { host },
+      ).host,
+    ).toBeUndefined();
+  });
   it("captures structured logs, actors, settings, and tenant overrides", () => {
     const context = createTestContext({
       tenantId: "t-2",

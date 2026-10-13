@@ -127,6 +127,7 @@ export interface PluginDeclaredCapabilities {
   chatComposerStatus?: { schemaVersion: "1" };
   deploymentAdminWorkspace?: { schemaVersion: "1" };
   identityDirectory?: { read: true };
+  personaHost?: { schemaVersion: "1" };
   audit?: { write: true };
   subjectLifecycle?: {
     schemaVersion: "1";

@@ -101,3 +101,7 @@ documents plugin-owned policy/reference declarations and host-attested invocatio
 
 The [governed skill Connection execution contract](./docs/host-skill-connection-exec-v1.md)
 documents how host 0.6.0 executes reviewed helpers packaged in attached skills without exposing raw Connection commands.
+
+## Channel messaging v1
+
+SDK 0.26.0 exports `ChannelMessagingContextV1`, `ChannelMessagingAdapterV1`, and message input validation/schema. See [host responsibilities and reference](docs/channel-messaging-v1.md). Runtime availability requires an implementing host; a saved connection alone grants no messaging authority.

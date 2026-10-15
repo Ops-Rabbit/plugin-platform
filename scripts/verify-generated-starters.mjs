@@ -33,6 +33,10 @@ execFileSync("node", ["scripts/verify-channel-approval-consumer.mjs"], {
   cwd: root,
   stdio: "inherit",
 });
+execFileSync("node", ["scripts/verify-channel-messaging-consumer.mjs"], {
+  cwd: root,
+  stdio: "inherit",
+});
 
 try {
   const sdk = pack("packages/plugin-sdk");

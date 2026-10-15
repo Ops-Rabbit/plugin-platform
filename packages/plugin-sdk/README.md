@@ -254,3 +254,7 @@ Published request and result JSON Schemas are available from
 validates the standalone wire shape; runtime validation additionally enforces
 UTF-8 byte limits, unique class and evidence keys, and request-relative class and
 evidence references.
+
+## Channel messaging v1
+
+SDK 0.26.0 exports `ChannelMessagingContextV1`, `ChannelMessagingAdapterV1`, and message input validation/schema. See [host responsibilities and reference](../../docs/channel-messaging-v1.md). Runtime availability requires an implementing host; a saved connection alone grants no messaging authority.

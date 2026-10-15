@@ -14,6 +14,16 @@ execution. Updates stop on completion, failure or cancellation; normal approval,
 authorization and output policies remain in force. Keep honoring `context.signal`.
 See [the contract and host responsibilities](plugin-contract-v0.24.md).
 
+## Channel messaging capability
+
+The SDK 0.26.0 [channel messaging v1 contract](channel-messaging-v1.md) adds a
+host-bound broker for starting messages through an existing channel connection.
+Study the reference and schema-parity tests. Authentication reuse does not confer
+agent authority: the host must separately check runtime identity, tenant,
+allowlists and live resource permissions. Never accept tokens or acting-agent
+overrides in tool arguments, and never retry an ambiguous post automatically.
+Runtime availability requires a compatible host that supplies the optional broker.
+
 ## Channel approval capability
 
 The [channel approval contract](plugin-contract-v0.23.md) adds an optional

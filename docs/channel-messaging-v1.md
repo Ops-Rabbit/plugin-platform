@@ -9,7 +9,8 @@ read and external-risk tools in its manifest; this contract does not grant a
 plugin arbitrary access to inbounds or secrets.
 
 `listDestinations()` returns only inbound/channel destinations permitted for the
-host-bound tenant, actor and actual runtime agent. `sendMessage({ instanceId,
+host-bound tenant, actor and actual runtime agent, including the current provider
+channel name so callers can resolve a human-requested destination. `sendMessage({ instanceId,
 channelId, text })` starts a new message and returns a confirmed provider channel
 and message id. Inputs are validated with `CHANNEL_MESSAGING_INPUT_SCHEMA` and
 `validateChannelMessagingInput`; text contains 1–4000 Unicode characters and at

@@ -5,6 +5,8 @@ export interface ChannelMessagingDestinationV1 {
   readonly instanceId: string;
   readonly instanceName: string;
   readonly channelId: string;
+  /** Current provider name, for resolving a user's requested destination. */
+  readonly channelName: string;
 }
 
 export interface ChannelMessagingInputV1 {

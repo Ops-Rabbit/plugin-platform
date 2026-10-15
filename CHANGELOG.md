@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.26.0 - 2026-10-15
+
+- Add versioned channel messaging broker and provider adapter contracts for reusing saved inbound credentials without exposing secrets to tools.
+- Publish bounded message validation and JSON Schema, an executable reference, and packed clean-consumer verification.
+- Keep tenant, actor, agent, destination allowlists, live authorization, approval, audit and deletion responsibilities in the host.
+- Align SDK, CLI and generated consumer versions at 0.26.0.
+
 ## 0.25.0 - Unreleased
 
 - Add a versioned, optional persona host contract for the reviewed Data Insight SQL provider, with active tenant group/user directory and host-managed dashboard policy materialization.

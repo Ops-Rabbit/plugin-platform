@@ -31,6 +31,7 @@ describe("channel messaging contract", () => {
   });
   it.each([
     valid,
+    { ...valid, threadId: "1700000000.000123" },
     { ...valid, text: "完成 ✅" },
     { ...valid, text: "a".repeat(4000) },
   ])("accepts bounded messages", (input) => {
@@ -40,6 +41,10 @@ describe("channel messaging contract", () => {
   });
   it.each([
     null,
+    { ...valid, threadId: "" },
+    { ...valid, threadId: null },
+    { ...valid, threadId: "root\n" },
+    { ...valid, threadId: "x".repeat(161) },
     [],
     {},
     { ...valid, instanceId: "slack-main\n" },
@@ -60,6 +65,37 @@ describe("channel messaging contract", () => {
       expect(schema(input)).toBe(false);
     },
   );
+  it("forwards an explicit root only to a broker supporting replies", async () => {
+    const { sendChannelMessage } = await import(
+      new URL("../reference/channel-messaging.mjs", import.meta.url).href
+    );
+    const sendMessage = vi.fn(async () => ({
+      channelId: "C123",
+      messageId: "1700000001.000001",
+      threadId: "1700000000.000123",
+    }));
+    const input = { ...valid, threadId: "1700000000.000123" };
+    await expect(
+      sendChannelMessage(
+        { messaging: { schemaVersion: "1", sendMessage } },
+        input,
+      ),
+    ).rejects.toThrow("Thread replies are unavailable");
+    expect(sendMessage).not.toHaveBeenCalled();
+    await expect(
+      sendChannelMessage(
+        {
+          messaging: {
+            schemaVersion: "1",
+            supportsThreadReplies: true,
+            sendMessage,
+          },
+        },
+        input,
+      ),
+    ).resolves.toMatchObject({ threadId: input.threadId });
+    expect(sendMessage).toHaveBeenCalledWith(input);
+  });
   it("runs the reference against an invocation-bound broker", async () => {
     const { sendChannelMessage } = await import(
       new URL("../reference/channel-messaging.mjs", import.meta.url).href

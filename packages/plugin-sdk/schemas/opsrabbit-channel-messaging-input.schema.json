@@ -17,6 +17,10 @@
       "minLength": 1,
       "maxLength": 4000,
       "pattern": "\\S"
+    },
+    "threadId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
     }
   }
 }

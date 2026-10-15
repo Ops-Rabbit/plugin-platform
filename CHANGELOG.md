@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.27.0 - 2026-10-15
+
+- Add optional provider-root thread ids and explicit thread-reply capability flags to channel messaging v1.
+- Preserve new-message compatibility and require unsupported replies to fail closed rather than start another message.
+- Update request schema, validators, executable reference, parity/consumer tests and host responsibilities.
+- Align SDK and CLI release versions at 0.27.0.
+
 ## 0.26.0 - 2026-10-15
 
 - Add versioned channel messaging broker and provider adapter contracts for reusing saved inbound credentials without exposing secrets to tools.

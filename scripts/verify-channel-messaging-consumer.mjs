@@ -50,6 +50,11 @@ assert.deepEqual(validateChannelMessagingInput(input), []);
 assert.ok(validateChannelMessagingInput({ ...input, token: "forbidden" }).length);
 const receipt = await sendChannelMessage({ messaging: { schemaVersion: "1", sendMessage: async () => ({ channelId: "C123", messageId: "123.456" }) } }, input);
 assert.equal(receipt.messageId, "123.456");
+const followUp = { ...input, threadId: receipt.messageId };
+assert.deepEqual(validateChannelMessagingInput(followUp), []);
+await assert.rejects(() => sendChannelMessage({ messaging: { schemaVersion: "1", sendMessage: async () => { throw new Error("must not execute"); } } }, followUp), /Thread replies are unavailable/);
+const reply = await sendChannelMessage({ messaging: { schemaVersion: "1", supportsThreadReplies: true, sendMessage: async (value) => { assert.equal(value.threadId, receipt.messageId); return { channelId: "C123", messageId: "124.456", threadId: value.threadId }; } } }, followUp);
+assert.equal(reply.threadId, receipt.messageId);
 await assert.rejects(() => sendChannelMessage({}, input));
 `,
   );

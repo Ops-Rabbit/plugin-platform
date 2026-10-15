@@ -13,16 +13,21 @@ export interface ChannelMessagingInputV1 {
   readonly instanceId: string;
   readonly channelId: string;
   readonly text: string;
+  /** Parent/root provider message id, scoped to the selected destination. Omit for a new message. */
+  readonly threadId?: string;
 }
 
 export interface ChannelMessagingReceiptV1 {
   readonly channelId: string;
   readonly messageId: string;
+  /** Root id to reuse for further replies; may differ from this messageId. */
+  readonly threadId?: string;
 }
 
 /** Invocation-scoped; a reference cannot authorize a later invocation. */
 export interface ChannelMessagingServiceV1 {
   readonly schemaVersion: typeof CHANNEL_MESSAGING_VERSION;
+  readonly supportsThreadReplies?: boolean;
   /** Lists only destinations allowed for the current runtime actor and agent. */
   listDestinations(): Promise<readonly ChannelMessagingDestinationV1[]>;
   /** Rechecks live authority and serializes against inbound configuration changes. */
@@ -43,6 +48,7 @@ export interface ChannelMessagingChannelV1 {
 
 /** Host supplies the existing channel context only after authorization. */
 export interface ChannelMessagingAdapterV1<Context> {
+  readonly supportsThreadReplies?: boolean;
   /** Admin-only configuration discovery; pagination is explicit and bounded. */
   listMessagingChannels(
     context: Context,
@@ -51,7 +57,7 @@ export interface ChannelMessagingAdapterV1<Context> {
     channels: readonly ChannelMessagingChannelV1[];
     nextCursor: string | null;
   }>;
-  /** New top-level message. No implicit retries after an ambiguous provider result. */
+  /** New message or explicit thread reply. Never downgrade a reply to a new message or retry ambiguity. */
   sendMessage(
     context: Context,
     input: Omit<ChannelMessagingInputV1, "instanceId">,

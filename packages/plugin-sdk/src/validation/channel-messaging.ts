@@ -15,6 +15,10 @@ export const CHANNEL_MESSAGING_INPUT_SCHEMA = {
       type: "string",
       pattern: "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])",
     },
+    threadId: {
+      type: "string",
+      pattern: "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])",
+    },
     text: { type: "string", minLength: 1, maxLength: 4000, pattern: "\\S" },
   },
 } as const;
@@ -36,7 +40,8 @@ export function validateChannelMessagingInput(
       });
     }
   }
-  for (const key of ["instanceId", "channelId"] as const) {
+  for (const key of ["instanceId", "channelId", "threadId"] as const) {
+    if (key === "threadId" && !Object.hasOwn(input, key)) continue;
     const item = input[key];
     if (
       typeof item !== "string" ||

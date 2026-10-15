@@ -11,11 +11,19 @@ plugin arbitrary access to inbounds or secrets.
 `listDestinations()` returns only inbound/channel destinations permitted for the
 host-bound tenant, actor and actual runtime agent, including the current provider
 channel name so callers can resolve a human-requested destination. `sendMessage({ instanceId,
-channelId, text })` starts a new message and returns a confirmed provider channel
-and message id. Inputs are validated with `CHANNEL_MESSAGING_INPUT_SCHEMA` and
+channelId, text, threadId? })` starts a new message when `threadId` is omitted.
+SDK 0.27.0 adds replies: require `messaging.supportsThreadReplies === true` and
+pass the root id returned as `receipt.threadId` (or the first message id), with the
+same instance and channel. A receipt contains its message id and may include the
+root `threadId`; subsequent replies must keep using that root, not the latest
+reply id. Older brokers without the capability flag still support new messages;
+reject follow-ups before any external effect. Never silently create a new message
+when a requested reply is unsupported. Inputs are validated with `CHANNEL_MESSAGING_INPUT_SCHEMA` and
 `validateChannelMessagingInput`; text contains 1–4000 Unicode characters and at
 least one non-whitespace character. Credentials, tenant overrides, acting agent
-overrides, thread identifiers and arbitrary provider methods are forbidden.
+overrides, host conversation identifiers and arbitrary provider methods are forbidden.
+The optional provider thread id has the same bounded opaque-id validation as
+destinations. It is routing data, never authority to bypass destination checks.
 
 The host owns role ceilings, active actor/service-principal validation, thread
 write and agent use checks, current tenant/plugin/inbound enablement, destination
@@ -31,6 +39,11 @@ destinations for an admin configuration flow. `sendMessage` posts only after hos
 authorization and uses existing credentials; no second authentication or copied
 secret configuration is required. Provider-specific membership and destination
 checks remain mandatory even when the host allowlist permits the destination.
+Adapters declare `supportsThreadReplies: true` only when they implement thread
+routing and return a verified root id. Otherwise the host must reject replies.
+Follow-ups use the same live channel/agent permissions, risk/approval policy,
+audit, configuration fences and saved authentication. No extra content store or
+automatic inbound conversation/agent reassignment is implied.
 
 No implicit resend is permitted after an ambiguous provider outcome. A provider
 success without a usable receipt is uncertain, not confirmed delivery. Hosts must

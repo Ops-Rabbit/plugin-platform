@@ -1,6 +1,6 @@
 {
   "name": "@opsrabbit/plugin-sdk",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "description": "Public contracts, validation, and testing utilities for OpsRabbit plugins",
   "type": "module",
   "license": "Apache-2.0",
@@ -44,7 +44,15 @@
     "./data-insight-template-catalog-schema": "./schemas/opsrabbit-data-insight-template-catalog.schema.json",
     "./data-insight-authorization-context-schema": "./schemas/opsrabbit-data-insight-authorization-context.schema.json",
     "./channel-messaging-input-schema": "./schemas/opsrabbit-channel-messaging-input.schema.json",
-    "./inbound-lifecycle-event-schema": "./schemas/opsrabbit-inbound-lifecycle-event.schema.json"
+    "./inbound-lifecycle-event-schema": "./schemas/opsrabbit-inbound-lifecycle-event.schema.json",
+    "./plugin-resource-capability-schema": "./schemas/opsrabbit-plugin-resource-capability.schema.json",
+    "./plugin-resource-deletion-schema": "./schemas/opsrabbit-plugin-resource-deletion.schema.json",
+    "./plugin-resource-query-schema": "./schemas/opsrabbit-plugin-resource-query.schema.json",
+    "./plugin-resource-registration-schema": "./schemas/opsrabbit-plugin-resource-registration.schema.json",
+    "./plugin-resource-transaction-schema": "./schemas/opsrabbit-plugin-resource-transaction.schema.json",
+    "./plugin-source-inbound-binding-schema": "./schemas/opsrabbit-plugin-source-inbound-binding.schema.json",
+    "./structured-enrichment-input-schema": "./schemas/opsrabbit-structured-enrichment-input.schema.json",
+    "./structured-enrichment-result-schema": "./schemas/opsrabbit-structured-enrichment-result.schema.json"
   },
   "scripts": {
     "build": "node ../../scripts/clean-directory.mjs dist && tsc -p tsconfig.build.json",

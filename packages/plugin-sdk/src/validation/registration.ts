@@ -13,6 +13,7 @@ const SECTIONS = [
   "routes",
   "ingressRoutes",
   "widgets",
+  "resourceLifecycle",
   "inboundLifecycle",
   "knowledgeEmailProcessor",
   "chatTurnAdmission",
@@ -40,6 +41,7 @@ export function validateRegistration(
   for (const section of SECTIONS.filter(
     (entry) =>
       ![
+        "resourceLifecycle",
         "inboundLifecycle",
         "knowledgeEmailProcessor",
         "chatTurnAdmission",
@@ -95,6 +97,13 @@ export function validateRegistration(
       );
   }
 
+  validateSingletonRegistration(
+    "resourceLifecycle",
+    manifest.capabilities.resourceRecords,
+    definition.resourceLifecycle,
+    issues,
+    ["deleteRecords", "cleanupTenant"],
+  );
   validateSingletonRegistration(
     "inboundLifecycle",
     manifest.capabilities.inboundLifecycle,
@@ -354,7 +363,8 @@ function validateSingletonRegistration(
     | "chatTurnAdmission"
     | "chatComposerStatus"
     | "subjectLifecycle"
-    | "inboundLifecycle",
+    | "inboundLifecycle"
+    | "resourceLifecycle",
   declared: { schemaVersion: "1" } | undefined,
   registered: { schemaVersion: "1" } | undefined,
   issues: ValidationIssue[],

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.com/schemas/structured-enrichment-result.v1.json",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "completed"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1
+        },
+        "values": {
+          "type": "object",
+          "maxProperties": 64,
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,79}(?![\\s\\S])"
+          },
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 0
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "required": ["status", "values"]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "unavailable"
+        },
+        "reason": {
+          "enum": ["not_configured", "policy_blocked", "capacity_unavailable"]
+        }
+      },
+      "required": ["status", "reason"]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "timeout"
+        }
+      },
+      "required": ["status"]
+    }
+  ]
+}

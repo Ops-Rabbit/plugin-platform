@@ -1,3 +1,4 @@
+import { validatePluginResourceCapability } from "./resource-records.js";
 import {
   PLUGIN_PERMISSIONS,
   PLUGIN_RISKS,
@@ -143,6 +144,19 @@ export function validateManifest(
     input.capabilities,
     issues,
   );
+  if (
+    record(input.navigation) &&
+    input.navigation.kind === "plugin_workspace" &&
+    input.frontend === undefined
+  ) {
+    issues.push(
+      issue(
+        "$.frontend",
+        "required",
+        "Standalone workspace navigation requires a native frontend.",
+      ),
+    );
+  }
   validateFormStarterPackReference(
     input.formStarterPack,
     input.navigation,
@@ -294,6 +308,7 @@ function validateInteractionDependencies(
     "localization",
   ]);
   requireCapabilities("subjectLifecycle", ["database", "audit"]);
+  requireCapabilities("structuredEnrichment", ["audit", "resourceRecords"]);
 }
 
 function validateFrontend(
@@ -427,6 +442,24 @@ function validateFrontend(
         );
     }
   }
+  if (
+    Array.isArray(value.capabilities) &&
+    value.capabilities.some(
+      (capability) =>
+        capability === "plugin.resources.manage" ||
+        capability === "plugin.investigations.open",
+    ) &&
+    (!record(capabilitiesValue) ||
+      capabilitiesValue.resourceRecords === undefined)
+  ) {
+    issues.push(
+      issue(
+        "$.frontend.capabilities",
+        "invalid",
+        "Resource sharing and investigation navigation require resourceRecords.",
+      ),
+    );
+  }
   if (Array.isArray(value.capabilities)) {
     const invokes = value.capabilities.includes("plugin.actions.invoke");
     if (
@@ -440,15 +473,38 @@ function validateFrontend(
         ),
       );
   }
-  if (!record(navigationValue) || navigationValue.kind !== "forms_workspace")
+  const standalone =
+    record(navigationValue) && navigationValue.kind === "plugin_workspace";
+  if (
+    !record(navigationValue) ||
+    !["forms_workspace", "plugin_workspace"].includes(
+      String(navigationValue.kind),
+    )
+  )
     issues.push(
       issue(
         "$.frontend",
         "invalid",
-        "A native workspace requires forms_workspace navigation.",
+        "A native workspace requires supported workspace navigation.",
       ),
     );
-  if (!record(starterPackValue))
+  if (
+    standalone &&
+    Array.isArray(value.capabilities) &&
+    value.capabilities.some(
+      (capability) =>
+        typeof capability === "string" && capability.startsWith("forms."),
+    )
+  ) {
+    issues.push(
+      issue(
+        "$.frontend.capabilities",
+        "invalid",
+        "Standalone workspaces cannot request Forms capabilities.",
+      ),
+    );
+  }
+  if (!standalone && !record(starterPackValue))
     issues.push(
       issue(
         "$.frontend",
@@ -923,12 +979,20 @@ function validateNavigation(
     "$.navigation",
     issues,
   );
-  if (value.kind !== "forms_workspace")
+  if (value.kind !== "forms_workspace" && value.kind !== "plugin_workspace")
     issues.push(
       issue(
         "$.navigation.kind",
         "unsupported",
-        "Navigation kind must be forms_workspace.",
+        "Navigation kind must be forms_workspace or plugin_workspace.",
+      ),
+    );
+  if (value.kind === "plugin_workspace" && value.workflow !== undefined)
+    issues.push(
+      issue(
+        "$.navigation.workflow",
+        "invalid",
+        "Standalone workspaces cannot declare a Forms workflow.",
       ),
     );
   string(
@@ -1145,6 +1209,8 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "knowledge",
     "connections",
     "structuredClassification",
+    "structuredEnrichment",
+    "resourceRecords",
     "inboundLifecycle",
     "knowledgeEmailProcessor",
     "chatTurnAdmission",
@@ -1461,35 +1527,39 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
       }
     }
   }
-  if (capabilities.structuredClassification !== undefined) {
+  for (const name of [
+    "structuredClassification",
+    "structuredEnrichment",
+  ] as const) {
+    if (capabilities[name] === undefined) continue;
     validateSingletonCapability(
-      capabilities.structuredClassification,
-      "structuredClassification",
+      capabilities[name],
+      name,
       ["schemaVersion", "actionIds", "scheduledJobIds"],
       issues,
       (entry) => {
         if (entry.schemaVersion !== "1")
           issues.push(
             issue(
-              "$.capabilities.structuredClassification.schemaVersion",
+              `$.capabilities.${name}.schemaVersion`,
               "invalid",
               "Structured classification schema version must be 1.",
             ),
           );
         const actionIds = boundedBindingIds(
           entry.actionIds,
-          "$.capabilities.structuredClassification.actionIds",
+          `$.capabilities.${name}.actionIds`,
           issues,
         );
         const jobIds = boundedBindingIds(
           entry.scheduledJobIds,
-          "$.capabilities.structuredClassification.scheduledJobIds",
+          `$.capabilities.${name}.scheduledJobIds`,
           issues,
         );
         if (actionIds.length + jobIds.length === 0)
           issues.push(
             issue(
-              "$.capabilities.structuredClassification",
+              `$.capabilities.${name}`,
               "required",
               "Bind at least one action or scheduled job.",
             ),
@@ -1498,7 +1568,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
           if (!capabilities.actions?.some((item) => item.id === id))
             issues.push(
               issue(
-                `$.capabilities.structuredClassification.actionIds[${index}]`,
+                `$.capabilities.${name}.actionIds[${index}]`,
                 "invalid",
                 "Classification action must be declared in capabilities.actions.",
               ),
@@ -1507,7 +1577,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
           if (!capabilities.scheduledJobs?.some((item) => item.id === id))
             issues.push(
               issue(
-                `$.capabilities.structuredClassification.scheduledJobIds[${index}]`,
+                `$.capabilities.${name}.scheduledJobIds[${index}]`,
                 "invalid",
                 "Classification job must be declared in capabilities.scheduledJobs.",
               ),
@@ -1732,6 +1802,25 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
         );
     },
   );
+  if (capabilities.resourceRecords !== undefined) {
+    issues.push(
+      ...validatePluginResourceCapability(capabilities.resourceRecords).map(
+        (entry) => ({
+          ...entry,
+          path: `$.capabilities.resourceRecords${entry.path.slice(1)}`,
+        }),
+      ),
+    );
+    if (!capabilities.database || !capabilities.audit) {
+      issues.push(
+        issue(
+          "$.capabilities.resourceRecords",
+          "invalid",
+          "Resource records require database and audit capabilities.",
+        ),
+      );
+    }
+  }
   validateSingletonCapability(
     capabilities.inboundLifecycle,
     "inboundLifecycle",
@@ -1778,6 +1867,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     !capabilities.database &&
     !capabilities.objectStore &&
     !capabilities.knowledge &&
+    !capabilities.resourceRecords &&
     !capabilities.inboundLifecycle &&
     !capabilities.knowledgeEmailProcessor &&
     !capabilities.chatTurnAdmission &&

@@ -76,6 +76,15 @@ export type PluginFormsWorkspaceNavigation = {
   workflow?: PluginFormsWorkflowNavigation;
 };
 
+/** A specialist workspace backed by plugin-owned resources, not ordinary Forms. */
+export type PluginStandaloneWorkspaceNavigation = Omit<
+  PluginFormsWorkspaceNavigation,
+  "kind" | "workflow"
+> & { kind: "plugin_workspace"; workflow?: never };
+export type PluginWorkspaceNavigation =
+  | PluginFormsWorkspaceNavigation
+  | PluginStandaloneWorkspaceNavigation;
+
 export interface PluginFormsWorkflowNavigation {
   rootStarterKey: string;
   stageModelSetting: string;
@@ -111,7 +120,7 @@ export interface PluginManifest {
     };
   };
   settings?: PluginSetting[];
-  navigation?: PluginFormsWorkspaceNavigation;
+  navigation?: PluginWorkspaceNavigation;
   frontend?: PluginNativeWorkspace;
   adminWorkspace?: DeploymentAdminWorkspaceV1;
   localization?: PluginLocalizationV1;

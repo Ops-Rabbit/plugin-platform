@@ -41,3 +41,5 @@ checks, a pinned GitHub Actions workflow, README, `AGENTS.md`, manifest, and
 deterministic package command. The platform CI regenerates all thirteen from the
 packed npm candidates, installs them outside the workspace, and runs every
 documented quality command before either public package can be released.
+
+The next-release [resource workspace reference](../packages/plugin-sdk/reference/resource-workspace.mjs) demonstrates specialist resource registration/query/deletion/enrichment boundaries without adding a generated starter ID. Its clean consumer installs the packed SDK outside this workspace. Read the [host responsibilities](resource-workspaces-v1.md) before implementing a dependent plugin.

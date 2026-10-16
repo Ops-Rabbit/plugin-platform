@@ -24,3 +24,9 @@ export * from "./validation/structured-classification.js";
 
 export * from "./contracts/inbound-lifecycle.js";
 export * from "./validation/inbound-lifecycle.js";
+
+export * from "./contracts/resource-records.js";
+export * from "./validation/resource-records.js";
+
+export * from "./contracts/structured-enrichment.js";
+export * from "./validation/structured-enrichment.js";

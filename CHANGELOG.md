@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.28.0 - Unreleased
+## 0.29.0 - 2026-10-16
+
+- Add standalone specialist workspaces without Forms starter/entitlement requirements.
+- Define namespaced plugin resources, host-authorized query/paging/aggregate boundaries, transaction-bound registration and binding configuration, and shared retention/deletion contracts.
+- Add optional tenant-model enrichment contracts with request/output validation and protected identity fields.
+- Add executable reference, schema parity tests and an outside-workspace packed consumer. Host enforcement and dependent incident plugin implementation remain coordinated work.
+
+## 0.28.0 - 2026-10-16
 
 - Add versioned, tenant-bound Inbound lifecycle subscriber contracts, bounded event schema and runtime validation, declaration/registration parity, and an executable delivery-boundary reference.
 - Document durable delivery, cancellation, deletion fences and host authorization responsibilities.

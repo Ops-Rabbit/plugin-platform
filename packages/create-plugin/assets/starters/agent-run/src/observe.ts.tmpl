@@ -1,0 +1,12 @@
+import type { OpsRabbitWorkspaceContext, PluginAgentRunObserverV1 } from '@opsrabbit/plugin-sdk';
+
+/**
+ * Reference adapter for a native workspace that declares agent.runs.observe,
+ * lists the binding in frontend.agentRunBindingIds and allowlists its get action.
+ */
+export function observeRun(context: OpsRabbitWorkspaceContext, runId: string, observer: PluginAgentRunObserverV1) {
+  if (!context.agentRuns) throw new Error('Agent run observation is unavailable.');
+  const observation = context.agentRuns.observe({ runId }, observer);
+  context.lifecycle.onCleanup(() => observation.close());
+  return observation;
+}

@@ -1,6 +1,7 @@
 import type { JsonValue } from "./manifest.js";
 import type { PluginStructuredClassificationService } from "./structured-classification.js";
 import type { DataInsightAuthorizationContext } from "./data-insight.js";
+import type { PluginAgentRunsServiceV1 } from "./agent-runs.js";
 
 export interface PluginActor {
   readonly id: string;
@@ -56,6 +57,8 @@ export interface PluginInvocationContext {
    * cancelled; its own deadline instead resolves an explicit timeout result.
    */
   readonly structuredClassification?: PluginStructuredClassificationService;
+  /** Present only in an action bound by the manifest agentRuns capability. */
+  readonly agentRuns?: PluginAgentRunsServiceV1;
   /** Host-attested Data Insight authorization; absent outside an authorized invocation. */
   readonly dataInsightAuthorization?: DataInsightAuthorizationContext;
 }

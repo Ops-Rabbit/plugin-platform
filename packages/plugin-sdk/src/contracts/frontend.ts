@@ -1,4 +1,5 @@
 import type { JsonValue } from "./manifest.js";
+import type { PluginAgentRunFrontendServiceV1 } from "./agent-runs.js";
 
 export const PLUGIN_FRONTEND_SDK_VERSION = "1" as const;
 export const PLUGIN_FRONTEND_CAPABILITIES = [
@@ -9,6 +10,7 @@ export const PLUGIN_FRONTEND_CAPABILITIES = [
   "forms.workflow",
   "forms.actions",
   "plugin.actions.invoke",
+  "agent.runs.observe",
 ] as const;
 
 export type PluginFrontendCapability =
@@ -23,6 +25,8 @@ export interface PluginNativeWorkspace {
   mountIsolation: "shadow_dom";
   capabilities: PluginFrontendCapability[];
   actionIds?: string[];
+  /** Agent run bindings this workspace may observe; requires agent.runs.observe. */
+  agentRunBindingIds?: string[];
 }
 
 export interface OpsRabbitWorkspaceError extends Error {
@@ -57,6 +61,8 @@ export interface OpsRabbitWorkspaceContext {
     onCleanup(callback: () => void): void;
   };
   overlayRoot: HTMLElement;
+  /** Present only when the workspace declares agent.runs.observe. */
+  agentRuns?: PluginAgentRunFrontendServiceV1;
   /** Resolve a declared asset to an authenticated, lifecycle-bound object URL. */
   assets: { url(path: string): Promise<string> };
   /** Invoke a manifest-declared action owned by the currently mounted plugin. */

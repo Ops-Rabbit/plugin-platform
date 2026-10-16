@@ -255,6 +255,10 @@ validates the standalone wire shape; runtime validation additionally enforces
 UTF-8 byte limits, unique class and evidence keys, and request-relative class and
 evidence references.
 
+## Agent runs v1
+
+SDK 0.28.0 exports `PluginAgentRunsServiceV1`, completion and observation types, and request, output-schema and state validators. See [host responsibilities and reference](../../docs/plugin-agent-runs-v1.md). Runtime availability requires an implementing host; a binding requests access and grants none, and limits remain host policy.
+
 ## Channel messaging v1
 
 SDK 0.27.0 exports `ChannelMessagingContextV1`, `ChannelMessagingAdapterV1`, and message input validation/schema. See [host responsibilities and reference](../../docs/channel-messaging-v1.md). Runtime availability requires an implementing host; a saved connection alone grants no messaging authority.

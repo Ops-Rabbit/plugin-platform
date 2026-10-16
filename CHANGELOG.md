@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.28.0 - Unreleased
+
+- Add the optional `agentRuns` capability: manifest permission bindings for host-executed tenant agent runs with typed start, get and cancel brokers and host-attested completion handlers.
+- Keep limits, tools and skills as host policy: bindings declare no limits, tools or skills, and the host decides what each run may use.
+- Add the capability-gated `agent.runs.observe` browser service with strict state and event validators; observed snapshots omit the run request.
+- Publish JSON Schema and runtime validation with field-level issues, request/output-schema validators, a capability-scoped test harness and observation fixture, and the `agent-run` starter.
+- Existing manifests, registrations and native workspaces are unchanged. Align SDK and CLI release versions at 0.28.0.
+
 ## 0.27.0 - 2026-10-15
 
 - Add optional provider-root thread ids and explicit thread-reply capability flags to channel messaging v1.

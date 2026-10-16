@@ -1,0 +1,60 @@
+import { definePlugin, matchesPluginAgentRunOutputSchema, type JsonValue } from '@opsrabbit/plugin-sdk';
+
+export const summarySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['summary'],
+  properties: { summary: { type: 'string', minLength: 1, maxLength: 500 } },
+} satisfies JsonValue;
+
+function runId(input: unknown): { runId: string } {
+  if (!input || typeof input !== 'object' || typeof (input as { runId?: unknown }).runId !== 'string')
+    throw new Error('A runId is required.');
+  return { runId: (input as { runId: string }).runId };
+}
+
+export const plugin = definePlugin({
+  actions: [
+    {
+      id: 'start-summary', title: 'Start summary',
+      risk: 'external', requiredRole: 'operator',
+      async run(input: unknown, context) {
+        if (!context.agentRuns) throw new Error('Agent runs are unavailable.');
+        if (!input || typeof input !== 'object' || typeof (input as { text?: unknown }).text !== 'string')
+          throw new Error('Text is required.');
+        // The host applies its own size, deadline and capacity limits and rechecks agent access.
+        return context.agentRuns.start({
+          schemaVersion: '1', bindingId: 'summarize', agentSettingKey: 'agent_name',
+          presetId: 'one-sentence', inputs: { text: (input as { text: string }).text }, outputSchema: summarySchema,
+        });
+      }
+    },
+    {
+      id: 'get-summary', title: 'Get summary run',
+      risk: 'read', requiredRole: 'operator',
+      async run(input: unknown, context) {
+        if (!context.agentRuns) throw new Error('Agent runs are unavailable.');
+        return context.agentRuns.get(runId(input));
+      }
+    },
+    {
+      id: 'cancel-summary', title: 'Cancel summary run',
+      risk: 'write', requiredRole: 'operator',
+      async run(input: unknown, context) {
+        if (!context.agentRuns) throw new Error('Agent runs are unavailable.');
+        return context.agentRuns.cancel(runId(input));
+      }
+    }
+  ],
+  agentRunCompletions: [{
+    id: 'receive-summary',
+    async handle(delivery) {
+      // Agent output is untrusted: validate it before any use. Delivery is at most once,
+      // so the canonical result remains readable through get-summary.
+      if (!matchesPluginAgentRunOutputSchema(summarySchema, delivery.result.output))
+        throw new Error('Invalid summary delivery.');
+    }
+  }]
+});
+
+export default plugin;

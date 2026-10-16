@@ -31,11 +31,16 @@ Available starters:
 - `native-workspace`
 - `interaction-policy`
 - `structured-classification`
+- `agent-run`
 
 `structured-classification` demonstrates an optional host-governed classifier
 from both a declared action and scheduled job. It uses bounded configurable
 classes and evidence, handles explicit unavailability, and never receives model
 credentials or provider-specific errors.
+
+`agent-run` binds start, get and cancel actions to a tenant-selected agent,
+starts a preset with JSON inputs and an output schema, validates untrusted
+completion output, and includes a native-workspace observation adapter.
 
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.

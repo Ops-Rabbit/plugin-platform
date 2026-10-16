@@ -27,6 +27,7 @@ const starterIds = [
   "native-workspace",
   "interaction-policy",
   "structured-classification",
+  "agent-run",
 ];
 await mkdir(tarballDirectory);
 execFileSync("node", ["scripts/verify-channel-approval-consumer.mjs"], {

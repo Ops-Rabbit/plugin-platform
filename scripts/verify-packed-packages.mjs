@@ -64,12 +64,27 @@ try {
       ])
         if (!paths.includes(schema))
           throw new Error(`SDK package is missing public schema ${schema}`);
+    if (manifest.name === "@opsrabbit/plugin-sdk")
+      for (const file of [
+        "dist/contracts/agent-runs.d.ts",
+        "dist/validation/agent-runs.js",
+        "dist/validation/agent-runs.d.ts",
+        "dist/testing/agent-run-observation.js",
+        "dist/testing/agent-run-observation.d.ts",
+      ])
+        if (!paths.includes(file))
+          throw new Error(`SDK package is missing agent run module ${file}`);
     if (
       manifest.name === "@opsrabbit/create-plugin" &&
       !paths.some((path) => path.startsWith("assets/starters/"))
     ) {
       throw new Error("CLI package is missing starter/reference assets");
     }
+    if (
+      manifest.name === "@opsrabbit/create-plugin" &&
+      !paths.includes("assets/starters/agent-run/src/observe.ts.tmpl")
+    )
+      throw new Error("CLI package is missing the agent run starter");
     const listing = execFileSync("tar", ["-xOzf", result.filename], {
       encoding: "utf8",
       maxBuffer: 20 * 1024 * 1024,

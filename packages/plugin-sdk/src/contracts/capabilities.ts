@@ -1,3 +1,5 @@
+import type { PluginAgentRunsCapabilityV1 } from "./agent-runs.js";
+
 export const PLUGIN_RISKS = [
   "read",
   "write",
@@ -109,6 +111,7 @@ export interface PluginKnowledgeCapability {
 }
 
 export interface PluginDeclaredCapabilities {
+  agentRuns?: PluginAgentRunsCapabilityV1;
   dataInsightProvider?: boolean;
   tools?: PluginToolCapability[];
   actions?: PluginActionCapability[];

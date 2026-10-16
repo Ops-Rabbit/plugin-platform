@@ -1,0 +1,29 @@
+{
+  "id": "{{id}}",
+  "name": "{{displayName}}",
+  "version": "0.1.0",
+  "description": "{{displayName}} host-executed agent run",
+  "apiVersion": "1.0",
+  "minimumOpsRabbitVersion": "0.9.0",
+  "main": "./dist/index.js",
+  "settings": [{ "key": "agent_name", "label": "Tenant agent name", "type": "string", "required": true }],
+  "capabilities": {
+    "actions": [
+      { "id": "start-summary", "risk": "external", "requiredRole": "operator" },
+      { "id": "get-summary", "risk": "read", "requiredRole": "operator" },
+      { "id": "cancel-summary", "risk": "write", "requiredRole": "operator" }
+    ],
+    "agentRuns": {
+      "schemaVersion": "1",
+      "bindings": [{
+        "id": "summarize",
+        "agentSettingKeys": ["agent_name"],
+        "startActionId": "start-summary",
+        "getActionId": "get-summary",
+        "cancelActionId": "cancel-summary",
+        "completionHandlerId": "receive-summary",
+        "presets": [{ "id": "one-sentence", "instructions": "Summarize the provided text in one sentence. Return JSON matching the output schema." }]
+      }]
+    }
+  }
+}

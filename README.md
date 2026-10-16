@@ -21,7 +21,7 @@ This repository publishes:
 - [`@opsrabbit/plugin-sdk`](./packages/plugin-sdk): contracts, manifest schema,
   validation, compatibility checks, governed service-plugin contracts, package
   inventory, and an isolated test harness.
-- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, thirteen starters,
+- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, fourteen starters,
   reference implementations, generated tests, CI, README, and `AGENTS.md`.
 
 ## Create a plugin
@@ -101,6 +101,10 @@ documents plugin-owned policy/reference declarations and host-attested invocatio
 
 The [governed skill Connection execution contract](./docs/host-skill-connection-exec-v1.md)
 documents how host 0.6.0 executes reviewed helpers packaged in attached skills without exposing raw Connection commands.
+
+## Agent runs v1
+
+SDK 0.28.0 exports `PluginAgentRunsServiceV1`, completion and observation types, and request, output-schema and state validators. See [host responsibilities and reference](docs/plugin-agent-runs-v1.md). Runtime availability requires an implementing host; a binding requests access and grants none, and limits remain host policy.
 
 ## Channel messaging v1
 

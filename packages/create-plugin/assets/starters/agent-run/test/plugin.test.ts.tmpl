@@ -1,0 +1,78 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it, vi } from 'vitest';
+import type { OpsRabbitWorkspaceContext, PluginManifest } from '@opsrabbit/plugin-sdk';
+import { assertValidPlugin, createAuthorizedTestContext, createTestAgentRunObservationService } from '@opsrabbit/plugin-sdk/testing';
+import { plugin, summarySchema } from '../src/index.js';
+import { observeRun } from '../src/observe.js';
+
+const manifest = JSON.parse(readFileSync(new URL('../opsrabbit.plugin.json', import.meta.url), 'utf8')) as PluginManifest;
+const runId = '00000000-0000-4000-8000-000000000001';
+const brokers = () => ({
+  start: vi.fn().mockResolvedValue({ runId }),
+  get: vi.fn().mockResolvedValue({ runId }),
+  cancel: vi.fn().mockResolvedValue({ runId }),
+});
+const action = (id: string) => plugin.actions!.find((entry) => entry.id === id)!;
+
+describe('{{id}} agent run', () => {
+  it('keeps manifest and runtime registrations aligned', () => {
+    expect(() => assertValidPlugin(manifest, plugin)).not.toThrow();
+  });
+
+  it('starts the bound preset through the broker', async () => {
+    const agentRuns = brokers();
+    const context = createAuthorizedTestContext(manifest, { kind: 'action', id: 'start-summary' }, { agentRuns });
+    await expect(action('start-summary').run({ text: 'Fictional release notes.' }, context)).resolves.toEqual({ runId });
+    expect(agentRuns.start).toHaveBeenCalledWith({
+      schemaVersion: '1', bindingId: 'summarize', agentSettingKey: 'agent_name',
+      presetId: 'one-sentence', inputs: { text: 'Fictional release notes.' }, outputSchema: summarySchema,
+    });
+    await expect(context.agentRuns!.get({ runId })).rejects.toThrow('not authorized');
+  });
+
+  it('reads and cancels only through their bound actions', async () => {
+    const agentRuns = brokers();
+    await action('get-summary').run({ runId }, createAuthorizedTestContext(manifest, { kind: 'action', id: 'get-summary' }, { agentRuns }));
+    await action('cancel-summary').run({ runId }, createAuthorizedTestContext(manifest, { kind: 'action', id: 'cancel-summary' }, { agentRuns }));
+    expect(agentRuns.get).toHaveBeenCalledWith({ runId });
+    expect(agentRuns.cancel).toHaveBeenCalledWith({ runId });
+  });
+
+  it('rejects malformed action input before calling the broker', async () => {
+    const agentRuns = brokers();
+    for (const input of [undefined, {}, { text: 1 }])
+      await expect(action('start-summary').run(input, createAuthorizedTestContext(manifest, { kind: 'action', id: 'start-summary' }, { agentRuns }))).rejects.toThrow('Text is required');
+    for (const input of [undefined, {}, { runId: 1 }])
+      await expect(action('get-summary').run(input, createAuthorizedTestContext(manifest, { kind: 'action', id: 'get-summary' }, { agentRuns }))).rejects.toThrow('runId is required');
+    expect(agentRuns.start).not.toHaveBeenCalled();
+    expect(agentRuns.get).not.toHaveBeenCalled();
+  });
+
+  it('fails closed without a broker and validates untrusted completion output', async () => {
+    for (const id of ['start-summary', 'get-summary', 'cancel-summary'])
+      await expect(action(id).run({ runId, text: 'x' }, createAuthorizedTestContext(manifest, { kind: 'action', id }))).rejects.toThrow('unavailable');
+    const handler = plugin.agentRunCompletions![0]!;
+    const context = { tenantId: 'tenant-a', signal: new AbortController().signal };
+    const delivery = (output: unknown) => ({
+      runId, tenantId: 'tenant-a', initiatingActorId: 'user-1', bindingId: 'summarize',
+      result: { kind: 'execution_v1' as const, request: {}, requestDigest: 'f'.repeat(64), output: output as never },
+    });
+    await expect(handler.handle(delivery({ summary: 'A fictional summary.' }), context)).resolves.toBeUndefined();
+    await expect(handler.handle(delivery({ summary: '' }), context)).rejects.toThrow('Invalid summary');
+    await expect(handler.handle(delivery({ summary: 'ok', injected: true }), context)).rejects.toThrow('Invalid summary');
+  });
+
+  it('observes a run and closes the observation on workspace cleanup', () => {
+    const fixture = createTestAgentRunObservationService();
+    const cleanups: Array<() => void> = [];
+    const context = {
+      agentRuns: fixture.service,
+      lifecycle: { onCleanup: (callback: () => void) => cleanups.push(callback) },
+    } as unknown as OpsRabbitWorkspaceContext;
+    observeRun(context, runId, { onEvent: vi.fn(), onError: vi.fn() });
+    expect(fixture.activeCount).toBe(1);
+    cleanups.forEach((cleanup) => cleanup());
+    expect(fixture.activeCount).toBe(0);
+    expect(() => observeRun({ lifecycle: context.lifecycle } as unknown as OpsRabbitWorkspaceContext, runId, { onEvent: vi.fn(), onError: vi.fn() })).toThrow('unavailable');
+  });
+});

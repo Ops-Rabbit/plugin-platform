@@ -13,6 +13,7 @@ import type {
   PluginRouteContext,
 } from "./contexts.js";
 import type { JsonValue } from "./manifest.js";
+import type { PluginAgentRunCompletionDefinitionV1 } from "./agent-runs.js";
 import type { KnowledgeEmailProcessorDefinitionV1 } from "./knowledge-email-processor.js";
 import type {
   ChatComposerStatusDefinitionV1,
@@ -252,6 +253,7 @@ export interface WidgetDefinition {
 }
 
 export interface PluginDefinition {
+  agentRunCompletions?: PluginAgentRunCompletionDefinitionV1[];
   tools?: ToolDefinition[];
   actions?: ActionDefinition[];
   scheduledJobs?: ScheduledJobDefinition[];

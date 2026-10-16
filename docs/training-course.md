@@ -1,5 +1,9 @@
 # Building Governed OpsRabbit Plugins
 
+## Agent runs (SDK 0.28.0)
+
+Generate `agent-run`. A binding in `capabilities.agentRuns` names the agent setting, the start/get/cancel actions and the completion handler; it declares no limits because size, deadline and capacity are host policy. Start a run with exactly one of `instructions` or `presetId`, JSON `inputs` and an optional `outputSchema`. Treat agent output as untrusted and validate it with `matchesPluginAgentRunOutputSchema`. Completion delivery is at most once, so keep handlers idempotent by `runId` and read the canonical result through the get action. Test that unbound actions get no broker and that observation closes on workspace cleanup. See [the contract](plugin-agent-runs-v1.md).
+
 ## Persona host helpers (SDK 0.25.0)
 
 The reviewed Data Insight SQL provider declares `capabilities.personaHost: { schemaVersion: "1" }` and checks `context.host` before calling any helper. Group listing returns only active tenant groups; user listing and dashboard materialization require a current signed-in tenant admin at the host. Walk through the [typed executable reference](../packages/plugin-sdk/test/fixtures/persona-host-reference.ts) and its missing-capability/group tests. A manifest declaration never grants authority, and this optional service is unavailable to ordinary generated starter ids. The host owns policy audit, rollback, revocation, and dashboard deletion. Use the published SDK and a compatible host release; a local type extension is not a public plugin contract.
@@ -106,7 +110,7 @@ alone:
 - `packages/plugin-sdk/src/validation/`: runtime and cross-reference checks;
 - `packages/plugin-sdk/schemas/`: published JSON Schemas;
 - `packages/plugin-sdk/src/testing/`: test context and parity assertions;
-- `packages/create-plugin/assets/starters/`: thirteen executable references;
+- `packages/create-plugin/assets/starters/`: fourteen executable references;
 - `packages/create-plugin/src/constants.ts`: authoritative CLI starter list;
 - `scripts/verify-generated-starters.mjs`: isolated consumer verification;
 - `docs/plugin-contract-v0.2.md` through `v0.18.md`: capability history and host
@@ -180,7 +184,7 @@ commands, and produce a reviewable ZIP.
 npx opsrabbit-plugin examples list --verbose
 ```
 
-The thirteen current starter ids are:
+The fourteen current starter ids are:
 
 - `basic-readonly`
 - `operational-action`
@@ -195,6 +199,7 @@ The thirteen current starter ids are:
 - `native-workspace`
 - `interaction-policy`
 - `structured-classification`
+- `agent-run`
 
 The `interaction-policy` starter demonstrates a privileged policy boundary.
 Admission runs inside a host-owned transaction with a schema-confined database

@@ -262,3 +262,7 @@ SDK 0.27.0 exports `ChannelMessagingContextV1`, `ChannelMessagingAdapterV1`, and
 ## Inbound lifecycle subscription (next release)
 
 Plugins can declare a versioned tenant-bound Inbound lifecycle handler. The strict event schema, runtime validator and executable reference are described in [the lifecycle contract](../../docs/inbound-lifecycle-v1.md). This contract does not itself implement host event delivery or cross-tenant authorization.
+
+### Resource workspaces (next release)
+
+`PluginWorkspaceNavigation` supports Forms workspaces and standalone `plugin_workspace` specialists. `PluginResourceRecordsService` defines core-authorized SQL paging/counting/grouping and transaction-bound resource registration; `PluginResourceLifecycleDefinitionV1` defines atomic deletion under the shared retention framework. `PluginStructuredEnrichmentService` is optional, tenant-model-backed and bounded. These declarations require the coordinated supporting host release. See the platform's `docs/resource-workspaces-v1.md` and executable reference; no host-private imports are supported.

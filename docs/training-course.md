@@ -990,3 +990,15 @@ Every tuple also requires the approval transition type, transition id, reviewer 
 ## Inbound lifecycle consumers
 
 For incident-oriented modules, use the declared Inbound lifecycle handler described in [Inbound lifecycle v1](inbound-lifecycle-v1.md). Keep plugin incident persistence separate from host-owned investigation threads. Validate envelopes before handler entry; schema validity is not authority. The host must bind tenant, plugin availability, origin, grants and persistence policy. Consumer mutation and deduplication receipts commit together; preserve per-change revisions and terminal deletion fences. Test duplicate/reordered events, tenant mismatch, cancellation and transaction failure without invoking models. Host delivery and cross-tenant grant contracts are separate prerequisites, not implied by a handler declaration.
+
+## Specialist workspaces and owned resource stores (next release)
+
+Use `plugin_workspace` navigation for a specialist page over dedicated plugin SQL, with the existing shadow-DOM ABI and declared actions. Do not invent a Forms starter or configured-Forms dependency for it. Ordinary configurable records still use Forms. A page does not grant access.
+
+Declare namespaced resource kinds with database/audit capabilities and a matching deletion handler. Record-mode host transactions enforce persistence before plugin SQL; canonical records, host ownership/grant origins and audit commit together. Admin-only configuration transactions can version mappings and bind source Inbounds even when incident persistence is disabled. Bindings retain admitted revisions/incarnations.
+
+Send parameterized candidate SQL through the resource query service. Core must apply current tenant/role/plugin/resource access before paging, counts and groups, including cross-tenant Insights. Scope metadata is not authority. Verify hidden rows never affect aggregates and test revocation. Use the host's standard sharing UI and investigation broker, which separately authorize thread navigation.
+
+Register retention in the shared framework, default to indefinite retention, block unsafe deletion under holds/active work, delete every derived store and audit atomically. Optional enrichment uses the tenant's approved model; identity and grant fields are forbidden. Recheck revision, manual-title and disable/delete races before applying a result.
+
+Read [the normative contract](resource-workspaces-v1.md) and run the executable packed-consumer reference. This lesson describes the next public contract, not proof that a host/incident plugin is implemented or released. The thirteen generated starter IDs remain unchanged; a standalone reference demonstrates this additional contract.

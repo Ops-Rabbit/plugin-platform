@@ -1,3 +1,4 @@
+import type { PluginResourceLifecycleDefinitionV1 } from "./resource-records.js";
 import type { InboundLifecycleDefinitionV1 } from "./inbound-lifecycle.js";
 import type {
   PluginPermission,
@@ -253,6 +254,7 @@ export interface WidgetDefinition {
 }
 
 export interface PluginDefinition {
+  resourceLifecycle?: PluginResourceLifecycleDefinitionV1;
   inboundLifecycle?: InboundLifecycleDefinitionV1;
   tools?: ToolDefinition[];
   actions?: ActionDefinition[];

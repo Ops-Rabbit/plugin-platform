@@ -109,3 +109,7 @@ SDK 0.27.0 exports `ChannelMessagingContextV1`, `ChannelMessagingAdapterV1`, and
 ## Inbound lifecycle subscription (next release)
 
 Plugins can declare a versioned tenant-bound Inbound lifecycle handler. The strict event schema, runtime validator and executable reference are described in [the lifecycle contract](docs/inbound-lifecycle-v1.md). This contract does not itself implement host event delivery or cross-tenant authorization.
+
+## Plugin-owned resource workspaces (next release)
+
+The [resource workspace contract](docs/resource-workspaces-v1.md) covers standalone specialist navigation, core-authorized queries over plugin-owned SQL, shared resource grants/retention and optional tenant-model enrichment. Public types and references do not implement host enforcement. Consume the published coordinated release before deploying a dependent plugin; unsupported hosts fail closed. Ordinary Forms modules continue to use the Forms engine.

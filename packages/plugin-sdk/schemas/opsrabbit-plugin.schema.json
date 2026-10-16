@@ -148,7 +148,7 @@
       "additionalProperties": false,
       "required": ["kind", "moduleKey", "path", "icon", "fallbackTitle"],
       "properties": {
-        "kind": { "const": "forms_workspace" },
+        "kind": { "enum": ["forms_workspace", "plugin_workspace"] },
         "moduleKey": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
@@ -247,7 +247,7 @@
         "mountIsolation": { "const": "shadow_dom" },
         "capabilities": {
           "type": "array",
-          "maxItems": 7,
+          "maxItems": 9,
           "uniqueItems": true,
           "items": {
             "enum": [
@@ -257,7 +257,9 @@
               "forms.attachments",
               "forms.workflow",
               "forms.actions",
-              "plugin.actions.invoke"
+              "plugin.actions.invoke",
+              "plugin.resources.manage",
+              "plugin.investigations.open"
             ]
           }
         },
@@ -697,6 +699,88 @@
             }
           }
         },
+        "resourceRecords": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schemaVersion": { "const": "1" },
+            "kinds": {
+              "type": "object",
+              "minProperties": 1,
+              "maxProperties": 16,
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,79}(?![\\s\\S])"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "labelKey": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_.-]{0,119}(?![\\s\\S])"
+                  },
+                  "descriptionKey": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_.-]{0,119}(?![\\s\\S])"
+                  },
+                  "retention": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "defaultMode": { "const": "retain_indefinitely" },
+                      "supportedModes": {
+                        "type": "array",
+                        "items": {
+                          "enum": [
+                            "do_not_persist",
+                            "retain_for_days",
+                            "retain_indefinitely"
+                          ]
+                        },
+                        "maxItems": 3,
+                        "minItems": 3,
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": ["defaultMode", "supportedModes"]
+                  }
+                },
+                "required": ["labelKey", "descriptionKey", "retention"]
+              }
+            }
+          },
+          "required": ["schemaVersion", "kinds"]
+        },
+        "structuredEnrichment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion"],
+          "properties": {
+            "schemaVersion": { "const": "1" },
+            "actionIds": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/id" }
+            },
+            "scheduledJobIds": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/id" }
+            }
+          },
+          "anyOf": [
+            { "properties": { "actionIds": {} }, "required": ["actionIds"] },
+            {
+              "properties": { "scheduledJobIds": {} },
+              "required": ["scheduledJobIds"]
+            }
+          ]
+        },
         "structuredClassification": {
           "type": "object",
           "additionalProperties": false,
@@ -798,7 +882,7 @@
   },
   "dependentRequired": {
     "formStarterPack": ["navigation"],
-    "frontend": ["navigation", "formStarterPack"],
+    "frontend": ["navigation"],
     "database": ["capabilities"]
   },
   "allOf": [
@@ -1050,6 +1134,150 @@
       "then": {
         "properties": { "localization": {} },
         "required": ["localization"]
+      }
+    },
+    {
+      "if": {
+        "required": ["frontend", "navigation"],
+        "properties": {
+          "navigation": {
+            "required": ["kind"],
+            "properties": { "kind": { "const": "forms_workspace" } },
+            "type": "object"
+          },
+          "frontend": {}
+        },
+        "type": "object"
+      },
+      "then": {
+        "required": ["formStarterPack"],
+        "type": "object",
+        "properties": { "formStarterPack": {} }
+      }
+    },
+    {
+      "if": {
+        "required": ["navigation"],
+        "properties": {
+          "navigation": {
+            "required": ["kind"],
+            "properties": { "kind": { "const": "plugin_workspace" } },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "then": {
+        "required": ["frontend"],
+        "not": {
+          "required": ["formStarterPack"],
+          "type": "object",
+          "properties": { "formStarterPack": {} }
+        },
+        "properties": {
+          "navigation": {
+            "not": {
+              "required": ["workflow"],
+              "type": "object",
+              "properties": { "workflow": {} }
+            }
+          },
+          "frontend": {
+            "properties": {
+              "capabilities": {
+                "items": {
+                  "enum": [
+                    "plugin.actions.invoke",
+                    "plugin.resources.manage",
+                    "plugin.investigations.open"
+                  ]
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "if": {
+        "required": ["capabilities"],
+        "properties": {
+          "capabilities": {
+            "required": ["resourceRecords"],
+            "type": "object",
+            "properties": { "resourceRecords": {} }
+          }
+        },
+        "type": "object"
+      },
+      "then": {
+        "properties": {
+          "capabilities": {
+            "required": ["database", "audit"],
+            "type": "object",
+            "properties": { "database": {}, "audit": {} }
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "if": {
+        "required": ["capabilities"],
+        "properties": {
+          "capabilities": {
+            "required": ["structuredEnrichment"],
+            "type": "object",
+            "properties": { "structuredEnrichment": {} }
+          }
+        },
+        "type": "object"
+      },
+      "then": {
+        "properties": {
+          "capabilities": {
+            "required": ["audit", "resourceRecords"],
+            "type": "object",
+            "properties": { "audit": {}, "resourceRecords": {} }
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "required": ["frontend"],
+        "properties": {
+          "frontend": {
+            "type": "object",
+            "required": ["capabilities"],
+            "properties": {
+              "capabilities": {
+                "type": "array",
+                "contains": {
+                  "enum": [
+                    "plugin.resources.manage",
+                    "plugin.investigations.open"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "capabilities": {
+            "type": "object",
+            "required": ["resourceRecords"],
+            "properties": { "resourceRecords": {} }
+          }
+        }
       }
     }
   ]

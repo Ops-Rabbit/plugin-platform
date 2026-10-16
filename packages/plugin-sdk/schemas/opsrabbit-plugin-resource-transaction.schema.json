@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.com/schemas/plugin-resource-transaction.v1.json",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,79}(?![\\s\\S])"
+        },
+        "purpose": {
+          "const": "records"
+        },
+        "operation": {
+          "enum": ["create", "write"]
+        },
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": ["kind", "purpose", "operation", "ids"]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,79}(?![\\s\\S])"
+        },
+        "purpose": {
+          "const": "configuration"
+        }
+      },
+      "required": ["kind", "purpose"]
+    }
+  ]
+}

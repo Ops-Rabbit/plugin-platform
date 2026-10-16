@@ -1,3 +1,4 @@
+import type { PluginResourceRecordsCapabilityV1 } from "./resource-records.js";
 export const PLUGIN_RISKS = [
   "read",
   "write",
@@ -109,6 +110,7 @@ export interface PluginKnowledgeCapability {
 }
 
 export interface PluginDeclaredCapabilities {
+  resourceRecords?: PluginResourceRecordsCapabilityV1;
   dataInsightProvider?: boolean;
   tools?: PluginToolCapability[];
   actions?: PluginActionCapability[];
@@ -122,6 +124,7 @@ export interface PluginDeclaredCapabilities {
   knowledge?: PluginKnowledgeCapability;
   connections?: { selectors: PluginConnectionSelector[] };
   structuredClassification?: PluginStructuredClassificationCapability;
+  structuredEnrichment?: PluginStructuredClassificationCapability;
   knowledgeEmailProcessor?: { schemaVersion: "1" };
   inboundLifecycle?: { schemaVersion: "1" };
   chatTurnAdmission?: { schemaVersion: "1"; scope: "deployment" };

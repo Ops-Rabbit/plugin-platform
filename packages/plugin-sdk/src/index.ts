@@ -21,3 +21,6 @@ export * from "./validation/manifest.js";
 export * from "./validation/knowledge-email-processor.js";
 export * from "./validation/registration.js";
 export * from "./validation/structured-classification.js";
+
+export * from "./contracts/inbound-lifecycle.js";
+export * from "./validation/inbound-lifecycle.js";

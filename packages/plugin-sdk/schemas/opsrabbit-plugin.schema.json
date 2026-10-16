@@ -726,6 +726,12 @@
             }
           ]
         },
+        "inboundLifecycle": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion"],
+          "properties": { "schemaVersion": { "const": "1" } }
+        },
         "knowledgeEmailProcessor": {
           "type": "object",
           "additionalProperties": false,

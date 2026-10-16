@@ -986,3 +986,7 @@ A successful learner should be able to say:
 - `action: "stage_transition"`, `fromStageKey: "awaiting_review" | "in_review"`, `toStageKey: "approved"`
 
 Every tuple also requires the approval transition type, transition id, reviewer id, approved content hash, approved structured-review hash, and approved content revision. Missing or mismatched fields fail closed and are projected as `null`; plugins must revalidate the tuple and bind publication to the approved revision.
+
+## Inbound lifecycle consumers
+
+For incident-oriented modules, use the declared Inbound lifecycle handler described in [Inbound lifecycle v1](inbound-lifecycle-v1.md). Keep plugin incident persistence separate from host-owned investigation threads. Validate envelopes before handler entry; schema validity is not authority. The host must bind tenant, plugin availability, origin, grants and persistence policy. Consumer mutation and deduplication receipts commit together; preserve per-change revisions and terminal deletion fences. Test duplicate/reordered events, tenant mismatch, cancellation and transaction failure without invoking models. Host delivery and cross-tenant grant contracts are separate prerequisites, not implied by a handler declaration.

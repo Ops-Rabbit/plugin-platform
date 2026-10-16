@@ -1,3 +1,4 @@
+import type { InboundLifecycleDefinitionV1 } from "./inbound-lifecycle.js";
 import type {
   PluginPermission,
   PluginRole,
@@ -252,6 +253,7 @@ export interface WidgetDefinition {
 }
 
 export interface PluginDefinition {
+  inboundLifecycle?: InboundLifecycleDefinitionV1;
   tools?: ToolDefinition[];
   actions?: ActionDefinition[];
   scheduledJobs?: ScheduledJobDefinition[];

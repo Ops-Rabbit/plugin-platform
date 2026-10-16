@@ -1145,6 +1145,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "knowledge",
     "connections",
     "structuredClassification",
+    "inboundLifecycle",
     "knowledgeEmailProcessor",
     "chatTurnAdmission",
     "chatComposerStatus",
@@ -1732,6 +1733,22 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     },
   );
   validateSingletonCapability(
+    capabilities.inboundLifecycle,
+    "inboundLifecycle",
+    ["schemaVersion"],
+    issues,
+    (entry) => {
+      if (entry.schemaVersion !== "1")
+        issues.push(
+          issue(
+            "$.capabilities.inboundLifecycle.schemaVersion",
+            "invalid",
+            "Inbound lifecycle schema version must be 1.",
+          ),
+        );
+    },
+  );
+  validateSingletonCapability(
     capabilities.knowledgeEmailProcessor,
     "knowledgeEmailProcessor",
     ["schemaVersion"],
@@ -1761,6 +1778,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     !capabilities.database &&
     !capabilities.objectStore &&
     !capabilities.knowledge &&
+    !capabilities.inboundLifecycle &&
     !capabilities.knowledgeEmailProcessor &&
     !capabilities.chatTurnAdmission &&
     !capabilities.chatComposerStatus &&

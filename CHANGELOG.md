@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.28.0 - Unreleased
+
+- Add versioned, tenant-bound Inbound lifecycle subscriber contracts, bounded event schema and runtime validation, declaration/registration parity, and an executable delivery-boundary reference.
+- Document durable delivery, cancellation, deletion fences and host authorization responsibilities.
+- Align SDK/CLI release inventory at 0.28.0. Host integration and the incident plugin remain coordinated work; the contract alone does not deliver events.
+
 ## 0.27.0 - 2026-10-15
 
 - Add optional provider-root thread ids and explicit thread-reply capability flags to channel messaging v1.

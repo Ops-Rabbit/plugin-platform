@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1"
+    },
+    "eventId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+    },
+    "tenantId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+    },
+    "inboundId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+    },
+    "sourceEventId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+    },
+    "sourceSystemId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+    },
+    "bindingRevision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "occurredAt": {
+      "type": "string",
+      "pattern": "^(?:[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z(?![\\s\\S])"
+    },
+    "change": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "received"
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 32768
+            },
+            "upstreamIncidentId": {
+              "type": "string",
+              "maxLength": 500,
+              "minLength": 1
+            },
+            "severity": {
+              "type": "string",
+              "maxLength": 80
+            }
+          },
+          "required": ["type", "title"]
+        },
+        {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "const": "correlated"
+                },
+                "disposition": {
+                  "const": "joined"
+                },
+                "threadId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 2000
+                }
+              },
+              "required": ["type", "disposition", "threadId"]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "const": "correlated"
+                },
+                "disposition": {
+                  "enum": ["new", "suppressed"]
+                },
+                "threadId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 2000
+                }
+              },
+              "required": ["type", "disposition"]
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "investigation_updated"
+            },
+            "threadId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+            },
+            "turnId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+            },
+            "status": {
+              "enum": ["queued", "running", "completed", "failed", "cancelled"]
+            }
+          },
+          "required": ["type", "threadId", "turnId", "status"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "writeback_updated"
+            },
+            "operationId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+            },
+            "status": {
+              "enum": ["pending", "succeeded", "failed", "not_required"]
+            }
+          },
+          "required": ["type", "operationId", "status"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "deleted"
+            }
+          },
+          "required": ["type"]
+        }
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "tenantId",
+    "inboundId",
+    "sourceEventId",
+    "sourceSystemId",
+    "bindingRevision",
+    "revision",
+    "occurredAt",
+    "change"
+  ]
+}

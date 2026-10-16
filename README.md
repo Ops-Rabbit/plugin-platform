@@ -105,3 +105,7 @@ documents how host 0.6.0 executes reviewed helpers packaged in attached skills w
 ## Channel messaging v1
 
 SDK 0.27.0 exports `ChannelMessagingContextV1`, `ChannelMessagingAdapterV1`, and message input validation/schema. See [host responsibilities and reference](docs/channel-messaging-v1.md). Runtime availability requires an implementing host; a saved connection alone grants no messaging authority.
+
+## Inbound lifecycle subscription (next release)
+
+Plugins can declare a versioned tenant-bound Inbound lifecycle handler. The strict event schema, runtime validator and executable reference are described in [the lifecycle contract](docs/inbound-lifecycle-v1.md). This contract does not itself implement host event delivery or cross-tenant authorization.

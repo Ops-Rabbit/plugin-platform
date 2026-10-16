@@ -61,6 +61,7 @@ try {
         "schemas/opsrabbit-channel-approval-decision.schema.json",
         "schemas/opsrabbit-channel-approval-cleanup.schema.json",
         "schemas/opsrabbit-channel-messaging-input.schema.json",
+        "schemas/opsrabbit-inbound-lifecycle-event.schema.json",
       ])
         if (!paths.includes(schema))
           throw new Error(`SDK package is missing public schema ${schema}`);

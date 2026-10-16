@@ -123,6 +123,7 @@ export interface PluginDeclaredCapabilities {
   connections?: { selectors: PluginConnectionSelector[] };
   structuredClassification?: PluginStructuredClassificationCapability;
   knowledgeEmailProcessor?: { schemaVersion: "1" };
+  inboundLifecycle?: { schemaVersion: "1" };
   chatTurnAdmission?: { schemaVersion: "1"; scope: "deployment" };
   chatComposerStatus?: { schemaVersion: "1" };
   deploymentAdminWorkspace?: { schemaVersion: "1" };

@@ -6,7 +6,7 @@
 - Keep limits, tools and skills as host policy: bindings declare no limits, tools or skills, and the host decides what each run may use.
 - Add the capability-gated `agent.runs.observe` browser service with strict state and event validators; observed snapshots omit the run request.
 - Publish JSON Schema and runtime validation with field-level issues, request/output-schema validators, a capability-scoped test harness and observation fixture, and the `agent-run` starter.
-- `parsePluginAgentRunRequestV1` returns a `PluginAgentRunAcceptedRequestV1` and applies the host byte limit after preset resolution. Caller instructions share the 12,288-character preset bound, and the canonical digest form omits `undefined`-valued keys. Run JSON rejects only own `__proto__` keys, so `constructor` and `prototype` are ordinary data keys, and observed agent output is not limited by array length or object width.
+- `parsePluginAgentRunRequestV1` returns a `PluginAgentRunAcceptedRequestV1` and applies the host byte limit after preset resolution. Caller instructions share the 12,288-character preset bound, and the canonical digest form omits `undefined`-valued keys. Run JSON rejects only own `__proto__` keys, so `constructor` and `prototype` are ordinary data keys. Run JSON must be a tree: shared or cyclic object and array references are rejected. Observed agent output is not limited by array length or object width.
 - Existing manifests, registrations and native workspaces are unchanged. Standalone (`plugin_workspace`) workspaces may also request `agent.runs.observe`. Align SDK and CLI release versions at 0.31.0.
 
 ## 0.30.0 - 2026-10-17

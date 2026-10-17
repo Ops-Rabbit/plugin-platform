@@ -194,11 +194,19 @@ export function createAuthorizedTestContext(
     field: "getActionId" | "cancelActionId",
     snapshot: PluginAgentRunSnapshotV1,
   ): PluginAgentRunSnapshotV1 => {
+    // A missing run is reported by the broker throwing, not by an empty result.
+    if (
+      typeof snapshot !== "object" ||
+      snapshot === null ||
+      typeof snapshot.bindingId !== "string"
+    )
+      throw new Error(
+        "Agent run broker must resolve a snapshot with a bindingId.",
+      );
     if (
       !runBindings.some(
         (binding) =>
-          binding.id === snapshot?.bindingId &&
-          binding[field] === invocation.id,
+          binding.id === snapshot.bindingId && binding[field] === invocation.id,
       )
     )
       throw new Error("Agent run is not authorized for this action's binding.");

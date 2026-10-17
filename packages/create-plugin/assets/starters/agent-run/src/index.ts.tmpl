@@ -55,8 +55,9 @@ export const plugin = definePlugin({
   agentRunCompletions: [{
     id: 'receive-summary',
     async handle(delivery) {
-      // Confirm the delivery belongs to this binding and that the attested digest
-      // matches the accepted request it carries.
+      // The host attests the delivery. These checks confirm it is for this binding and
+      // that its digest matches the request it carries; they do not tie it to a start
+      // call. To do that, record the runId from start-summary and compare it here.
       if (
         delivery.bindingId !== 'summarize' ||
         createHash('sha256').update(canonicalPluginAgentRunJson(delivery.result.request)).digest('hex') !==

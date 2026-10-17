@@ -100,31 +100,41 @@ export function validatePluginAgentRunJson(
   path = "$",
   options: { maxBytes?: number } = {},
 ): ValidationIssue[] {
-  return checkRunJson(value, path, { ...options, boundWidth: true });
+  const result = checkRunJson(value, path, {
+    boundWidth: true,
+    measure: options.maxBytes !== undefined,
+  });
+  if (
+    !result.issues.length &&
+    options.maxBytes !== undefined &&
+    result.bytes > options.maxBytes
+  )
+    result.issues.push(
+      issue(path, "too-large", "JSON exceeds the host byte limit."),
+    );
+  return result.issues;
 }
 
 /**
  * `boundWidth: false` skips the array-length and object-width bounds. It is
  * used only for observed agent output, which the host bounds by size and the
- * state transport ceiling bounds again.
+ * state transport ceiling bounds again. With `measure`, `bytes` is the UTF-8
+ * size of the value's `JSON.stringify` form; otherwise it is 0.
  */
 function checkRunJson(
   value: unknown,
   path: string,
-  options: { maxBytes?: number; boundWidth: boolean },
-): ValidationIssue[] {
+  options: { boundWidth: boolean; measure: boolean },
+): { issues: ValidationIssue[]; bytes: number } {
   const issues: ValidationIssue[] = [];
-  // `active` detects cycles. `validated` records the deepest depth at which a
-  // shared object passed; passing there also proves it fits at any shallower
-  // depth, so such references are not re-walked and work stays linear in
-  // distinct objects. Byte size is summed during the same walk instead of
-  // re-serializing, which would expand shared references.
-  const active = new Set<object>();
-  const validated = new Map<object, { depth: number; bytes: number }>();
-  const visit = (entry: unknown, at: string, depth: number): number => {
+  // Run JSON must be a tree, as `JSON.parse` produces. Rejecting any object
+  // reached twice catches cycles and shared references, so the walk, the
+  // serialized size and the canonical digest form all stay linear in the input.
+  const seen = new Set<object>();
+  const visit = (entry: unknown, at: string, depth: number): boolean => {
     if (depth > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxDepth) {
       issues.push(issue(at, "too-deep", "JSON nesting is too deep."));
-      return -1;
+      return false;
     }
     if (
       entry === null ||
@@ -132,67 +142,68 @@ function checkRunJson(
       typeof entry === "boolean" ||
       (typeof entry === "number" && Number.isFinite(entry))
     )
-      return jsonBytes(entry);
-    if (typeof entry !== "object" || active.has(entry)) {
+      return true;
+    if (typeof entry !== "object") {
       issues.push(issue(at, "type", "Value must be JSON."));
-      return -1;
+      return false;
     }
-    const known = validated.get(entry);
-    if (known && depth <= known.depth) return known.bytes;
-    active.add(entry);
-    let bytes = 2;
+    if (seen.has(entry)) {
+      issues.push(
+        issue(
+          at,
+          "type",
+          "Value must be a JSON tree; an object or array cannot appear twice.",
+        ),
+      );
+      return false;
+    }
+    seen.add(entry);
     if (Array.isArray(entry)) {
       if (
         options.boundWidth &&
         entry.length > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxArrayItems
       ) {
         issues.push(issue(at, "too-large", "JSON array is too large."));
-        return -1;
+        return false;
       }
-      for (const [index, child] of entry.entries()) {
-        const size = visit(child, `${at}[${index}]`, depth + 1);
-        if (size < 0) return -1;
-        bytes += size + (index > 0 ? 1 : 0);
+      for (const [index, child] of entry.entries())
+        if (!visit(child, `${at}[${index}]`, depth + 1)) return false;
+      return true;
+    }
+    const prototype = Object.getPrototypeOf(entry);
+    if (prototype !== Object.prototype && prototype !== null) {
+      issues.push(issue(at, "type", "Value must be JSON."));
+      return false;
+    }
+    const keys = Object.keys(entry);
+    if (
+      options.boundWidth &&
+      keys.length > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxObjectKeys
+    ) {
+      issues.push(issue(at, "too-large", "JSON object is too large."));
+      return false;
+    }
+    for (const key of keys) {
+      // An own `__proto__` key, as JSON.parse creates, can replace a prototype
+      // when the value is copied with assignment. `constructor` and `prototype`
+      // are ordinary data keys on a plain JSON object.
+      if (key === "__proto__") {
+        issues.push(issue(`${at}.${key}`, "unsafe", "Unsafe JSON field."));
+        return false;
       }
-    } else {
-      const prototype = Object.getPrototypeOf(entry);
-      if (prototype !== Object.prototype && prototype !== null) {
-        issues.push(issue(at, "type", "Value must be JSON."));
-        return -1;
-      }
-      const keys = Object.keys(entry);
       if (
-        options.boundWidth &&
-        keys.length > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxObjectKeys
-      ) {
-        issues.push(issue(at, "too-large", "JSON object is too large."));
-        return -1;
-      }
-      for (const [index, key] of keys.entries()) {
-        // An own `__proto__` key, as JSON.parse creates, can replace a prototype
-        // when the value is copied with assignment. `constructor` and `prototype`
-        // are ordinary data keys on a plain JSON object.
-        if (key === "__proto__") {
-          issues.push(issue(`${at}.${key}`, "unsafe", "Unsafe JSON field."));
-          return -1;
-        }
-        const size = visit(
+        !visit(
           (entry as Record<string, unknown>)[key],
           `${at}.${key}`,
           depth + 1,
-        );
-        if (size < 0) return -1;
-        bytes += jsonBytes(key) + 1 + size + (index > 0 ? 1 : 0);
-      }
+        )
+      )
+        return false;
     }
-    active.delete(entry);
-    validated.set(entry, { depth, bytes });
-    return bytes;
+    return true;
   };
-  const bytes = visit(value, path, 0);
-  if (bytes >= 0 && options.maxBytes !== undefined && bytes > options.maxBytes)
-    issues.push(issue(path, "too-large", "JSON exceeds the host byte limit."));
-  return issues;
+  const valid = visit(value, path, 0);
+  return { issues, bytes: valid && options.measure ? jsonBytes(value) : 0 };
 }
 
 /** Validates one binding. Settings and action references are checked by `validateManifest`. */
@@ -487,8 +498,21 @@ export function validatePluginAgentRunRequestV1(
   binding: PluginAgentRunBindingV1,
   options: { maxRequestBytes?: number } = {},
 ): ValidationIssue[] {
+  return checkRequest(value, binding, options).issues;
+}
+
+function checkRequest(
+  value: unknown,
+  binding: PluginAgentRunBindingV1,
+  options: { maxRequestBytes?: number },
+): {
+  issues: ValidationIssue[];
+  accepted?: PluginAgentRunAcceptedRequestV1;
+} {
   if (!record(value))
-    return [issue("$", "type", "Agent run request must be an object.")];
+    return {
+      issues: [issue("$", "type", "Agent run request must be an object.")],
+    };
   const issues: ValidationIssue[] = [];
   unknownKeys(value, REQUEST_KEYS, "$", issues);
   if (value.schemaVersion !== "1")
@@ -545,20 +569,21 @@ export function validatePluginAgentRunRequestV1(
         "$.outputSchema",
       ),
     );
+  if (issues.length) return { issues };
+  const accepted = acceptRequest(
+    value as unknown as PluginAgentRunRequestV1,
+    binding,
+  );
   // The byte bound applies to the accepted request, after preset resolution.
-  if (!issues.length && options.maxRequestBytes !== undefined)
+  // Validated run JSON is a tree, so serializing it is linear in its size.
+  if (
+    options.maxRequestBytes !== undefined &&
+    jsonBytes(accepted) > options.maxRequestBytes
+  )
     issues.push(
-      ...validatePluginAgentRunJson(
-        acceptRequest(value as unknown as PluginAgentRunRequestV1, binding),
-        "$",
-        { maxBytes: options.maxRequestBytes },
-      ).map((entry) =>
-        entry.code === "too-large"
-          ? issue("$", "too-large", "Request exceeds the host byte limit.")
-          : entry,
-      ),
+      issue("$", "too-large", "Request exceeds the host byte limit."),
     );
-  return issues;
+  return issues.length ? { issues } : { issues, accepted };
 }
 
 /**
@@ -596,9 +621,9 @@ export function parsePluginAgentRunRequestV1(
   binding: PluginAgentRunBindingV1,
   options: { maxRequestBytes?: number } = {},
 ): PluginAgentRunAcceptedRequestV1 {
-  const issues = validatePluginAgentRunRequestV1(value, binding, options);
-  if (issues.length) fail(issues);
-  return acceptRequest(value as unknown as PluginAgentRunRequestV1, binding);
+  const { issues, accepted } = checkRequest(value, binding, options);
+  if (!accepted) fail(issues);
+  return accepted;
 }
 
 /**
@@ -761,7 +786,8 @@ export function parsePluginAgentRunStateV1(
       !DIGEST.test(row.result.requestDigest) ||
       checkRunJson(row.result.output, "$.snapshot.result.output", {
         boundWidth: false,
-      }).length)
+        measure: false,
+      }).issues.length)
   )
     return invalid();
   if (!consistentSnapshot(row)) return invalid();

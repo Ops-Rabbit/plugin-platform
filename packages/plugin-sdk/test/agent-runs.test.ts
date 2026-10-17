@@ -9,6 +9,7 @@ import {
   matchesPluginAgentRunOutputSchema,
   parsePluginAgentRunBindingV1,
   parsePluginAgentRunRequestV1,
+  validatePluginAgentRunRequestV1,
   PluginValidationError,
   validateManifest,
   validatePluginAgentRunJson,
@@ -406,6 +407,33 @@ describe("agent run requests", () => {
     ).toBe(long);
   });
 
+  it("applies the same depth bound to inputs with or without a byte limit", () => {
+    let atLimit: unknown = "leaf";
+    for (let index = 0; index < 32; index += 1) atLimit = [atLimit];
+    const deepInputs = { ...request, inputs: atLimit };
+    expect(validatePluginAgentRunRequestV1(deepInputs, binding)).toEqual([]);
+    expect(
+      validatePluginAgentRunRequestV1(deepInputs, binding, {
+        maxRequestBytes: 1_000_000,
+      }),
+    ).toEqual([]);
+  });
+
+  it("measures the accepted request exactly against the byte limit", () => {
+    const accepted = parsePluginAgentRunRequestV1(request, binding);
+    const exact = new TextEncoder().encode(JSON.stringify(accepted)).byteLength;
+    expect(
+      parsePluginAgentRunRequestV1(request, binding, {
+        maxRequestBytes: exact,
+      }),
+    ).toEqual(accepted);
+    expect(
+      validatePluginAgentRunRequestV1(request, binding, {
+        maxRequestBytes: exact - 1,
+      }),
+    ).toEqual([expect.objectContaining({ path: "$", code: "too-large" })]);
+  });
+
   it("leaves byte size to host policy", () => {
     const large = { ...request, inputs: { text: "x".repeat(400_000) } };
     expect(parsePluginAgentRunRequestV1(large, binding).inputs).toEqual(
@@ -434,8 +462,6 @@ describe("agent run requests", () => {
       JSON.parse('{"__proto__":{}}'),
     ])
       expect(validatePluginAgentRunJson(value)).not.toEqual([]);
-    const shared = { text: "x" };
-    expect(validatePluginAgentRunJson({ a: shared, b: shared })).toEqual([]);
     expect(
       validatePluginAgentRunJson({
         code: { constructor: "Widget", prototype: "render" },
@@ -443,23 +469,25 @@ describe("agent run requests", () => {
     ).toEqual([]);
   });
 
-  it("walks shared references once and measures their serialized size", () => {
+  it("rejects shared references and measures serialized size", () => {
+    const shared = { text: "x" };
+    for (const value of [{ a: shared, b: shared }, [shared, [shared]]])
+      expect(validatePluginAgentRunJson(value)).toEqual([
+        expect.objectContaining({ code: "type" }),
+      ]);
     let dag: unknown = "leaf";
     for (let index = 0; index < 31; index += 1) dag = [dag, dag];
     const started = performance.now();
-    expect(validatePluginAgentRunJson(dag)).toEqual([]);
-    expect(validatePluginAgentRunJson(dag, "$", { maxBytes: 1_000 })).toEqual([
-      expect.objectContaining({ code: "too-large" }),
+    expect(validatePluginAgentRunJson(dag)).toEqual([
+      expect.objectContaining({ code: "type" }),
     ]);
+    expect(() =>
+      parsePluginAgentRunRequestV1({ ...request, inputs: dag }, binding),
+    ).toThrow(PluginValidationError);
     expect(performance.now() - started).toBeLessThan(1_000);
-    let tall: unknown = "leaf";
-    for (let index = 0; index < 30; index += 1) tall = { tall };
-    let deepRef: unknown = tall;
-    for (let index = 0; index < 3; index += 1) deepRef = [deepRef];
-    expect(validatePluginAgentRunJson({ near: tall })).toEqual([]);
-    expect(validatePluginAgentRunJson({ near: tall, far: deepRef })).toEqual([
-      expect.objectContaining({ code: "too-deep" }),
-    ]);
+    expect(
+      validatePluginAgentRunJson({ a: { text: "x" }, b: { text: "x" } }),
+    ).toEqual([]);
     const value = { b: [1, "é", null, { c: true }], a: { ké: -0.5 } };
     const exact = new TextEncoder().encode(JSON.stringify(value)).byteLength;
     expect(validatePluginAgentRunJson(value, "$", { maxBytes: exact })).toEqual(
@@ -561,6 +589,20 @@ describe("agent run test harness", () => {
     );
     await expect(get.get({ runId: "run-1" })).resolves.toEqual(snapshot);
     expect(agentRuns.start).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a broker result that is not a snapshot", async () => {
+    const agentRuns = {
+      ...service(),
+      get: vi.fn().mockResolvedValue(undefined),
+    };
+    await expect(
+      createAuthorizedTestContext(
+        manifest,
+        { kind: "action", id: "get-run" },
+        { agentRuns },
+      ).agentRuns!.get({ runId: "run-1" }),
+    ).rejects.toThrow("must resolve a snapshot");
   });
 
   it("rejects runs of a binding that does not own the get or cancel action", async () => {

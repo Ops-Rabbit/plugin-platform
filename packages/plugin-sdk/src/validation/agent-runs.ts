@@ -100,37 +100,52 @@ export function validatePluginAgentRunJson(
   path = "$",
   options: { maxBytes?: number } = {},
 ): ValidationIssue[] {
-  const result = checkRunJson(value, path, {
-    boundWidth: true,
-    measure: options.maxBytes !== undefined,
-  });
+  const issues = checkRunJson(value, path, { boundWidth: true });
   if (
-    !result.issues.length &&
+    !issues.length &&
     options.maxBytes !== undefined &&
-    result.bytes > options.maxBytes
+    jsonBytes(value) > options.maxBytes
   )
-    result.issues.push(
-      issue(path, "too-large", "JSON exceeds the host byte limit."),
-    );
-  return result.issues;
+    issues.push(issue(path, "too-large", "JSON exceeds the host byte limit."));
+  return issues;
+}
+
+/**
+ * Reads an own data property. Accessors are rejected so that the value that
+ * was validated is the value later serialized, measured and digested.
+ */
+function dataProperty(
+  entry: object,
+  key: string,
+): { ok: true; value: unknown } | { ok: false } {
+  const descriptor = Object.getOwnPropertyDescriptor(entry, key);
+  return descriptor && "value" in descriptor
+    ? { ok: true, value: descriptor.value }
+    : { ok: false };
 }
 
 /**
  * `boundWidth: false` skips the array-length and object-width bounds. It is
  * used only for observed agent output, which the host bounds by size and the
- * state transport ceiling bounds again. With `measure`, `bytes` is the UTF-8
- * size of the value's `JSON.stringify` form; otherwise it is 0.
+ * state transport ceiling bounds again. Pass one `seen` set to check several
+ * values as parts of a single tree.
  */
 function checkRunJson(
   value: unknown,
   path: string,
-  options: { boundWidth: boolean; measure: boolean },
-): { issues: ValidationIssue[]; bytes: number } {
+  options: { boundWidth: boolean; seen?: Set<object> },
+): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   // Run JSON must be a tree, as `JSON.parse` produces. Rejecting any object
   // reached twice catches cycles and shared references, so the walk, the
   // serialized size and the canonical digest form all stay linear in the input.
-  const seen = new Set<object>();
+  // Only data properties are accepted and arrays cannot carry their own
+  // `toJSON`, so `JSON.stringify` and the canonical form see what was validated.
+  const seen = options.seen ?? new Set<object>();
+  const notData = (at: string) => {
+    issues.push(issue(at, "type", "Value must be JSON data, not an accessor."));
+    return false;
+  };
   const visit = (entry: unknown, at: string, depth: number): boolean => {
     if (depth > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxDepth) {
       issues.push(issue(at, "too-deep", "JSON nesting is too deep."));
@@ -160,14 +175,33 @@ function checkRunJson(
     seen.add(entry);
     if (Array.isArray(entry)) {
       if (
+        Object.getPrototypeOf(entry) !== Array.prototype ||
+        Object.hasOwn(entry, "toJSON")
+      ) {
+        issues.push(issue(at, "type", "Value must be JSON."));
+        return false;
+      }
+      if (
         options.boundWidth &&
         entry.length > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxArrayItems
       ) {
         issues.push(issue(at, "too-large", "JSON array is too large."));
         return false;
       }
-      for (const [index, child] of entry.entries())
-        if (!visit(child, `${at}[${index}]`, depth + 1)) return false;
+      for (let index = 0; index < entry.length; index += 1) {
+        const child = dataProperty(entry, String(index));
+        // A hole has no descriptor; it is reported as a non-JSON value.
+        if (!child.ok && Object.hasOwn(entry, index))
+          return notData(`${at}[${index}]`);
+        if (
+          !visit(
+            child.ok ? child.value : undefined,
+            `${at}[${index}]`,
+            depth + 1,
+          )
+        )
+          return false;
+      }
       return true;
     }
     const prototype = Object.getPrototypeOf(entry);
@@ -191,19 +225,14 @@ function checkRunJson(
         issues.push(issue(`${at}.${key}`, "unsafe", "Unsafe JSON field."));
         return false;
       }
-      if (
-        !visit(
-          (entry as Record<string, unknown>)[key],
-          `${at}.${key}`,
-          depth + 1,
-        )
-      )
-        return false;
+      const child = dataProperty(entry, key);
+      if (!child.ok) return notData(`${at}.${key}`);
+      if (!visit(child.value, `${at}.${key}`, depth + 1)) return false;
     }
     return true;
   };
-  const valid = visit(value, path, 0);
-  return { issues, bytes: valid && options.measure ? jsonBytes(value) : 0 };
+  visit(value, path, 0);
+  return issues;
 }
 
 /** Validates one binding. Settings and action references are checked by `validateManifest`. */
@@ -293,10 +322,18 @@ export function validatePluginAgentRunOutputSchema(
   schema: unknown,
   path = "$",
 ): ValidationIssue[] {
-  const issues = validatePluginAgentRunJson(schema, path, {
-    maxBytes: PLUGIN_AGENT_RUN_OUTPUT_SCHEMA_MAX_BYTES,
-  });
+  return checkOutputSchema(schema, path, new Set());
+}
+
+function checkOutputSchema(
+  schema: unknown,
+  path: string,
+  seen: Set<object>,
+): ValidationIssue[] {
+  const issues = checkRunJson(schema, path, { boundWidth: true, seen });
   if (issues.length) return issues;
+  if (jsonBytes(schema) > PLUGIN_AGENT_RUN_OUTPUT_SCHEMA_MAX_BYTES)
+    return [issue(path, "too-large", "JSON exceeds the host byte limit.")];
   const visit = (node: unknown, at: string, depth: number): void => {
     if (!record(node) || depth > 8) {
       issues.push(issue(at, "unsupported", "Unsupported output schema."));
@@ -515,7 +552,19 @@ function checkRequest(
     };
   const issues: ValidationIssue[] = [];
   unknownKeys(value, REQUEST_KEYS, "$", issues);
-  if (value.schemaVersion !== "1")
+  // Each field is read once, from an own data property, so the checks below
+  // and the accepted request see the same values.
+  const fields: Record<string, unknown> = {};
+  for (const key of REQUEST_KEYS) {
+    if (!Object.hasOwn(value, key)) continue;
+    const field = dataProperty(value, key);
+    if (field.ok) fields[key] = field.value;
+    else
+      issues.push(
+        issue(`$.${key}`, "type", "Request fields must be data properties."),
+      );
+  }
+  if (fields.schemaVersion !== "1")
     issues.push(
       issue(
         "$.schemaVersion",
@@ -523,11 +572,11 @@ function checkRequest(
         "Request schema version must be 1.",
       ),
     );
-  if (value.bindingId !== binding.id)
+  if (fields.bindingId !== binding.id)
     issues.push(issue("$.bindingId", "forbidden", "Binding is not permitted."));
   if (
-    typeof value.agentSettingKey !== "string" ||
-    !binding.agentSettingKeys.includes(value.agentSettingKey)
+    typeof fields.agentSettingKey !== "string" ||
+    !binding.agentSettingKeys.includes(fields.agentSettingKey)
   )
     issues.push(
       issue(
@@ -536,15 +585,15 @@ function checkRequest(
         "Agent setting is not permitted.",
       ),
     );
-  if ((value.instructions === undefined) === (value.presetId === undefined))
+  if ((fields.instructions === undefined) === (fields.presetId === undefined))
     issues.push(
       issue("$", "invalid", "Supply exactly one of instructions or presetId."),
     );
   if (
-    value.instructions !== undefined &&
-    (typeof value.instructions !== "string" ||
-      !/\S/.test(value.instructions) ||
-      [...value.instructions].length >
+    fields.instructions !== undefined &&
+    (typeof fields.instructions !== "string" ||
+      !/\S/.test(fields.instructions) ||
+      [...fields.instructions].length >
         PLUGIN_AGENT_RUN_INSTRUCTIONS_MAX_CHARACTERS)
   )
     issues.push(
@@ -555,27 +604,31 @@ function checkRequest(
       ),
     );
   if (
-    value.presetId !== undefined &&
-    !binding.presets?.some((preset) => preset.id === value.presetId)
+    fields.presetId !== undefined &&
+    !binding.presets?.some((preset) => preset.id === fields.presetId)
   )
     issues.push(issue("$.presetId", "invalid", "Unknown preset."));
+  // inputs and outputSchema are checked as parts of one tree, so an object
+  // cannot be shared between them either.
+  const seen = new Set<object>();
   if (!Object.hasOwn(value, "inputs"))
     issues.push(issue("$.inputs", "required", "Inputs are required."));
-  else issues.push(...validatePluginAgentRunJson(value.inputs, "$.inputs"));
-  if (value.outputSchema !== undefined)
+  else
     issues.push(
-      ...validatePluginAgentRunOutputSchema(
-        value.outputSchema,
-        "$.outputSchema",
-      ),
+      ...checkRunJson(fields.inputs, "$.inputs", { boundWidth: true, seen }),
+    );
+  if (fields.outputSchema !== undefined)
+    issues.push(
+      ...checkOutputSchema(fields.outputSchema, "$.outputSchema", seen),
     );
   if (issues.length) return { issues };
   const accepted = acceptRequest(
-    value as unknown as PluginAgentRunRequestV1,
+    fields as unknown as PluginAgentRunRequestV1,
     binding,
   );
   // The byte bound applies to the accepted request, after preset resolution.
-  // Validated run JSON is a tree, so serializing it is linear in its size.
+  // Validated run JSON is a tree of data properties with no array `toJSON`, so
+  // serializing it is linear and measures exactly what was validated.
   if (
     options.maxRequestBytes !== undefined &&
     jsonBytes(accepted) > options.maxRequestBytes
@@ -786,8 +839,7 @@ export function parsePluginAgentRunStateV1(
       !DIGEST.test(row.result.requestDigest) ||
       checkRunJson(row.result.output, "$.snapshot.result.output", {
         boundWidth: false,
-        measure: false,
-      }).issues.length)
+      }).length)
   )
     return invalid();
   if (!consistentSnapshot(row)) return invalid();

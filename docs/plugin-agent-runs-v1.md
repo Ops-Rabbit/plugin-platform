@@ -84,7 +84,11 @@ Observed agent output is checked for JSON shape, depth and `__proto__` keys
 only. Its size is bounded by the host and by the state transport ceiling, not
 by array length or object width.
 Run JSON must be a tree, as `JSON.parse` produces: an object or array that
-appears more than once, whether shared or cyclic, is rejected. The host
+appears more than once, whether shared or cyclic, is rejected. In a request,
+`inputs` and `outputSchema` form one tree, so they cannot share an object.
+Request fields and run JSON must be own data properties rather than accessors,
+and arrays cannot carry their own `toJSON`, so the value that is validated is
+the value that is measured, serialized and digested. The host
 supplies the byte bound, which applies to the accepted request after preset
 instructions are resolved.
 

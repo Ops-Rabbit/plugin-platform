@@ -498,6 +498,72 @@ describe("agent run requests", () => {
     ).not.toEqual([]);
   });
 
+  it("rejects an object shared between inputs and outputSchema", () => {
+    const schema = { type: "string" };
+    expect(
+      validatePluginAgentRunRequestV1(
+        { ...request, inputs: { schema }, outputSchema: schema },
+        binding,
+      ),
+    ).toEqual([
+      expect.objectContaining({ path: "$.outputSchema", code: "type" }),
+    ]);
+    expect(
+      validatePluginAgentRunRequestV1(
+        {
+          ...request,
+          inputs: { schema: { type: "string" } },
+          outputSchema: { type: "string" },
+        },
+        binding,
+      ),
+    ).toEqual([]);
+  });
+
+  it("rejects array toJSON and accessors that would change the measured value", () => {
+    const masked = Object.assign(["x".repeat(10_000)], { toJSON: () => [] });
+    expect(validatePluginAgentRunJson(masked)).toEqual([
+      expect.objectContaining({ path: "$", code: "type" }),
+    ]);
+    expect(
+      validatePluginAgentRunRequestV1({ ...request, inputs: masked }, binding, {
+        maxRequestBytes: 1_000,
+      }),
+    ).toEqual([expect.objectContaining({ path: "$.inputs", code: "type" })]);
+    let reads = 0;
+    const changing = {
+      get text() {
+        reads += 1;
+        return reads > 1 ? "x".repeat(10_000) : "ok";
+      },
+    };
+    expect(
+      validatePluginAgentRunRequestV1(
+        { ...request, inputs: changing },
+        binding,
+        { maxRequestBytes: 1_000 },
+      ),
+    ).toEqual([
+      expect.objectContaining({ path: "$.inputs.text", code: "type" }),
+    ]);
+    const element = ["ok"];
+    Object.defineProperty(element, 0, { get: () => "ok", enumerable: true });
+    expect(validatePluginAgentRunJson(element)).toEqual([
+      expect.objectContaining({ path: "$[0]", code: "type" }),
+    ]);
+    let fieldReads = 0;
+    const envelope = { ...request } as Record<string, unknown>;
+    Object.defineProperty(envelope, "instructions", {
+      get: () => ((fieldReads += 1) > 1 ? 42 : "Summarize the input."),
+      enumerable: true,
+    });
+    expect(validatePluginAgentRunRequestV1(envelope, binding)).toContainEqual(
+      expect.objectContaining({ path: "$.instructions", code: "type" }),
+    );
+    expect(fieldReads).toBe(0);
+    expect(validatePluginAgentRunJson(JSON.parse('[1,{"a":[2]}]'))).toEqual([]);
+  });
+
   it("validates the supported output schema subset", () => {
     const schema = {
       type: "object",

@@ -1022,6 +1022,7 @@ describe("validateManifest", () => {
     "receipt",
     "search",
     "shield_check",
+    "siren",
     "variable",
     "waves",
   ])("accepts the plugin-selected navigation icon %s", (icon) => {

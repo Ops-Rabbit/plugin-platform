@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.31.1 - 2026-10-17
+
+- Align admin-workspace icon JSON Schema with the same supported icon list enforced at runtime.
+- Add the `siren` navigation/admin-workspace icon to the public enum, runtime validation and manifest schema for distinct operational incident navigation. Requires a host that renders this icon key.
+
 ## 0.31.0 - Unreleased
 
 - Add the optional `agentRuns` capability: manifest permission bindings for host-executed tenant agent runs with typed start, get and cancel brokers and host-attested completion handlers.

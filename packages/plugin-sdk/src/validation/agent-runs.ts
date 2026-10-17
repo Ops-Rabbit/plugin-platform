@@ -1,4 +1,5 @@
 import type {
+  PluginAgentRunAcceptedRequestV1,
   PluginAgentRunBindingV1,
   PluginAgentRunObservationEventV1,
   PluginAgentRunObservedSnapshotV1,
@@ -39,6 +40,9 @@ export const PLUGIN_AGENT_RUN_ID_PATTERN =
 export const PLUGIN_AGENT_RUN_ID_MAX_LENGTH = 64;
 /** Characters in one manifest preset instruction. */
 export const PLUGIN_AGENT_RUN_PRESET_MAX_CHARACTERS = 12_288;
+/** Characters in caller-supplied run instructions, matching the preset bound. */
+export const PLUGIN_AGENT_RUN_INSTRUCTIONS_MAX_CHARACTERS =
+  PLUGIN_AGENT_RUN_PRESET_MAX_CHARACTERS;
 /** UTF-8 bytes of a JSON-encoded output schema. */
 export const PLUGIN_AGENT_RUN_OUTPUT_SCHEMA_MAX_BYTES = 8_192;
 /**
@@ -96,12 +100,31 @@ export function validatePluginAgentRunJson(
   path = "$",
   options: { maxBytes?: number } = {},
 ): ValidationIssue[] {
+  return checkRunJson(value, path, { ...options, boundWidth: true });
+}
+
+/**
+ * `boundWidth: false` skips the array-length and object-width bounds. It is
+ * used only for observed agent output, which the host bounds by size and the
+ * state transport ceiling bounds again.
+ */
+function checkRunJson(
+  value: unknown,
+  path: string,
+  options: { maxBytes?: number; boundWidth: boolean },
+): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const seen = new Set<object>();
-  const visit = (entry: unknown, at: string, depth: number): boolean => {
+  // `active` detects cycles. `validated` records the deepest depth at which a
+  // shared object passed; passing there also proves it fits at any shallower
+  // depth, so such references are not re-walked and work stays linear in
+  // distinct objects. Byte size is summed during the same walk instead of
+  // re-serializing, which would expand shared references.
+  const active = new Set<object>();
+  const validated = new Map<object, { depth: number; bytes: number }>();
+  const visit = (entry: unknown, at: string, depth: number): number => {
     if (depth > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxDepth) {
       issues.push(issue(at, "too-deep", "JSON nesting is too deep."));
-      return false;
+      return -1;
     }
     if (
       entry === null ||
@@ -109,57 +132,65 @@ export function validatePluginAgentRunJson(
       typeof entry === "boolean" ||
       (typeof entry === "number" && Number.isFinite(entry))
     )
-      return true;
-    if (typeof entry !== "object" || seen.has(entry)) {
+      return jsonBytes(entry);
+    if (typeof entry !== "object" || active.has(entry)) {
       issues.push(issue(at, "type", "Value must be JSON."));
-      return false;
+      return -1;
     }
-    seen.add(entry);
+    const known = validated.get(entry);
+    if (known && depth <= known.depth) return known.bytes;
+    active.add(entry);
+    let bytes = 2;
     if (Array.isArray(entry)) {
-      if (entry.length > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxArrayItems) {
+      if (
+        options.boundWidth &&
+        entry.length > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxArrayItems
+      ) {
         issues.push(issue(at, "too-large", "JSON array is too large."));
-        return false;
+        return -1;
       }
-      for (const [index, child] of entry.entries())
-        if (!visit(child, `${at}[${index}]`, depth + 1)) return false;
+      for (const [index, child] of entry.entries()) {
+        const size = visit(child, `${at}[${index}]`, depth + 1);
+        if (size < 0) return -1;
+        bytes += size + (index > 0 ? 1 : 0);
+      }
     } else {
       const prototype = Object.getPrototypeOf(entry);
       if (prototype !== Object.prototype && prototype !== null) {
         issues.push(issue(at, "type", "Value must be JSON."));
-        return false;
+        return -1;
       }
       const keys = Object.keys(entry);
-      if (keys.length > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxObjectKeys) {
+      if (
+        options.boundWidth &&
+        keys.length > PLUGIN_AGENT_RUN_JSON_BOUNDS.maxObjectKeys
+      ) {
         issues.push(issue(at, "too-large", "JSON object is too large."));
-        return false;
+        return -1;
       }
-      for (const key of keys) {
-        if (
-          key === "__proto__" ||
-          key === "constructor" ||
-          key === "prototype"
-        ) {
+      for (const [index, key] of keys.entries()) {
+        // An own `__proto__` key, as JSON.parse creates, can replace a prototype
+        // when the value is copied with assignment. `constructor` and `prototype`
+        // are ordinary data keys on a plain JSON object.
+        if (key === "__proto__") {
           issues.push(issue(`${at}.${key}`, "unsafe", "Unsafe JSON field."));
-          return false;
+          return -1;
         }
-        if (
-          !visit(
-            (entry as Record<string, unknown>)[key],
-            `${at}.${key}`,
-            depth + 1,
-          )
-        )
-          return false;
+        const size = visit(
+          (entry as Record<string, unknown>)[key],
+          `${at}.${key}`,
+          depth + 1,
+        );
+        if (size < 0) return -1;
+        bytes += jsonBytes(key) + 1 + size + (index > 0 ? 1 : 0);
       }
     }
-    seen.delete(entry);
-    return true;
+    active.delete(entry);
+    validated.set(entry, { depth, bytes });
+    return bytes;
   };
-  if (
-    visit(value, path, 0) &&
-    options.maxBytes !== undefined &&
-    jsonBytes(value) > options.maxBytes
-  )
+  const bytes = visit(value, path, 0);
+  if (bytes >= 0 && options.maxBytes !== undefined && bytes > options.maxBytes)
     issues.push(issue(path, "too-large", "JSON exceeds the host byte limit."));
   return issues;
 }
@@ -487,13 +518,16 @@ export function validatePluginAgentRunRequestV1(
     );
   if (
     value.instructions !== undefined &&
-    (typeof value.instructions !== "string" || !/\S/.test(value.instructions))
+    (typeof value.instructions !== "string" ||
+      !/\S/.test(value.instructions) ||
+      [...value.instructions].length >
+        PLUGIN_AGENT_RUN_INSTRUCTIONS_MAX_CHARACTERS)
   )
     issues.push(
       issue(
         "$.instructions",
         "invalid",
-        "Instructions must be non-blank text.",
+        "Instructions must be non-blank text of at most 12,288 characters.",
       ),
     );
   if (
@@ -511,45 +545,78 @@ export function validatePluginAgentRunRequestV1(
         "$.outputSchema",
       ),
     );
-  if (
-    !issues.length &&
-    options.maxRequestBytes !== undefined &&
-    jsonBytes(value) > options.maxRequestBytes
-  )
+  // The byte bound applies to the accepted request, after preset resolution.
+  if (!issues.length && options.maxRequestBytes !== undefined)
     issues.push(
-      issue("$", "too-large", "Request exceeds the host byte limit."),
+      ...validatePluginAgentRunJson(
+        acceptRequest(value as unknown as PluginAgentRunRequestV1, binding),
+        "$",
+        { maxBytes: options.maxRequestBytes },
+      ).map((entry) =>
+        entry.code === "too-large"
+          ? issue("$", "too-large", "Request exceeds the host byte limit.")
+          : entry,
+      ),
     );
   return issues;
 }
 
-/** Returns the accepted request with `instructions` resolved from a preset when selected. */
-export function parsePluginAgentRunRequestV1(
-  value: unknown,
+/**
+ * Builds the accepted request from a validated one: preset instructions are
+ * resolved, `presetId` is kept as provenance, and absent optional fields are
+ * omitted rather than carried as `undefined`.
+ */
+function acceptRequest(
+  request: PluginAgentRunRequestV1,
   binding: PluginAgentRunBindingV1,
-  options: { maxRequestBytes?: number } = {},
-): PluginAgentRunRequestV1 & { readonly instructions: string } {
-  const issues = validatePluginAgentRunRequestV1(value, binding, options);
-  if (issues.length) fail(issues);
-  const request = value as unknown as PluginAgentRunRequestV1;
+): PluginAgentRunAcceptedRequestV1 {
   const instructions =
     request.instructions ??
     binding.presets!.find((preset) => preset.id === request.presetId)!
       .instructions;
-  return { ...request, instructions };
+  return {
+    schemaVersion: request.schemaVersion,
+    bindingId: request.bindingId,
+    agentSettingKey: request.agentSettingKey,
+    instructions,
+    ...(request.presetId === undefined ? {} : { presetId: request.presetId }),
+    inputs: request.inputs,
+    ...(request.outputSchema === undefined
+      ? {}
+      : { outputSchema: request.outputSchema }),
+  };
+}
+
+/**
+ * Returns the accepted request. It is not itself a start request: when a preset
+ * was selected it carries both `presetId` and the resolved `instructions`.
+ */
+export function parsePluginAgentRunRequestV1(
+  value: unknown,
+  binding: PluginAgentRunBindingV1,
+  options: { maxRequestBytes?: number } = {},
+): PluginAgentRunAcceptedRequestV1 {
+  const issues = validatePluginAgentRunRequestV1(value, binding, options);
+  if (issues.length) fail(issues);
+  return acceptRequest(value as unknown as PluginAgentRunRequestV1, binding);
 }
 
 /**
  * Canonical JSON hashed for `requestDigest`: object keys sorted by UTF-16 code
- * unit order, no whitespace, primitives encoded as by `JSON.stringify`. The
- * digest is the lowercase hex SHA-256 of this string's UTF-8 bytes.
+ * unit order, no whitespace, primitives encoded as by `JSON.stringify`. As in
+ * `JSON.stringify`, object keys whose value is `undefined` are omitted, so the
+ * digest matches the request as serialized over a transport. The digest is the
+ * lowercase hex SHA-256 of this string's UTF-8 bytes.
  */
 export function canonicalPluginAgentRunJson(
-  value: JsonValue | PluginAgentRunRequestV1,
+  value: JsonValue | PluginAgentRunRequestV1 | PluginAgentRunAcceptedRequestV1,
 ): string {
   const encode = (entry: unknown): string => {
-    if (Array.isArray(entry)) return `[${entry.map(encode).join(",")}]`;
+    if (Array.isArray(entry))
+      return `[${entry.map((item) => (item === undefined ? "null" : encode(item))).join(",")}]`;
     if (entry !== null && typeof entry === "object")
       return `{${Object.keys(entry)
+        .filter((key) => (entry as Record<string, unknown>)[key] !== undefined)
         .sort()
         .map(
           (key) =>
@@ -692,7 +759,9 @@ export function parsePluginAgentRunStateV1(
       row.result.kind !== "execution_v1" ||
       typeof row.result.requestDigest !== "string" ||
       !DIGEST.test(row.result.requestDigest) ||
-      validatePluginAgentRunJson(row.result.output).length)
+      checkRunJson(row.result.output, "$.snapshot.result.output", {
+        boundWidth: false,
+      }).length)
   )
     return invalid();
   if (!consistentSnapshot(row)) return invalid();

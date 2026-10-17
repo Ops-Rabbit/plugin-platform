@@ -346,6 +346,66 @@ describe("agent run requests", () => {
     ).toMatch(/^[0-9a-f]{64}$/);
   });
 
+  it("omits undefined optional fields so the digest matches the serialized request", () => {
+    const sparse = { ...request, presetId: undefined, outputSchema: undefined };
+    const accepted = parsePluginAgentRunRequestV1(sparse, binding);
+    expect(Object.keys(accepted)).not.toContain("presetId");
+    expect(Object.keys(accepted)).not.toContain("outputSchema");
+    expect(canonicalPluginAgentRunJson(sparse as never)).toBe(
+      canonicalPluginAgentRunJson(JSON.parse(JSON.stringify(sparse))),
+    );
+    expect(canonicalPluginAgentRunJson([1, undefined] as never)).toBe(
+      JSON.stringify([1, undefined]),
+    );
+  });
+
+  it("keeps presetId as provenance on the accepted request", () => {
+    const accepted = parsePluginAgentRunRequestV1(
+      { ...omit(request, "instructions"), presetId: "short" },
+      binding,
+    );
+    expect(accepted).toEqual({
+      ...omit(request, "instructions"),
+      presetId: "short",
+      instructions: "Summarize in one sentence.",
+    });
+  });
+
+  it("bounds caller instructions like presets", () => {
+    expect(
+      parsePluginAgentRunRequestV1(
+        { ...request, instructions: "é".repeat(12_288) },
+        binding,
+      ).instructions,
+    ).toHaveLength(12_288);
+    expect(() =>
+      parsePluginAgentRunRequestV1(
+        { ...request, instructions: "é".repeat(12_289) },
+        binding,
+      ),
+    ).toThrow(PluginValidationError);
+  });
+
+  it("applies the host byte limit after preset instructions are resolved", () => {
+    const long = "x".repeat(10_000);
+    const presetBinding = {
+      ...binding,
+      presets: [{ id: "long", instructions: long }],
+    };
+    const selected = { ...omit(request, "instructions"), presetId: "long" };
+    const raw = new TextEncoder().encode(JSON.stringify(selected)).byteLength;
+    expect(() =>
+      parsePluginAgentRunRequestV1(selected, presetBinding, {
+        maxRequestBytes: raw + 100,
+      }),
+    ).toThrow(PluginValidationError);
+    expect(
+      parsePluginAgentRunRequestV1(selected, presetBinding, {
+        maxRequestBytes: raw + long.length + 100,
+      }).instructions,
+    ).toBe(long);
+  });
+
   it("leaves byte size to host policy", () => {
     const large = { ...request, inputs: { text: "x".repeat(400_000) } };
     expect(parsePluginAgentRunRequestV1(large, binding).inputs).toEqual(
@@ -376,6 +436,38 @@ describe("agent run requests", () => {
       expect(validatePluginAgentRunJson(value)).not.toEqual([]);
     const shared = { text: "x" };
     expect(validatePluginAgentRunJson({ a: shared, b: shared })).toEqual([]);
+    expect(
+      validatePluginAgentRunJson({
+        code: { constructor: "Widget", prototype: "render" },
+      }),
+    ).toEqual([]);
+  });
+
+  it("walks shared references once and measures their serialized size", () => {
+    let dag: unknown = "leaf";
+    for (let index = 0; index < 31; index += 1) dag = [dag, dag];
+    const started = performance.now();
+    expect(validatePluginAgentRunJson(dag)).toEqual([]);
+    expect(validatePluginAgentRunJson(dag, "$", { maxBytes: 1_000 })).toEqual([
+      expect.objectContaining({ code: "too-large" }),
+    ]);
+    expect(performance.now() - started).toBeLessThan(1_000);
+    let tall: unknown = "leaf";
+    for (let index = 0; index < 30; index += 1) tall = { tall };
+    let deepRef: unknown = tall;
+    for (let index = 0; index < 3; index += 1) deepRef = [deepRef];
+    expect(validatePluginAgentRunJson({ near: tall })).toEqual([]);
+    expect(validatePluginAgentRunJson({ near: tall, far: deepRef })).toEqual([
+      expect.objectContaining({ code: "too-deep" }),
+    ]);
+    const value = { b: [1, "é", null, { c: true }], a: { ké: -0.5 } };
+    const exact = new TextEncoder().encode(JSON.stringify(value)).byteLength;
+    expect(validatePluginAgentRunJson(value, "$", { maxBytes: exact })).toEqual(
+      [],
+    );
+    expect(
+      validatePluginAgentRunJson(value, "$", { maxBytes: exact - 1 }),
+    ).not.toEqual([]);
   });
 
   it("validates the supported output schema subset", () => {
@@ -419,10 +511,11 @@ describe("agent run requests", () => {
 });
 
 describe("agent run test harness", () => {
+  const snapshot = { runId: "run-1", bindingId: "summarize" };
   const service = () => ({
     start: vi.fn().mockResolvedValue({ runId: "run-1" }),
-    get: vi.fn().mockResolvedValue({ runId: "run-1" }),
-    cancel: vi.fn().mockResolvedValue({ runId: "run-1" }),
+    get: vi.fn().mockResolvedValue(snapshot),
+    cancel: vi.fn().mockResolvedValue(snapshot),
   });
 
   it("exposes the broker only to bound actions", () => {
@@ -466,9 +559,47 @@ describe("agent run test harness", () => {
     await expect(get.cancel({ runId: "run-1" })).rejects.toThrow(
       "not authorized",
     );
-    await expect(get.get({ runId: "run-1" })).resolves.toEqual({
-      runId: "run-1",
-    });
+    await expect(get.get({ runId: "run-1" })).resolves.toEqual(snapshot);
     expect(agentRuns.start).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects runs of a binding that does not own the get or cancel action", async () => {
+    const other = {
+      ...binding,
+      id: "other",
+      startActionId: "start-other",
+      getActionId: "get-other",
+      cancelActionId: "cancel-other",
+      completionHandlerId: "receive-other",
+    };
+    const twoBindings = structuredClone(manifest);
+    twoBindings.capabilities.actions!.push(
+      { id: "start-other", risk: "external", requiredRole: "operator" },
+      { id: "get-other", risk: "read", requiredRole: "operator" },
+      { id: "cancel-other", risk: "write", requiredRole: "operator" },
+    );
+    twoBindings.capabilities.agentRuns = {
+      schemaVersion: "1",
+      bindings: [binding, other],
+    };
+    const agentRuns = service();
+    for (const [id, operation] of [
+      ["get-other", "get"],
+      ["cancel-other", "cancel"],
+    ] as const)
+      await expect(
+        createAuthorizedTestContext(
+          twoBindings,
+          { kind: "action", id },
+          { agentRuns },
+        ).agentRuns![operation]({ runId: "run-1" }),
+      ).rejects.toThrow("not authorized");
+    await expect(
+      createAuthorizedTestContext(
+        twoBindings,
+        { kind: "action", id: "cancel-run" },
+        { agentRuns },
+      ).agentRuns!.cancel({ runId: "run-1" }),
+    ).resolves.toEqual(snapshot);
   });
 });

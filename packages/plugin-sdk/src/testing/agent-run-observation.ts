@@ -6,14 +6,18 @@ import type {
 import type { OpsRabbitWorkspaceError } from "../contracts/frontend.js";
 import { parsePluginAgentRunObservationEventV1 } from "../validation/agent-runs.js";
 
+interface Observation {
+  readonly observer: PluginAgentRunObserverV1;
+  readonly close: () => void;
+}
+
 /**
  * Deterministic frontend fixture with the host's observation lifecycle: a
- * `closed` event or an error ends that observation. Authorization remains a
- * host integration concern.
+ * `closed` event or an error ends that observation, and a closed observation
+ * receives nothing further. Authorization remains a host integration concern.
  */
 export function createTestAgentRunObservationService(signal?: AbortSignal) {
-  const listeners = new Map<string, Set<PluginAgentRunObserverV1>>();
-  const closers = new Map<PluginAgentRunObserverV1, () => void>();
+  const listeners = new Map<string, Set<Observation>>();
   const service: PluginAgentRunFrontendServiceV1 = {
     observe({ runId }, observer) {
       let closed = false;
@@ -21,17 +25,16 @@ export function createTestAgentRunObservationService(signal?: AbortSignal) {
         if (closed) return;
         closed = true;
         const set = listeners.get(runId);
-        set?.delete(observer);
+        set?.delete(observation);
         if (set && !set.size) listeners.delete(runId);
         signal?.removeEventListener("abort", close);
-        closers.delete(observer);
       };
+      const observation: Observation = { observer, close };
       if (signal?.aborted) closed = true;
       else {
-        const set = listeners.get(runId) ?? new Set<PluginAgentRunObserverV1>();
-        set.add(observer);
+        const set = listeners.get(runId) ?? new Set<Observation>();
+        set.add(observation);
         listeners.set(runId, set);
-        closers.set(observer, close);
         signal?.addEventListener("abort", close, { once: true });
       }
       return { close };
@@ -42,14 +45,16 @@ export function createTestAgentRunObservationService(signal?: AbortSignal) {
     notify: (observer: PluginAgentRunObserverV1) => void,
     ends: boolean,
   ) => {
-    for (const observer of [...(listeners.get(runId) ?? [])]) {
+    for (const observation of [...(listeners.get(runId) ?? [])]) {
+      // A callback earlier in this dispatch may have closed this observation.
+      if (!listeners.get(runId)?.has(observation)) continue;
       try {
-        notify(observer);
+        notify(observation.observer);
       } catch {
-        closers.get(observer)?.();
+        observation.close();
         continue;
       }
-      if (ends) closers.get(observer)?.();
+      if (ends) observation.close();
     }
   };
   return {

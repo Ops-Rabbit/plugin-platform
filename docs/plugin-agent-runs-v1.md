@@ -63,18 +63,29 @@ backwards. Progress codes are state hints, never percentages.
 
 A succeeded result is
 `{ kind: "execution_v1", request, requestDigest, output }`. `request` is the
-accepted request with preset instructions resolved, and `requestDigest` is the
-lowercase hex SHA-256 of `canonicalPluginAgentRunJson(request)` in UTF-8, so a
-plugin can confirm which request produced the output. `output` is untrusted agent output: validate it before use,
-for example with `matchesPluginAgentRunOutputSchema` and the run's
-`outputSchema`.
+accepted request (`PluginAgentRunAcceptedRequestV1`): `instructions` is always
+resolved, and when a preset was selected `presetId` is kept as provenance, so
+the accepted request is not itself a start request. Absent optional fields are
+omitted. `requestDigest` is the lowercase hex SHA-256 of
+`canonicalPluginAgentRunJson(request)` in UTF-8, so a plugin can confirm which
+request produced the output. Like `JSON.stringify`, the canonical form omits
+object keys whose value is `undefined`. `output` is untrusted agent output:
+validate it before use, for example with `matchesPluginAgentRunOutputSchema`
+and the run's `outputSchema`.
 
 `parsePluginAgentRunRequestV1(value, binding, { maxRequestBytes })` validates a
-request against its binding and resolves preset instructions. It rejects unknown
-fields, a binding or agent setting outside the binding, ambiguous instructions,
-non-JSON or unsafe values, and output schemas outside the supported subset.
-Structural bounds (`PLUGIN_AGENT_RUN_JSON_BOUNDS`) limit depth, array length and
-object width. The byte bound is supplied by the host.
+request against its binding and returns the accepted request. It rejects unknown
+fields, a binding or agent setting outside the binding, ambiguous or blank
+instructions, caller instructions over 12,288 characters, non-JSON values, own
+`__proto__` keys, and output schemas outside the supported subset. `constructor`
+and `prototype` are ordinary data keys. Structural bounds
+(`PLUGIN_AGENT_RUN_JSON_BOUNDS`) limit depth, array length and object width.
+Observed agent output is checked for JSON shape, depth and `__proto__` keys
+only. Its size is bounded by the host and by the state transport ceiling, not
+by array length or object width.
+Validation walks a shared reference once rather than once per path. The host
+supplies the byte bound, which applies to the accepted request after preset
+instructions are resolved.
 
 The output schema subset supports `object`, `array`, `string`, `number`,
 `integer`, `boolean` and `null` types with `properties`, `required`,
@@ -153,7 +164,10 @@ A compatible host:
 
 `createAuthorizedTestContext(manifest, invocation, { agentRuns })` exposes a
 broker only to bound actions, rejects other operations, and validates `start`
-requests against the binding. `createTestAgentRunObservationService()` from
+requests against the binding. `get` and `cancel` reject any returned snapshot
+whose `bindingId` is not the binding that owns the invoking action. A real host
+refuses such a run before acting, but the harness can check only after the
+supplied broker has returned. `createTestAgentRunObservationService()` from
 `@opsrabbit/plugin-sdk/testing` provides deterministic `emit` and `fail` with
 the host's close semantics. The generated `agent-run` starter is an executable
 reference for the actions, the completion handler and an observation adapter.

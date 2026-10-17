@@ -1,6 +1,7 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import type { OpsRabbitWorkspaceContext, PluginManifest } from '@opsrabbit/plugin-sdk';
+import { canonicalPluginAgentRunJson, type OpsRabbitWorkspaceContext, type PluginManifest } from '@opsrabbit/plugin-sdk';
 import { assertValidPlugin, createAuthorizedTestContext, createTestAgentRunObservationService } from '@opsrabbit/plugin-sdk/testing';
 import { plugin, summarySchema } from '../src/index.js';
 import { observeRun } from '../src/observe.js';
@@ -9,8 +10,8 @@ const manifest = JSON.parse(readFileSync(new URL('../opsrabbit.plugin.json', imp
 const runId = '00000000-0000-4000-8000-000000000001';
 const brokers = () => ({
   start: vi.fn().mockResolvedValue({ runId }),
-  get: vi.fn().mockResolvedValue({ runId }),
-  cancel: vi.fn().mockResolvedValue({ runId }),
+  get: vi.fn().mockResolvedValue({ runId, bindingId: 'summarize' }),
+  cancel: vi.fn().mockResolvedValue({ runId, bindingId: 'summarize' }),
 });
 const action = (id: string) => plugin.actions!.find((entry) => entry.id === id)!;
 
@@ -53,11 +54,15 @@ describe('{{id}} agent run', () => {
       await expect(action(id).run({ runId, text: 'x' }, createAuthorizedTestContext(manifest, { kind: 'action', id }))).rejects.toThrow('unavailable');
     const handler = plugin.agentRunCompletions![0]!;
     const context = { tenantId: 'tenant-a', signal: new AbortController().signal };
-    const delivery = (output: unknown) => ({
-      runId, tenantId: 'tenant-a', initiatingActorId: 'user-1', bindingId: 'summarize',
-      result: { kind: 'execution_v1' as const, request: {}, requestDigest: 'f'.repeat(64), output: output as never },
+    const request = { schemaVersion: '1', bindingId: 'summarize', instructions: 'Summarize.', inputs: { text: 'x' } };
+    const digest = createHash('sha256').update(canonicalPluginAgentRunJson(request)).digest('hex');
+    const delivery = (output: unknown, overrides: { bindingId?: string; requestDigest?: string } = {}) => ({
+      runId, tenantId: 'tenant-a', initiatingActorId: 'user-1', bindingId: overrides.bindingId ?? 'summarize',
+      result: { kind: 'execution_v1' as const, request, requestDigest: overrides.requestDigest ?? digest, output: output as never },
     });
     await expect(handler.handle(delivery({ summary: 'A fictional summary.' }), context)).resolves.toBeUndefined();
+    await expect(handler.handle(delivery({ summary: 'ok' }, { bindingId: 'other' }), context)).rejects.toThrow('Unexpected summary');
+    await expect(handler.handle(delivery({ summary: 'ok' }, { requestDigest: 'f'.repeat(64) }), context)).rejects.toThrow('Unexpected summary');
     await expect(handler.handle(delivery({ summary: '' }), context)).rejects.toThrow('Invalid summary');
     await expect(handler.handle(delivery({ summary: 'ok', injected: true }), context)).rejects.toThrow('Invalid summary');
   });

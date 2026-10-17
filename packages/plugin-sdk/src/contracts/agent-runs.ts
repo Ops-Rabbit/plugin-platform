@@ -36,9 +36,19 @@ export interface PluginAgentRunRequestV1 {
   readonly instructions?: string;
   readonly presetId?: string;
   readonly inputs: JsonValue;
-  /** Optional bounded output schema; see `assertPluginAgentRunOutputSchema`. */
+  /** Optional bounded output schema; see `validatePluginAgentRunOutputSchema`. */
   readonly outputSchema?: JsonValue;
 }
+
+/**
+ * Request as accepted by the host and returned by `parsePluginAgentRunRequestV1`.
+ * `instructions` is always resolved; when a preset was selected `presetId` is
+ * kept as provenance, so this is not itself a valid start request.
+ */
+export type PluginAgentRunAcceptedRequestV1 = Omit<
+  PluginAgentRunRequestV1,
+  "instructions"
+> & { readonly instructions: string };
 
 export type PluginAgentRunStatus =
   | "queued"

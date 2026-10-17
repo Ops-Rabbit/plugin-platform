@@ -40,7 +40,9 @@ credentials or provider-specific errors.
 
 `agent-run` binds start, get and cancel actions to a tenant-selected agent,
 starts a preset with JSON inputs and an output schema, validates untrusted
-completion output, and includes a native-workspace observation adapter.
+completion output, and includes a native-workspace observation adapter. The
+adapter is a reference only: the starter manifest declares no workspace, so add
+one with `agent.runs.observe` before the host provides observation.
 
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.

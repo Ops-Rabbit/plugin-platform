@@ -10,7 +10,10 @@ import type {
 } from "../contracts/contexts.js";
 import type { PluginStructuredClassificationService } from "../contracts/structured-classification.js";
 import type { DataInsightAuthorizationContext } from "../contracts/data-insight.js";
-import type { PluginAgentRunsServiceV1 } from "../contracts/agent-runs.js";
+import type {
+  PluginAgentRunSnapshotV1,
+  PluginAgentRunsServiceV1,
+} from "../contracts/agent-runs.js";
 import type { JsonValue } from "../contracts/manifest.js";
 import { parsePluginAgentRunRequestV1 } from "../validation/agent-runs.js";
 import type { PluginManifest } from "../contracts/manifest.js";
@@ -184,6 +187,23 @@ export function createAuthorizedTestContext(
   ) =>
     invocation.kind === "action" &&
     runBindings.some((binding) => binding[field] === invocation.id);
+  // The host scopes get and cancel to runs of the binding that owns the action.
+  // The harness cannot see that ownership before the call, so it rejects any
+  // returned snapshot whose binding does not own this action.
+  const ownedSnapshot = (
+    field: "getActionId" | "cancelActionId",
+    snapshot: PluginAgentRunSnapshotV1,
+  ): PluginAgentRunSnapshotV1 => {
+    if (
+      !runBindings.some(
+        (binding) =>
+          binding.id === snapshot?.bindingId &&
+          binding[field] === invocation.id,
+      )
+    )
+      throw new Error("Agent run is not authorized for this action's binding.");
+    return snapshot;
+  };
   const agentRuns: PluginAgentRunsServiceV1 | undefined =
     suppliedAgentRuns &&
     invocationDeclared &&
@@ -209,14 +229,20 @@ export function createAuthorizedTestContext(
               throw new Error(
                 "Agent run read is not authorized for this action.",
               );
-            return suppliedAgentRuns.get(input);
+            return ownedSnapshot(
+              "getActionId",
+              await suppliedAgentRuns.get(input),
+            );
           },
           cancel: async (input) => {
             if (!boundRuns("cancelActionId"))
               throw new Error(
                 "Agent run cancellation is not authorized for this action.",
               );
-            return suppliedAgentRuns.cancel(input);
+            return ownedSnapshot(
+              "cancelActionId",
+              await suppliedAgentRuns.cancel(input),
+            );
           },
         }
       : undefined;

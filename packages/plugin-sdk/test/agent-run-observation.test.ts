@@ -99,6 +99,33 @@ describe("agent run observation contract", () => {
     );
   });
 
+  it("accepts wide agent output and ordinary constructor/prototype keys", () => {
+    const output = {
+      items: Array(5_000).fill(1),
+      fields: Object.fromEntries(
+        Array.from({ length: 600 }, (_, index) => [`k${index}`, index]),
+      ),
+      code: { constructor: "Widget", prototype: "render" },
+    };
+    expect(
+      parsePluginAgentRunStateV1(
+        state({ ...succeeded, result: { ...succeeded.result, output } }),
+      ).snapshot.result?.output,
+    ).toEqual(output);
+    for (const unsafe of [
+      JSON.parse('{"__proto__":{"polluted":true}}'),
+      { deep: JSON.parse('{"__proto__":{}}') },
+    ])
+      expect(() =>
+        parsePluginAgentRunStateV1(
+          state({
+            ...succeeded,
+            result: { ...succeeded.result, output: unsafe },
+          }),
+        ),
+      ).toThrow(PluginValidationError);
+  });
+
   it("rejects inconsistent status, error, delivery and time combinations", () => {
     for (const snapshot of [
       { ...succeeded, errorCode: "EXECUTION_FAILED" },
@@ -189,5 +216,32 @@ describe("agent run observation fixture", () => {
     expect(() => fixture.emit(runId, { type: "progress" } as never)).toThrow(
       PluginValidationError,
     );
+  });
+
+  it("delivers nothing to an observation closed earlier in the same dispatch", () => {
+    const fixture = createTestAgentRunObservationService();
+    const second = { onEvent: vi.fn(), onError: vi.fn() };
+    const handles: { close(): void }[] = [];
+    fixture.service.observe(
+      { runId },
+      { onEvent: () => handles[0]?.close(), onError: vi.fn() },
+    );
+    handles.push(fixture.service.observe({ runId }, second));
+    fixture.emit(runId, { type: "connection", state: "live" });
+    expect(second.onEvent).not.toHaveBeenCalled();
+    expect(fixture.activeCount).toBe(1);
+  });
+
+  it("keeps observations of one observer on different runs independent", () => {
+    const fixture = createTestAgentRunObservationService();
+    const otherRunId = "00000000-0000-4000-8000-000000000002";
+    const shared = { onEvent: vi.fn(), onError: vi.fn() };
+    fixture.service.observe({ runId }, shared);
+    fixture.service.observe({ runId: otherRunId }, shared);
+    fixture.emit(runId, { type: "closed", reason: "settled" });
+    expect(fixture.activeCount).toBe(1);
+    fixture.emit(otherRunId, { type: "closed", reason: "settled" });
+    expect(fixture.activeCount).toBe(0);
+    expect(shared.onEvent).toHaveBeenCalledTimes(2);
   });
 });

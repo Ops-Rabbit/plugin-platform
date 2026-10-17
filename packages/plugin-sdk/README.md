@@ -266,3 +266,5 @@ Plugins can declare a versioned tenant-bound Inbound lifecycle handler. The stri
 ### Resource workspaces (next release)
 
 `PluginWorkspaceNavigation` supports Forms workspaces and standalone `plugin_workspace` specialists. `PluginResourceRecordsService` defines core-authorized SQL paging/counting/grouping and transaction-bound resource registration; `PluginResourceLifecycleDefinitionV1` defines atomic deletion under the shared retention framework. `PluginStructuredEnrichmentService` is optional, tenant-model-backed and bounded. These declarations require the coordinated supporting host release. See the platform's `docs/resource-workspaces-v1.md` and executable reference; no host-private imports are supported.
+
+SDK/CLI 0.30.0 adds declarative source Inbound business configuration for host-owned registration controls. Core owns the checkbox, grants and delivery; plugins declare bounded localized mapping/enrichment fields and tenant-admin read/write actions. Configuration uses revision/incarnation fences. See [the Inbound registration contract](../../docs/inbound-registration-v1.md).

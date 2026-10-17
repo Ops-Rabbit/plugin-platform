@@ -31,6 +31,118 @@ async function preparedPlugin(): Promise<string> {
 }
 
 describe("plugin directory validation", () => {
+  it("requires localized Inbound business configuration labels in every declared locale", async () => {
+    const target = await preparedPlugin();
+    try {
+      const file = join(target, "opsrabbit.plugin.json");
+      const manifest = JSON.parse(await readFile(file, "utf8"));
+      manifest.database = { migrationsPath: "./migrations/sql" };
+      manifest.localization = {
+        schemaVersion: "1",
+        defaultLocale: "en",
+        supportedLocales: ["en", "es"],
+        path: "./locales/messages",
+      };
+      manifest.capabilities = {
+        ...manifest.capabilities,
+        database: { mode: "plugin_schema" },
+        audit: { write: true },
+        localization: { schemaVersion: "1" },
+        inboundLifecycle: { schemaVersion: "1" },
+        resourceRecords: {
+          schemaVersion: "1",
+          kinds: {
+            incident: {
+              labelKey: "incident.title",
+              descriptionKey: "incident.description",
+              retention: {
+                defaultMode: "retain_indefinitely",
+                supportedModes: [
+                  "do_not_persist",
+                  "retain_for_days",
+                  "retain_indefinitely",
+                ],
+              },
+            },
+          },
+        },
+        actions: [
+          { id: "read-config", requiredRole: "admin", risk: "read" },
+          { id: "write-config", requiredRole: "admin", risk: "write" },
+        ],
+        inboundRegistration: {
+          schemaVersion: "1",
+          resourceKind: "incident",
+          sourceProviders: ["webhook"],
+          labelKey: "incident.save",
+          descriptionKey: "incident.description",
+          configuration: {
+            readActionId: "read-config",
+            writeActionId: "write-config",
+            fields: [
+              {
+                key: "mapping",
+                type: "json",
+                default: {},
+                labelKey: "incident.mapping",
+                descriptionKey: "incident.mapping.description",
+              },
+            ],
+          },
+        },
+      };
+      await mkdir(join(target, "migrations/sql"), { recursive: true });
+      await writeFile(
+        join(target, "migrations/sql/0001_fixture.sql"),
+        "CREATE TABLE example(id text);\n",
+      );
+      await mkdir(join(target, "migrations/sql/meta"), { recursive: true });
+      await writeFile(
+        join(target, "migrations/sql/meta/_journal.json"),
+        JSON.stringify({
+          version: "7",
+          dialect: "postgresql",
+          entries: [
+            {
+              idx: 0,
+              version: "7",
+              when: 1,
+              tag: "0001_fixture",
+              breakpoints: true,
+            },
+          ],
+        }),
+      );
+      await mkdir(join(target, "locales/messages"), { recursive: true });
+      const messages = {
+        "incident.title": "Incidents",
+        "incident.save": "Save incidents",
+        "incident.description": "Registration",
+        "incident.mapping": "Mapping",
+        "incident.mapping.description": "Business field mapping",
+      };
+      for (const locale of ["en", "es"])
+        await writeFile(
+          join(target, `locales/messages/${locale}.json`),
+          JSON.stringify(messages),
+        );
+      await writeFile(file, JSON.stringify(manifest));
+      expect((await validatePluginDirectory(target)).issues).toEqual([]);
+      await writeFile(
+        join(target, "locales/messages/es.json"),
+        JSON.stringify({
+          ...messages,
+          "incident.mapping.description": undefined,
+        }),
+      );
+      expect((await validatePluginDirectory(target)).issues).toContainEqual(
+        expect.objectContaining({ code: "missing-key" }),
+      );
+    } finally {
+      await rm(target, { recursive: true, force: true });
+    }
+  });
+
   it("validates required localization bundles", async () => {
     const parent = await mkdtemp(join(tmpdir(), "opsrabbit-localization-"));
     const target = join(parent, "policy");

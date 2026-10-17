@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.30.0 - 2026-10-17
+
+- Declare localized Inbound business configuration without delegating host checkbox/grant ownership to plugins. Validate referenced tenant-admin read/write actions, supported providers, resource kinds and reserved core controls.
+- Add bounded configuration schemas and optimistic binding revision/incarnation fences, source incarnation catalog metadata, CLI localization checks, an executable reference and packed clean-consumer verification.
+
 ## 0.29.0 - 2026-10-16
 
 - Add standalone specialist workspaces without Forms starter/entitlement requirements.

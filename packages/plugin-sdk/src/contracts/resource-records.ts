@@ -100,9 +100,14 @@ export interface PluginSourceInboundBindingV1 {
   readonly inboundId: string;
   readonly kind: string;
   readonly enabled: boolean;
+  /** Optional optimistic concurrency check; zero means no prior binding. */
+  readonly expectedRevision?: number;
+  /** Pins configuration to the saved source instance, including delete/recreate races. */
+  readonly expectedIncarnationId?: string;
 }
 export interface PluginSourceInboundV1 {
   readonly id: string;
+  readonly incarnationId: string;
   readonly name: string;
   readonly providerId: string;
   readonly binding?: {

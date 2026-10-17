@@ -224,6 +224,7 @@
             "receipt",
             "search",
             "shield_check",
+            "siren",
             "variable",
             "waves"
           ]
@@ -706,8 +707,7 @@
           "$ref": "#/$defs/messageKey"
         },
         "icon": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/navigation/properties/icon"
         },
         "order": {
           "type": "integer"

@@ -46,6 +46,7 @@ export const PLUGIN_NAVIGATION_ICONS = [
   "receipt",
   "search",
   "shield_check",
+  "siren",
   "variable",
   "waves",
 ] as const;

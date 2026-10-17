@@ -46,3 +46,7 @@ version, upgrade the host validator and navigation projection to that version,
 then release plugins that declare the field. Older validators reject the new
 field; a local source checkout is not a published release. Set the dependent
 plugin's minimum host version to the release that implements this contract.
+
+## Incident icon
+
+SDK 0.31.1 adds `navigation.icon: "siren"` (also supported by `adminWorkspace.icon` and icon-setting options). The host must implement that icon before a plugin selects it; declaring an icon changes presentation only and grants no permissions.

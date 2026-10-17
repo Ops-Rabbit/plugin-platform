@@ -1011,3 +1011,7 @@ Read [the normative contract](resource-workspaces-v1.md) and run the executable 
 ## Host-owned Inbound registration (SDK 0.30.0)
 
 Teach the ownership boundary before adding configuration: OpsRabbit owns Inbound screens, enablement, output grants, tenant authorization and delivery/lifecycle enforcement. Plugins declare resource kinds and optional localized business fields, never permission or enablement controls. Use tenant-admin configuration actions, immutable mapping revisions, and both `expectedRevision` and `expectedIncarnationId` when binding configuration. Preserve the host's live enabled state; core rejects attempts to change it through these actions. See [Inbound registration v1](inbound-registration-v1.md) and its executable reference. The packed outside-workspace consumer verifies this ordering as part of `pnpm starters:verify`.
+
+### Distinct navigation icons
+
+Choose an icon from the published SDK icon enum and avoid reusing the icons of other installed navigation items. SDK 0.31.1 adds `siren` for operational incidents. Use it only with a host that renders that key; menu placement and icons never grant workspace access.

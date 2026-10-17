@@ -1,0 +1,7 @@
+# Siren navigation icon
+
+Add `siren` to the shared public menu-icon contract and JSON Schema so Incident Register can use a distinct operational icon. Runtime validation already consumes this shared enum. Existing icons, authorization, storage and lifecycle behavior are unchanged. The host must map the new key to a reusable themed SVG; the plugin must use the same glyph in its heading. Validate runtime/schema parity, generated consumer packaging, and host rendering. Release the public SDK before downstream consumption.
+
+The training course needs only a note about choosing a distinct icon and matching the host compatibility requirement. This is an additive presentation enum, not a new host service. Existing reference starters remain compatible.
+
+Verification: full `pnpm quality` passes (575 SDK tests, 46 CLI tests, coverage, builds, packed-package validation, and all generated starters outside the workspace). A subsequent explicit schema/runtime test exposed the existing admin-workspace schema's unrestricted icon string; that schema now references the shared navigation icon enum. Both valid siren and rejected case/unknown names are covered for navigation and admin workspaces. Final focused parity checks pass (50 tests), formatting and repacked inventory verification pass. SDK contract and CLI constants line coverage are 100%. Final local autoreview is scoped-clean; pinned strict full Semgrep passes (255 rules / 220 files / zero findings / exit 0). Training-course guidance is updated. No access, lifecycle or host-service semantics changed.

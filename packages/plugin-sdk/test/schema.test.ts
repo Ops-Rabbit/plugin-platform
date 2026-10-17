@@ -225,6 +225,23 @@ describe("published manifest schema", () => {
     };
     expect(validateSchema(quotationNavigation)).toBe(true);
     expect(validateManifest(quotationNavigation).ok).toBe(true);
+    for (const icon of ["siren", "Siren", "unknown_icon"]) {
+      const expected = icon === "siren";
+      for (const candidate of [
+        {
+          ...quotationNavigation,
+          navigation: { ...quotationNavigation.navigation, icon },
+        },
+        {
+          ...interaction,
+          adminWorkspace: { ...interaction.adminWorkspace, icon },
+        },
+      ]) {
+        expect(validateSchema(candidate), icon).toBe(expected);
+        expect(validateManifest(candidate).ok, icon).toBe(expected);
+      }
+    }
+
     const nativeWorkspace = {
       ...quotationNavigation,
       capabilities: {

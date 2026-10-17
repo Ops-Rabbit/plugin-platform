@@ -119,3 +119,5 @@ Plugins can declare a versioned tenant-bound Inbound lifecycle handler. The stri
 The [resource workspace contract](docs/resource-workspaces-v1.md) covers standalone specialist navigation, core-authorized queries over plugin-owned SQL, shared resource grants/retention and optional tenant-model enrichment. Public types and references do not implement host enforcement. Consume the published coordinated release before deploying a dependent plugin; unsupported hosts fail closed. Ordinary Forms modules continue to use the Forms engine.
 
 SDK/CLI 0.30.0 adds declarative source Inbound business configuration for host-owned registration controls. Core owns the checkbox, grants and delivery; plugins declare bounded localized mapping/enrichment fields and tenant-admin read/write actions. Configuration uses revision/incarnation fences. See [the Inbound registration contract](docs/inbound-registration-v1.md).
+
+SDK 0.31.1 adds the `siren` navigation icon for operational incidents. Hosts must render this icon key before plugins select it; see [navigation compatibility](docs/plugin-navigation-sections-v1.md).

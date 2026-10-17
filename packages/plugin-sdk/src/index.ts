@@ -30,3 +30,6 @@ export * from "./validation/resource-records.js";
 
 export * from "./contracts/structured-enrichment.js";
 export * from "./validation/structured-enrichment.js";
+
+export * from "./contracts/inbound-registration.js";
+export * from "./validation/inbound-registration.js";

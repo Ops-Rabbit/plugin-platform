@@ -149,7 +149,16 @@ export function validatePluginResourceCapability(
 
 export const PLUGIN_SOURCE_INBOUND_BINDING_SCHEMA = schema(
   "plugin-source-inbound-binding",
-  object({ inboundId: id, kind: key, enabled: { type: "boolean" } }),
+  object(
+    {
+      inboundId: id,
+      kind: key,
+      enabled: { type: "boolean" },
+      expectedRevision: { type: "integer", minimum: 0, maximum: 2147483647 },
+      expectedIncarnationId: id,
+    },
+    ["inboundId", "kind", "enabled"],
+  ),
 );
 export function validatePluginSourceInboundBinding(
   value: unknown,

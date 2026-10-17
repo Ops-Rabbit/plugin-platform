@@ -1002,3 +1002,7 @@ Send parameterized candidate SQL through the resource query service. Core must a
 Register retention in the shared framework, default to indefinite retention, block unsafe deletion under holds/active work, delete every derived store and audit atomically. Optional enrichment uses the tenant's approved model; identity and grant fields are forbidden. Recheck revision, manual-title and disable/delete races before applying a result.
 
 Read [the normative contract](resource-workspaces-v1.md) and run the executable packed-consumer reference. This lesson describes the next public contract, not proof that a host/incident plugin is implemented or released. The thirteen generated starter IDs remain unchanged; a standalone reference demonstrates this additional contract.
+
+## Host-owned Inbound registration (SDK 0.30.0)
+
+Teach the ownership boundary before adding configuration: OpsRabbit owns Inbound screens, enablement, output grants, tenant authorization and delivery/lifecycle enforcement. Plugins declare resource kinds and optional localized business fields, never permission or enablement controls. Use tenant-admin configuration actions, immutable mapping revisions, and both `expectedRevision` and `expectedIncarnationId` when binding configuration. Preserve the host's live enabled state; core rejects attempts to change it through these actions. See [Inbound registration v1](inbound-registration-v1.md) and its executable reference. The packed outside-workspace consumer verifies this ordering as part of `pnpm starters:verify`.

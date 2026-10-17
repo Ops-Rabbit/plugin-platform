@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
+const require = createRequire(import.meta.url);
 import {
   validateManifest,
   validateRegistration,
@@ -189,4 +192,98 @@ import.meta.resolve(
 import.meta.resolve("@opsrabbit/plugin-sdk/structured-enrichment-input-schema");
 import.meta.resolve(
   "@opsrabbit/plugin-sdk/structured-enrichment-result-schema",
+);
+
+const { saveInboundBusinessConfiguration } = await import(
+  "./inbound-registration.mjs"
+);
+const {
+  validatePluginInboundRegistration,
+  PLUGIN_INBOUND_REGISTRATION_SCHEMA,
+} = await import("@opsrabbit/plugin-sdk");
+const registrationCapability = {
+  schemaVersion: "1",
+  resourceKind: "incident",
+  sourceProviders: ["webhook"],
+  labelKey: "incident.save",
+  descriptionKey: "incident.description",
+  configuration: {
+    readActionId: "read-config",
+    writeActionId: "write-config",
+    fields: [
+      {
+        key: "mapping",
+        labelKey: "incident.mapping",
+        type: "json",
+        default: {},
+      },
+    ],
+  },
+};
+assert.deepEqual(validatePluginInboundRegistration(registrationCapability), []);
+assert.deepEqual(
+  JSON.parse(
+    readFileSync(
+      require.resolve(
+        "@opsrabbit/plugin-sdk/plugin-inbound-registration-schema",
+      ),
+      "utf8",
+    ),
+  ),
+  PLUGIN_INBOUND_REGISTRATION_SCHEMA,
+);
+let savedConfiguration = false;
+const inboundContext = {
+  tenantId: "tenant-a",
+  signal: new globalThis.AbortController().signal,
+  resourceRecords: {
+    sourceInbounds: async () => [
+      {
+        id: "source-1",
+        incarnationId: "instance-1",
+        binding: { enabled: false, revision: 0 },
+      },
+    ],
+    transaction: async (input, run) => {
+      assert.equal(input.purpose, "configuration");
+      return run({
+        database: {},
+        bindSourceInbound: async (binding) => {
+          assert.deepEqual(binding, {
+            inboundId: "source-1",
+            kind: "incident",
+            enabled: false,
+            expectedRevision: 0,
+            expectedIncarnationId: "instance-1",
+          });
+          return { revision: 1 };
+        },
+      });
+    },
+  },
+};
+const inboundInput = {
+  inboundId: "source-1",
+  incarnationId: "instance-1",
+  revision: 0,
+  values: { mapping: {} },
+};
+await saveInboundBusinessConfiguration(
+  inboundContext,
+  registrationCapability,
+  inboundInput,
+  async (_database, saved) => {
+    assert.equal(saved.revision, 1);
+    savedConfiguration = true;
+  },
+);
+assert.equal(savedConfiguration, true);
+await assert.rejects(
+  saveInboundBusinessConfiguration(
+    inboundContext,
+    registrationCapability,
+    { ...inboundInput, incarnationId: "recreated" },
+    async () => {},
+  ),
+  /unavailable/,
 );

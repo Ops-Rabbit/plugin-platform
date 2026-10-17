@@ -40,6 +40,10 @@ try {
     join(target, "reference.mjs"),
   );
   await copyFile(
+    join(root, "packages/plugin-sdk/reference/inbound-registration.mjs"),
+    join(target, "inbound-registration.mjs"),
+  );
+  await copyFile(
     join(root, "scripts/fixtures/resource-workspace-consumer.mjs"),
     join(target, "verify.mjs"),
   );

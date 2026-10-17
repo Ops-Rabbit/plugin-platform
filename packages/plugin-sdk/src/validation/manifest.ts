@@ -1,3 +1,4 @@
+import { validatePluginInboundRegistration } from "./inbound-registration.js";
 import { validatePluginResourceCapability } from "./resource-records.js";
 import {
   PLUGIN_PERMISSIONS,
@@ -1212,6 +1213,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "structuredEnrichment",
     "resourceRecords",
     "inboundLifecycle",
+    "inboundRegistration",
     "knowledgeEmailProcessor",
     "chatTurnAdmission",
     "chatComposerStatus",
@@ -1853,6 +1855,16 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
         );
     },
   );
+  if (capabilities.inboundRegistration !== undefined)
+    issues.push(
+      ...validatePluginInboundRegistration(
+        capabilities.inboundRegistration,
+        capabilities,
+      ).map((entry) => ({
+        ...entry,
+        path: `$.capabilities.inboundRegistration${entry.path.slice(1)}`,
+      })),
+    );
   const surfaceCount = [
     capabilities.tools,
     capabilities.actions,

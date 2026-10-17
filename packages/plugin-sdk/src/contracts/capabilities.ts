@@ -1,5 +1,7 @@
+import type { PluginAgentRunsCapabilityV1 } from "./agent-runs.js";
 import type { PluginInboundRegistrationCapabilityV1 } from "./inbound-registration.js";
 import type { PluginResourceRecordsCapabilityV1 } from "./resource-records.js";
+
 export const PLUGIN_RISKS = [
   "read",
   "write",
@@ -111,6 +113,7 @@ export interface PluginKnowledgeCapability {
 }
 
 export interface PluginDeclaredCapabilities {
+  agentRuns?: PluginAgentRunsCapabilityV1;
   inboundRegistration?: PluginInboundRegistrationCapabilityV1;
   resourceRecords?: PluginResourceRecordsCapabilityV1;
   dataInsightProvider?: boolean;

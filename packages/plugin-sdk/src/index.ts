@@ -1,3 +1,5 @@
+export * from "./contracts/agent-runs.js";
+export * from "./validation/agent-runs.js";
 export * from "./contracts/capabilities.js";
 export * from "./contracts/channel-approvals.js";
 export * from "./contracts/channel-messaging.js";

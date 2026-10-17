@@ -1,0 +1,15 @@
+import type { OpsRabbitWorkspaceContext, PluginAgentRunObserverV1 } from '@opsrabbit/plugin-sdk';
+
+/**
+ * Reference adapter for a native workspace. This starter's manifest declares no
+ * workspace, so the host provides no `context.agentRuns` until you add one (see
+ * the `native-workspace` starter) whose `frontend` declares `agent.runs.observe`
+ * and `plugin.actions.invoke`, lists "summarize" in `agentRunBindingIds`, and
+ * lists "get-summary" in `actionIds`.
+ */
+export function observeRun(context: OpsRabbitWorkspaceContext, runId: string, observer: PluginAgentRunObserverV1) {
+  if (!context.agentRuns) throw new Error('Agent run observation is unavailable.');
+  const observation = context.agentRuns.observe({ runId }, observer);
+  context.lifecycle.onCleanup(() => observation.close());
+  return observation;
+}

@@ -13,6 +13,7 @@ const SECTIONS = [
   "routes",
   "ingressRoutes",
   "widgets",
+  "agentRunCompletions",
   "resourceLifecycle",
   "inboundLifecycle",
   "knowledgeEmailProcessor",
@@ -136,6 +137,25 @@ export function validateRegistration(
   );
 
   validateNamed("tools", manifest.capabilities.tools, definition.tools, issues);
+  validateNamed(
+    "agentRunCompletions",
+    (manifest.capabilities.agentRuns?.bindings ?? []).map((binding) => ({
+      id: binding.completionHandlerId,
+    })),
+    definition.agentRunCompletions,
+    issues,
+  );
+  for (const [index, completion] of (
+    definition.agentRunCompletions ?? []
+  ).entries())
+    if (record(completion) && typeof completion.handle !== "function")
+      issues.push(
+        issue(
+          `$.agentRunCompletions[${index}].handle`,
+          "invalid-registration",
+          "A completion handler requires a handle function.",
+        ),
+      );
   validateNamed(
     "actions",
     manifest.capabilities.actions,

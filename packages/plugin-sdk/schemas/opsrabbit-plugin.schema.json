@@ -324,7 +324,7 @@
         },
         "capabilities": {
           "type": "array",
-          "maxItems": 9,
+          "maxItems": 10,
           "uniqueItems": true,
           "items": {
             "enum": [
@@ -335,6 +335,7 @@
               "forms.workflow",
               "forms.actions",
               "plugin.actions.invoke",
+              "agent.runs.observe",
               "plugin.resources.manage",
               "plugin.investigations.open"
             ]
@@ -347,6 +348,78 @@
           "items": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+          }
+        },
+        "agentRunBindingIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/agentRunId"
+          }
+        }
+      }
+    },
+    "agentRunId": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$"
+    },
+    "agentRunBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "agentSettingKeys",
+        "startActionId",
+        "getActionId",
+        "cancelActionId",
+        "completionHandlerId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/agentRunId"
+        },
+        "agentSettingKeys": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/settingKey"
+          }
+        },
+        "startActionId": {
+          "$ref": "#/$defs/agentRunId"
+        },
+        "getActionId": {
+          "$ref": "#/$defs/agentRunId"
+        },
+        "cancelActionId": {
+          "$ref": "#/$defs/agentRunId"
+        },
+        "completionHandlerId": {
+          "$ref": "#/$defs/agentRunId"
+        },
+        "presets": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "instructions"],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/agentRunId"
+              },
+              "instructions": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 12288,
+                "pattern": "\\S"
+              }
+            }
           }
         }
       }
@@ -1081,6 +1154,24 @@
               "required": ["scheduledJobIds"]
             }
           ]
+        },
+        "agentRuns": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "bindings"],
+          "properties": {
+            "schemaVersion": {
+              "const": "1"
+            },
+            "bindings": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 16,
+              "items": {
+                "$ref": "#/$defs/agentRunBinding"
+              }
+            }
+          }
         },
         "inboundLifecycle": {
           "type": "object",
@@ -3224,6 +3315,7 @@
                 "items": {
                   "enum": [
                     "plugin.actions.invoke",
+                    "agent.runs.observe",
                     "plugin.resources.manage",
                     "plugin.investigations.open"
                   ]
@@ -3324,6 +3416,74 @@
             "properties": {
               "resourceRecords": {}
             }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "frontend": {
+            "type": "object",
+            "properties": {
+              "capabilities": {
+                "type": "array",
+                "contains": {
+                  "const": "agent.runs.observe"
+                }
+              }
+            },
+            "required": ["capabilities"]
+          }
+        },
+        "required": ["frontend"]
+      },
+      "then": {
+        "properties": {
+          "frontend": {
+            "type": "object",
+            "properties": {
+              "agentRunBindingIds": {},
+              "actionIds": {}
+            },
+            "required": ["agentRunBindingIds", "actionIds"]
+          },
+          "capabilities": {
+            "type": "object",
+            "properties": {
+              "agentRuns": {}
+            },
+            "required": ["agentRuns"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "frontend": {
+            "type": "object",
+            "properties": {
+              "agentRunBindingIds": {}
+            },
+            "required": ["agentRunBindingIds"]
+          }
+        },
+        "required": ["frontend"]
+      },
+      "then": {
+        "properties": {
+          "frontend": {
+            "type": "object",
+            "properties": {
+              "capabilities": {
+                "type": "array",
+                "contains": {
+                  "const": "agent.runs.observe"
+                }
+              }
+            },
+            "required": ["capabilities"]
           }
         }
       }

@@ -8,6 +8,7 @@ import {
   type PluginDeclaredCapabilities,
 } from "../contracts/capabilities.js";
 import type { ValidationIssue } from "../contracts/errors.js";
+import { validatePluginAgentRunBindingV1 } from "./agent-runs.js";
 import {
   PLUGIN_API_VERSION,
   PLUGIN_NAVIGATION_ICONS,
@@ -166,6 +167,7 @@ export function validateManifest(
   validateAdminWorkspace(input.adminWorkspace, input.capabilities, issues);
   validateLocalization(input.localization, input.capabilities, issues);
   validateCapabilities(input.capabilities, issues);
+  validateAgentRuns(input.capabilities, input.settings, issues);
   validateConnectionSelectors(input.capabilities, input.settings, issues);
   validateInteractionDependencies(input.capabilities, issues);
   if (record(input.capabilities) && Array.isArray(input.capabilities.actions)) {
@@ -335,6 +337,7 @@ function validateFrontend(
       "mountIsolation",
       "capabilities",
       "actionIds",
+      "agentRunBindingIds",
     ]),
     "$.frontend",
     issues,
@@ -474,6 +477,7 @@ function validateFrontend(
         ),
       );
   }
+  validateFrontendAgentRunBindings(value, capabilitiesValue, issues);
   const standalone =
     record(navigationValue) && navigationValue.kind === "plugin_workspace";
   if (
@@ -513,6 +517,179 @@ function validateFrontend(
         "A native workspace requires a Forms starter pack owned by its navigation module.",
       ),
     );
+}
+
+function agentRunBindingRecords(
+  capabilitiesValue: unknown,
+): Record<string, unknown>[] {
+  return record(capabilitiesValue) &&
+    record(capabilitiesValue.agentRuns) &&
+    Array.isArray(capabilitiesValue.agentRuns.bindings)
+    ? capabilitiesValue.agentRuns.bindings.filter(record)
+    : [];
+}
+
+function validateFrontendAgentRunBindings(
+  value: Record<string, unknown>,
+  capabilitiesValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  const path = "$.frontend.agentRunBindingIds";
+  const observes =
+    Array.isArray(value.capabilities) &&
+    value.capabilities.includes("agent.runs.observe");
+  const ids = value.agentRunBindingIds;
+  if (ids !== undefined && !Array.isArray(ids)) {
+    issues.push(issue(path, "type", "agentRunBindingIds must be an array."));
+    return;
+  }
+  if (observes !== (Array.isArray(ids) && ids.length > 0)) {
+    issues.push(
+      issue(
+        path,
+        "invalid",
+        "Declare non-empty agentRunBindingIds exactly when agent.runs.observe is requested.",
+      ),
+    );
+  }
+  if (!Array.isArray(ids)) return;
+  if (ids.length > 16)
+    issues.push(issue(path, "invalid", "Observe at most 16 bindings."));
+  uniqueStrings(ids, path, issues, ID);
+  const bindings = agentRunBindingRecords(capabilitiesValue);
+  for (const [index, id] of ids.entries()) {
+    const binding = bindings.find((entry) => entry.id === id);
+    if (
+      !binding ||
+      !Array.isArray(value.actionIds) ||
+      !value.actionIds.includes(binding.getActionId)
+    )
+      issues.push(
+        issue(
+          `${path}[${index}]`,
+          "invalid",
+          "Observe only declared bindings whose get action is in frontend actionIds.",
+        ),
+      );
+  }
+}
+
+function validateAgentRuns(
+  capabilitiesValue: unknown,
+  settingsValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  if (!record(capabilitiesValue) || capabilitiesValue.agentRuns === undefined)
+    return;
+  const capability = capabilitiesValue.agentRuns;
+  const path = "$.capabilities.agentRuns";
+  if (!record(capability)) {
+    issues.push(
+      issue(path, "type", "Agent runs capability must be an object."),
+    );
+    return;
+  }
+  unknownKeys(capability, new Set(["schemaVersion", "bindings"]), path, issues);
+  if (capability.schemaVersion !== "1")
+    issues.push(
+      issue(
+        `${path}.schemaVersion`,
+        "unsupported",
+        "Agent runs schema version must be 1.",
+      ),
+    );
+  if (
+    !Array.isArray(capability.bindings) ||
+    capability.bindings.length < 1 ||
+    capability.bindings.length > 16
+  ) {
+    issues.push(
+      issue(
+        `${path}.bindings`,
+        "invalid",
+        "Declare 1 to 16 agent run bindings.",
+      ),
+    );
+    return;
+  }
+  const actions = Array.isArray(capabilitiesValue.actions)
+    ? capabilitiesValue.actions.filter(record)
+    : [];
+  const settings = Array.isArray(settingsValue)
+    ? settingsValue.filter(record)
+    : [];
+  const ids = new Set<string>();
+  const boundActions = new Set<string>();
+  const handlers = new Set<string>();
+  for (const [index, binding] of capability.bindings.entries()) {
+    const at = `${path}.bindings[${index}]`;
+    const bindingIssues = validatePluginAgentRunBindingV1(binding, at);
+    issues.push(...bindingIssues);
+    if (!record(binding)) continue;
+    if (typeof binding.id === "string") {
+      if (ids.has(binding.id))
+        issues.push(
+          issue(`${at}.id`, "duplicate", "Binding ids must be unique."),
+        );
+      ids.add(binding.id);
+    }
+    if (Array.isArray(binding.agentSettingKeys))
+      for (const [keyIndex, key] of binding.agentSettingKeys.entries())
+        if (
+          !settings.some(
+            (setting) =>
+              setting.key === key &&
+              setting.type === "string" &&
+              setting.required === true &&
+              setting.default === undefined,
+          )
+        )
+          issues.push(
+            issue(
+              `${at}.agentSettingKeys[${keyIndex}]`,
+              "invalid",
+              "Reference a required string setting without a default; an admin chooses the agent.",
+            ),
+          );
+    for (const [field, risk] of [
+      ["startActionId", "external"],
+      ["getActionId", "read"],
+      ["cancelActionId", "write"],
+    ] as const) {
+      const id = binding[field];
+      if (typeof id !== "string") continue;
+      if (
+        boundActions.has(id) ||
+        !actions.some(
+          (action) =>
+            action.id === id &&
+            action.risk === risk &&
+            (action.requiredRole === "operator" ||
+              action.requiredRole === "admin") &&
+            action.deploymentAdminOnly !== true,
+        )
+      )
+        issues.push(
+          issue(
+            `${at}.${field}`,
+            "invalid",
+            `Reference a unique tenant action with ${risk} risk and operator or admin role.`,
+          ),
+        );
+      else boundActions.add(id);
+    }
+    if (typeof binding.completionHandlerId === "string") {
+      if (handlers.has(binding.completionHandlerId))
+        issues.push(
+          issue(
+            `${at}.completionHandlerId`,
+            "duplicate",
+            "Completion handler ids must be unique.",
+          ),
+        );
+      handlers.add(binding.completionHandlerId);
+    }
+  }
 }
 
 function validateFrontendFiles(
@@ -1210,6 +1387,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "knowledge",
     "connections",
     "structuredClassification",
+    "agentRuns",
     "structuredEnrichment",
     "resourceRecords",
     "inboundLifecycle",

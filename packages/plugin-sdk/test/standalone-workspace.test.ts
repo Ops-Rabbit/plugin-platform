@@ -92,6 +92,44 @@ describe("standalone workspace navigation", () => {
     expect(validateManifest(input).ok).toBe(true);
     expect(validateSchema(input)).toBe(true);
   });
+  it("observes agent runs from a standalone workspace", () => {
+    const binding = {
+      id: "summarize",
+      agentSettingKeys: ["agent_name"],
+      startActionId: "start_run",
+      getActionId: "get_run",
+      cancelActionId: "cancel_run",
+      completionHandlerId: "receive_run",
+    };
+    const input = {
+      ...manifest,
+      settings: [
+        { key: "agent_name", label: "Agent", type: "string", required: true },
+      ],
+      frontend: {
+        ...manifest.frontend,
+        capabilities: ["plugin.actions.invoke", "agent.runs.observe"],
+        actionIds: ["list_records", "get_run"],
+        agentRunBindingIds: ["summarize"],
+      },
+      capabilities: {
+        actions: [
+          ...manifest.capabilities.actions,
+          { id: "start_run", risk: "external", requiredRole: "operator" },
+          { id: "get_run", risk: "read", requiredRole: "operator" },
+          { id: "cancel_run", risk: "write", requiredRole: "operator" },
+        ],
+        agentRuns: { schemaVersion: "1", bindings: [binding] },
+      },
+    };
+    expect(validateManifest(input).issues).toEqual([]);
+    expect(validateSchema(input)).toBe(true);
+    const unlisted = {
+      ...input,
+      frontend: { ...input.frontend, actionIds: ["list_records"] },
+    };
+    expect(validateManifest(unlisted).ok).toBe(false);
+  });
   it.each([
     { frontend: undefined },
     {

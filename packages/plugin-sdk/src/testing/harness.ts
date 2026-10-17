@@ -10,7 +10,12 @@ import type {
 } from "../contracts/contexts.js";
 import type { PluginStructuredClassificationService } from "../contracts/structured-classification.js";
 import type { DataInsightAuthorizationContext } from "../contracts/data-insight.js";
+import type {
+  PluginAgentRunSnapshotV1,
+  PluginAgentRunsServiceV1,
+} from "../contracts/agent-runs.js";
 import type { JsonValue } from "../contracts/manifest.js";
+import { parsePluginAgentRunRequestV1 } from "../validation/agent-runs.js";
 import type { PluginManifest } from "../contracts/manifest.js";
 
 export interface TestLogEntry {
@@ -34,6 +39,7 @@ export function createTestContext(
     forms?: PluginFormsService;
     host?: Partial<PluginPersonaHostService>;
     structuredClassification?: PluginStructuredClassificationService;
+    agentRuns?: PluginAgentRunsServiceV1;
     dataInsightAuthorization?: DataInsightAuthorizationContext;
     settings?: Readonly<Record<string, JsonValue>>;
   } = {},
@@ -61,6 +67,9 @@ export function createTestContext(
     ...(options.structuredClassification === undefined
       ? {}
       : { structuredClassification: options.structuredClassification }),
+    ...(options.agentRuns === undefined
+      ? {}
+      : { agentRuns: options.agentRuns }),
     ...(options.dataInsightAuthorization === undefined
       ? {}
       : { dataInsightAuthorization: options.dataInsightAuthorization }),
@@ -86,6 +95,7 @@ export function createAuthorizedTestContext(
     connections: suppliedConnections,
     structuredClassification: suppliedStructuredClassification,
     host: suppliedHost,
+    agentRuns: suppliedAgentRuns,
     ...baseOptions
   } = options;
   const declaration = manifest.capabilities.knowledge;
@@ -171,8 +181,82 @@ export function createAuthorizedTestContext(
     classificationAllowed
       ? suppliedStructuredClassification
       : undefined;
+  const runBindings = manifest.capabilities.agentRuns?.bindings ?? [];
+  const boundRuns = (
+    field: "startActionId" | "getActionId" | "cancelActionId",
+  ) =>
+    invocation.kind === "action" &&
+    runBindings.some((binding) => binding[field] === invocation.id);
+  // The host scopes get and cancel to runs of the binding that owns the action.
+  // The harness cannot see that ownership before the call, so it rejects any
+  // returned snapshot whose binding does not own this action.
+  const ownedSnapshot = (
+    field: "getActionId" | "cancelActionId",
+    snapshot: PluginAgentRunSnapshotV1,
+  ): PluginAgentRunSnapshotV1 => {
+    // A missing run is reported by the broker throwing, not by an empty result.
+    if (
+      typeof snapshot !== "object" ||
+      snapshot === null ||
+      typeof snapshot.bindingId !== "string"
+    )
+      throw new Error(
+        "Agent run broker must resolve a snapshot with a bindingId.",
+      );
+    if (
+      !runBindings.some(
+        (binding) =>
+          binding.id === snapshot.bindingId && binding[field] === invocation.id,
+      )
+    )
+      throw new Error("Agent run is not authorized for this action's binding.");
+    return snapshot;
+  };
+  const agentRuns: PluginAgentRunsServiceV1 | undefined =
+    suppliedAgentRuns &&
+    invocationDeclared &&
+    (boundRuns("startActionId") ||
+      boundRuns("getActionId") ||
+      boundRuns("cancelActionId"))
+      ? {
+          start: async (input) => {
+            const binding = runBindings.find(
+              (entry) =>
+                entry.id === input.bindingId &&
+                entry.startActionId === invocation.id,
+            );
+            if (!binding)
+              throw new Error(
+                "Agent run binding is not authorized for this action.",
+              );
+            parsePluginAgentRunRequestV1(input, binding);
+            return suppliedAgentRuns.start(input);
+          },
+          get: async (input) => {
+            if (!boundRuns("getActionId"))
+              throw new Error(
+                "Agent run read is not authorized for this action.",
+              );
+            return ownedSnapshot(
+              "getActionId",
+              await suppliedAgentRuns.get(input),
+            );
+          },
+          cancel: async (input) => {
+            if (!boundRuns("cancelActionId"))
+              throw new Error(
+                "Agent run cancellation is not authorized for this action.",
+              );
+            return ownedSnapshot(
+              "cancelActionId",
+              await suppliedAgentRuns.cancel(input),
+            );
+          },
+        }
+      : undefined;
   return createTestContext({
     ...baseOptions,
+    ...(agentRuns === undefined ? {} : { agentRuns }),
     ...(suppliedHost &&
     invocationDeclared &&
     manifest.id === "data_insight_sql" &&

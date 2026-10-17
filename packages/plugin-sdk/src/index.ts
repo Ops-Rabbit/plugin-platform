@@ -23,3 +23,15 @@ export * from "./validation/manifest.js";
 export * from "./validation/knowledge-email-processor.js";
 export * from "./validation/registration.js";
 export * from "./validation/structured-classification.js";
+
+export * from "./contracts/inbound-lifecycle.js";
+export * from "./validation/inbound-lifecycle.js";
+
+export * from "./contracts/resource-records.js";
+export * from "./validation/resource-records.js";
+
+export * from "./contracts/structured-enrichment.js";
+export * from "./validation/structured-enrichment.js";
+
+export * from "./contracts/inbound-registration.js";
+export * from "./validation/inbound-registration.js";

@@ -1,3 +1,5 @@
+import type { PluginStructuredEnrichmentService } from "./structured-enrichment.js";
+import type { PluginResourceRecordsService } from "./resource-records.js";
 import type { JsonValue } from "./manifest.js";
 import type { PluginStructuredClassificationService } from "./structured-classification.js";
 import type { DataInsightAuthorizationContext } from "./data-insight.js";
@@ -28,6 +30,9 @@ export interface PluginPersonaHostService {
 }
 
 export interface PluginInvocationContext {
+  /** Available only for manifest-declared resource kinds and host-authorized invocations. */
+  readonly resourceRecords?: PluginResourceRecordsService;
+  readonly structuredEnrichment?: PluginStructuredEnrichmentService;
   readonly tenantId: string;
   readonly actor: PluginActor;
   readonly signal: AbortSignal;

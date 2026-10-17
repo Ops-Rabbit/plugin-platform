@@ -1,6 +1,6 @@
 # Plugin agent runs v1
 
-Introduced in SDK 0.28.0. A plugin can ask a compatible host to run one of the
+Introduced in SDK 0.31.0. A plugin can ask a compatible host to run one of the
 tenant's own agents on plugin-supplied instructions and JSON inputs, follow the
 run, cancel it, and receive its result. The manifest declaration requests access;
 it grants nothing. Runtime availability requires a host that implements this

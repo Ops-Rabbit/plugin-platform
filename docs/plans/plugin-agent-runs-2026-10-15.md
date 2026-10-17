@@ -2,7 +2,7 @@
 
 ## Scope
 
-Add the optional `agentRuns` capability to the public SDK 0.28.0: manifest
+Add the optional `agentRuns` capability to the public SDK 0.31.0: manifest
 permission bindings, typed start/get/cancel brokers, host-attested completion
 handlers, and the capability-gated `agent.runs.observe` browser service. Any
 plugin may declare it; nothing is specific to one plugin or domain.
@@ -56,7 +56,7 @@ retention, deletion, audit and logging limits for run content; see
 
 ## Rollout
 
-Release SDK and CLI 0.28.0 together, then pin the published version in a host
+Release SDK and CLI 0.31.0 together, then pin the published version in a host
 that implements the contract. Plugins must check `context.agentRuns` before use.
 
 ## Verification

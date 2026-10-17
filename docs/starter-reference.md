@@ -42,3 +42,9 @@ checks, a pinned GitHub Actions workflow, README, `AGENTS.md`, manifest, and
 deterministic package command. The platform CI regenerates all fourteen from the
 packed npm candidates, installs them outside the workspace, and runs every
 documented quality command before either public package can be released.
+
+The next-release [resource workspace reference](../packages/plugin-sdk/reference/resource-workspace.mjs) demonstrates specialist resource registration/query/deletion/enrichment boundaries without adding a generated starter ID. Its clean consumer installs the packed SDK outside this workspace. Read the [host responsibilities](resource-workspaces-v1.md) before implementing a dependent plugin.
+
+## Inbound registration configuration reference
+
+SDK 0.30.0 provides `packages/plugin-sdk/reference/inbound-registration.mjs` alongside the resource-workspace reference. Use it when adding business mapping/profile configuration to host-owned Inbound controls. Core owns enablement and grants; configuration actions preserve enablement and bind immutable configuration using revision and incarnation checks. This is a reference rather than a new generated starter, so the generated-starter inventory is unchanged. The clean resource-workspace consumer executes this reference against the packed SDK.

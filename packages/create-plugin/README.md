@@ -126,3 +126,5 @@ approval gates Knowledge publication, and a read tool reranks competing hits
 before exact-family expansion. The adapter is an executable teaching seam, not
 production IMAP ingestion; replace it with a maintained protocol library while
 preserving its limits and cancellation. Credentials are never stored or logged.
+
+SDK/CLI 0.30.0 adds declarative source Inbound business configuration for host-owned registration controls. Core owns the checkbox, grants and delivery; plugins declare bounded localized mapping/enrichment fields and tenant-admin read/write actions. Configuration uses revision/incarnation fences. See [the Inbound registration contract](../../docs/inbound-registration-v1.md).

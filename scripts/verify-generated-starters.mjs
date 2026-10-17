@@ -34,6 +34,14 @@ execFileSync("node", ["scripts/verify-channel-approval-consumer.mjs"], {
   cwd: root,
   stdio: "inherit",
 });
+execFileSync("node", ["scripts/verify-resource-workspace-consumer.mjs"], {
+  cwd: root,
+  stdio: "inherit",
+});
+execFileSync("node", ["scripts/verify-inbound-lifecycle-consumer.mjs"], {
+  cwd: root,
+  stdio: "inherit",
+});
 execFileSync("node", ["scripts/verify-channel-messaging-consumer.mjs"], {
   cwd: root,
   stdio: "inherit",

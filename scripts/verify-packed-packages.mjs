@@ -61,6 +61,18 @@ try {
         "schemas/opsrabbit-channel-approval-decision.schema.json",
         "schemas/opsrabbit-channel-approval-cleanup.schema.json",
         "schemas/opsrabbit-channel-messaging-input.schema.json",
+        "schemas/opsrabbit-inbound-lifecycle-event.schema.json",
+        "schemas/opsrabbit-plugin-inbound-registration.schema.json",
+        "schemas/opsrabbit-plugin-inbound-configuration-request.schema.json",
+        "schemas/opsrabbit-plugin-inbound-configuration.schema.json",
+        "schemas/opsrabbit-plugin-resource-query.schema.json",
+        "schemas/opsrabbit-plugin-resource-registration.schema.json",
+        "schemas/opsrabbit-plugin-resource-deletion.schema.json",
+        "schemas/opsrabbit-plugin-resource-capability.schema.json",
+        "schemas/opsrabbit-plugin-resource-transaction.schema.json",
+        "schemas/opsrabbit-plugin-source-inbound-binding.schema.json",
+        "schemas/opsrabbit-structured-enrichment-input.schema.json",
+        "schemas/opsrabbit-structured-enrichment-result.schema.json",
       ])
         if (!paths.includes(schema))
           throw new Error(`SDK package is missing public schema ${schema}`);

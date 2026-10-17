@@ -143,6 +143,15 @@ async function rejectSymlinkSegments(
 
 function localizationKeys(manifest: PluginManifest): Set<string> {
   const keys = new Set<string>();
+  const registration = manifest.capabilities.inboundRegistration;
+  if (registration) {
+    keys.add(registration.labelKey);
+    keys.add(registration.descriptionKey);
+    for (const field of registration.configuration?.fields ?? []) {
+      keys.add(field.labelKey);
+      if (field.descriptionKey) keys.add(field.descriptionKey);
+    }
+  }
   const workspace = manifest.adminWorkspace;
   if (!workspace) return keys;
   keys.add(workspace.titleKey);

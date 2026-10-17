@@ -1,13 +1,31 @@
 # Changelog
 
-## 0.28.0 - Unreleased
+## 0.31.0 - Unreleased
 
 - Add the optional `agentRuns` capability: manifest permission bindings for host-executed tenant agent runs with typed start, get and cancel brokers and host-attested completion handlers.
 - Keep limits, tools and skills as host policy: bindings declare no limits, tools or skills, and the host decides what each run may use.
 - Add the capability-gated `agent.runs.observe` browser service with strict state and event validators; observed snapshots omit the run request.
 - Publish JSON Schema and runtime validation with field-level issues, request/output-schema validators, a capability-scoped test harness and observation fixture, and the `agent-run` starter.
 - `parsePluginAgentRunRequestV1` returns a `PluginAgentRunAcceptedRequestV1` and applies the host byte limit after preset resolution. Caller instructions share the 12,288-character preset bound, and the canonical digest form omits `undefined`-valued keys. Run JSON rejects only own `__proto__` keys, so `constructor` and `prototype` are ordinary data keys, and observed agent output is not limited by array length or object width.
-- Existing manifests, registrations and native workspaces are unchanged. Align SDK and CLI release versions at 0.28.0.
+- Existing manifests, registrations and native workspaces are unchanged. Standalone (`plugin_workspace`) workspaces may also request `agent.runs.observe`. Align SDK and CLI release versions at 0.31.0.
+
+## 0.30.0 - 2026-10-17
+
+- Declare localized Inbound business configuration without delegating host checkbox/grant ownership to plugins. Validate referenced tenant-admin read/write actions, supported providers, resource kinds and reserved core controls.
+- Add bounded configuration schemas and optimistic binding revision/incarnation fences, source incarnation catalog metadata, CLI localization checks, an executable reference and packed clean-consumer verification.
+
+## 0.29.0 - 2026-10-16
+
+- Add standalone specialist workspaces without Forms starter/entitlement requirements.
+- Define namespaced plugin resources, host-authorized query/paging/aggregate boundaries, transaction-bound registration and binding configuration, and shared retention/deletion contracts.
+- Add optional tenant-model enrichment contracts with request/output validation and protected identity fields.
+- Add executable reference, schema parity tests and an outside-workspace packed consumer. Host enforcement and dependent incident plugin implementation remain coordinated work.
+
+## 0.28.0 - 2026-10-16
+
+- Add versioned, tenant-bound Inbound lifecycle subscriber contracts, bounded event schema and runtime validation, declaration/registration parity, and an executable delivery-boundary reference.
+- Document durable delivery, cancellation, deletion fences and host authorization responsibilities.
+- Align SDK/CLI release inventory at 0.28.0. Host integration and the incident plugin remain coordinated work; the contract alone does not deliver events.
 
 ## 0.27.0 - 2026-10-15
 

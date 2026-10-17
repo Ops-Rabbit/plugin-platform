@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.com/schemas/plugin-resource-capability.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1"
+    },
+    "kinds": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 16,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{0,79}(?![\\s\\S])"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "labelKey": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{0,119}(?![\\s\\S])"
+          },
+          "descriptionKey": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{0,119}(?![\\s\\S])"
+          },
+          "retention": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "defaultMode": {
+                "const": "retain_indefinitely"
+              },
+              "supportedModes": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "do_not_persist",
+                    "retain_for_days",
+                    "retain_indefinitely"
+                  ]
+                },
+                "maxItems": 3,
+                "minItems": 3,
+                "uniqueItems": true
+              }
+            },
+            "required": ["defaultMode", "supportedModes"]
+          }
+        },
+        "required": ["labelKey", "descriptionKey", "retention"]
+      }
+    }
+  },
+  "required": ["schemaVersion", "kinds"]
+}

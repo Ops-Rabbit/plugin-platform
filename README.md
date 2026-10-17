@@ -104,8 +104,18 @@ documents how host 0.6.0 executes reviewed helpers packaged in attached skills w
 
 ## Agent runs v1
 
-SDK 0.28.0 exports `PluginAgentRunsServiceV1`, completion and observation types, and request, output-schema and state validators. See [host responsibilities and reference](docs/plugin-agent-runs-v1.md). Runtime availability requires an implementing host; a binding requests access and grants none, and limits remain host policy.
+SDK 0.31.0 exports `PluginAgentRunsServiceV1`, completion and observation types, and request, output-schema and state validators. See [host responsibilities and reference](docs/plugin-agent-runs-v1.md). Runtime availability requires an implementing host; a binding requests access and grants none, and limits remain host policy.
 
 ## Channel messaging v1
 
 SDK 0.27.0 exports `ChannelMessagingContextV1`, `ChannelMessagingAdapterV1`, and message input validation/schema. See [host responsibilities and reference](docs/channel-messaging-v1.md). Runtime availability requires an implementing host; a saved connection alone grants no messaging authority.
+
+## Inbound lifecycle subscription (next release)
+
+Plugins can declare a versioned tenant-bound Inbound lifecycle handler. The strict event schema, runtime validator and executable reference are described in [the lifecycle contract](docs/inbound-lifecycle-v1.md). This contract does not itself implement host event delivery or cross-tenant authorization.
+
+## Plugin-owned resource workspaces (next release)
+
+The [resource workspace contract](docs/resource-workspaces-v1.md) covers standalone specialist navigation, core-authorized queries over plugin-owned SQL, shared resource grants/retention and optional tenant-model enrichment. Public types and references do not implement host enforcement. Consume the published coordinated release before deploying a dependent plugin; unsupported hosts fail closed. Ordinary Forms modules continue to use the Forms engine.
+
+SDK/CLI 0.30.0 adds declarative source Inbound business configuration for host-owned registration controls. Core owns the checkbox, grants and delivery; plugins declare bounded localized mapping/enrichment fields and tenant-admin read/write actions. Configuration uses revision/incarnation fences. See [the Inbound registration contract](docs/inbound-registration-v1.md).

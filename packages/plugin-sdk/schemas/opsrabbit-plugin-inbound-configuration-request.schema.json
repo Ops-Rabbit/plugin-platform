@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.com/schemas/plugin-inbound-configuration-request.v1.json",
+  "type": "object",
+  "properties": {
+    "inboundId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+    }
+  },
+  "required": ["inboundId"],
+  "additionalProperties": false
+}

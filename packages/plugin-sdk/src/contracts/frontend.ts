@@ -11,6 +11,8 @@ export const PLUGIN_FRONTEND_CAPABILITIES = [
   "forms.actions",
   "plugin.actions.invoke",
   "agent.runs.observe",
+  "plugin.resources.manage",
+  "plugin.investigations.open",
 ] as const;
 
 export type PluginFrontendCapability =
@@ -71,6 +73,23 @@ export interface OpsRabbitWorkspaceContext {
       actionId: string,
       input?: Record<string, JsonValue>,
     ): Promise<unknown>;
+  };
+  /** Host revalidates tenant/record manage access and opens the standard grant UI. */
+  resourceAccess?: {
+    manage(input: {
+      tenantId: string;
+      kind: string;
+      id: string;
+    }): Promise<void>;
+  };
+  /** Host verifies record association and independent thread read before navigation. */
+  investigations?: {
+    open(input: {
+      tenantId: string;
+      kind: string;
+      id: string;
+      threadId: string;
+    }): Promise<void>;
   };
   forms: {
     catalog(): Promise<unknown>;

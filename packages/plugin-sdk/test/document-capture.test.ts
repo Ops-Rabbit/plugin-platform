@@ -212,7 +212,12 @@ describe("document capture manifest", () => {
   it("requires minimumOpsRabbitVersion 0.10.0 or later", () => {
     const unversioned: PluginManifest = { ...manifest };
     delete unversioned.minimumOpsRabbitVersion;
-    for (const minimumOpsRabbitVersion of [undefined, "0.9.9", "0.10.0-rc.1"]) {
+    for (const minimumOpsRabbitVersion of [
+      undefined,
+      "0.6.0",
+      "0.9.9",
+      "0.10.0-rc.1",
+    ]) {
       const candidate =
         minimumOpsRabbitVersion === undefined
           ? unversioned
@@ -221,14 +226,25 @@ describe("document capture manifest", () => {
         validateManifest(candidate).issues.map((entry) => entry.path),
         String(minimumOpsRabbitVersion),
       ).toContain("$.minimumOpsRabbitVersion");
+      expect(validateSchema(candidate), String(minimumOpsRabbitVersion)).toBe(
+        false,
+      );
     }
-    for (const minimumOpsRabbitVersion of ["0.10.0", "0.11.2", "1.0.0"])
-      expect(
-        validateManifest({ ...manifest, minimumOpsRabbitVersion }).issues,
-      ).toEqual([]);
+    for (const minimumOpsRabbitVersion of [
+      "0.10.0",
+      "0.10.1-rc.1",
+      "0.11.2",
+      "0.100.0",
+      "1.0.0",
+    ]) {
+      const candidate = { ...manifest, minimumOpsRabbitVersion };
+      expect(validateManifest(candidate).issues).toEqual([]);
+      expect(validateSchema(candidate), minimumOpsRabbitVersion).toBe(true);
+    }
     const legacy = withoutCapture();
     delete legacy.minimumOpsRabbitVersion;
     expect(validateManifest(legacy).ok).toBe(true);
+    expect(validateSchema(legacy)).toBe(true);
   });
 
   it("leaves manifests without the capability unchanged", () => {

@@ -128,14 +128,32 @@ describe("{{id}}", () => {
     ).rejects.toMatchObject({ code: "capture_unavailable" });
   });
 
-  it("does not expose the broker to an unbound invocation", () => {
+  it("does not expose the broker to a declared but unbound invocation", () => {
+    const actionOnly = {
+      ...manifest,
+      capabilities: {
+        ...manifest.capabilities,
+        documentCapture: {
+          schemaVersion: "1",
+          sources: ["url"],
+          actionIds: ["capture-document"],
+        },
+      },
+    } as PluginManifest;
     expect(
       createAuthorizedTestContext(
-        manifest,
-        { kind: "scheduledJob", id: "not-bound" },
+        actionOnly,
+        { kind: "scheduledJob", id: "refresh-document" },
         { documentCapture: broker() },
       ).documentCapture,
     ).toBeUndefined();
+    expect(
+      createAuthorizedTestContext(
+        actionOnly,
+        { kind: "action", id: "capture-document" },
+        { documentCapture: broker() },
+      ).documentCapture,
+    ).toBeDefined();
   });
 
   it("rejects with the cancellation reason", async () => {
@@ -179,12 +197,29 @@ describe("{{id}}", () => {
     expect(context.logs[0]?.fields).toEqual({ ok: false, code: "no_readable_text" });
   });
 
-  it("skips a scheduled refresh when the broker is absent", async () => {
+  it("logs a skipped scheduled refresh when the broker is absent", async () => {
     const context = createAuthorizedTestContext(manifest, {
       kind: "scheduledJob",
       id: "refresh-document",
     });
     await job.run(context);
-    expect(context.logs).toEqual([]);
+    expect(context.logs).toMatchObject([
+      { level: "warn", message: "document refresh skipped: capture unavailable" },
+    ]);
+  });
+
+  it("returns a preview of at most 280 characters", async () => {
+    const text = "é".repeat(400);
+    const documentCapture = {
+      fromUrl: vi.fn(
+        async ({ url }: { url: string }): Promise<PluginDocumentCaptureResultV1> => ({
+          ok: true,
+          document: captured(url, text),
+        }),
+      ),
+    };
+    await expect(
+      action.run({ url: "https://example.com/page" }, actionContext(documentCapture)),
+    ).resolves.toMatchObject({ preview: "é".repeat(280) });
   });
 });

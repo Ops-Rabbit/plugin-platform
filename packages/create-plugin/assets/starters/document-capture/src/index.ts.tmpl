@@ -53,6 +53,18 @@ function captureError(error: PluginDocumentCaptureErrorV1): PluginActionError {
   }
 }
 
+/** First `limit` code points, without copying the rest of the text. */
+function preview(text: string, limit: number): string {
+  let result = "";
+  let count = 0;
+  for (const character of text) {
+    if (count === limit) break;
+    result += character;
+    count += 1;
+  }
+  return result;
+}
+
 function capture(url: string, documentCapture: PluginDocumentCaptureServiceV1) {
   return documentCapture.fromUrl({ url, maxTextBytes: MAX_TEXT_BYTES });
 }
@@ -87,7 +99,7 @@ export const plugin = definePlugin({
           textSha256: document.textSha256,
           truncated: document.truncated,
           warnings: [...document.warnings],
-          preview: [...document.text].slice(0, PREVIEW_CHARACTERS).join(""),
+          preview: preview(document.text, PREVIEW_CHARACTERS),
         };
       },
     },
@@ -99,7 +111,13 @@ export const plugin = definePlugin({
       intervalSeconds: 86_400,
       timeoutSeconds: 120,
       async run(context) {
-        if (context.signal.aborted || !context.documentCapture) return;
+        if (context.signal.aborted) return;
+        // Absent when the host lacks the broker or the job is not bound; say so
+        // rather than letting an empty run pass for a refresh.
+        if (!context.documentCapture) {
+          context.logger.warn("document refresh skipped: capture unavailable");
+          return;
+        }
         const result = await capture(SCHEDULED_URL, context.documentCapture);
         // Log identifiers and outcome only, never captured text.
         context.logger.info(

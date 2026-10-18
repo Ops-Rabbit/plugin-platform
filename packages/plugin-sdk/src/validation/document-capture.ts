@@ -452,6 +452,7 @@ function readDocument(
     issues,
   );
   let source: PluginCapturedDocumentV1["source"] | undefined;
+  let crossOrigin = false;
   if (sourceEntry) {
     const sourceStart = issues.length;
     for (const key of SOURCE_KEYS)
@@ -502,13 +503,15 @@ function readDocument(
           "Final URL must equal the requested URL when no redirect occurred.",
         ),
       );
-    if (issues.length === sourceStart && requested && final)
+    if (issues.length === sourceStart && requested && final) {
+      crossOrigin = requested.origin !== final.origin;
       source = Object.freeze({
         kind: "url",
         requestedUrl: requested.href,
         finalUrl: final.href,
         redirectCount: sourceEntry.redirectCount as number,
       });
+    }
   }
 
   if (
@@ -528,12 +531,13 @@ function readDocument(
     `${path}.contentType`,
     issues,
   );
-  // A captured document has a non-empty body, never larger than a requested bound.
+  // A captured document has a non-empty body, never larger than the requested
+  // bound or, without one, the largest response limit a host can apply.
   boundedInteger(
     entry.byteLength,
     `${path}.byteLength`,
     1,
-    request?.maxResponseBytes ?? Number.MAX_SAFE_INTEGER,
+    request?.maxResponseBytes ?? LIMITS.maxResponseBytes,
     issues,
   );
   for (const key of ["byteSha256", "textSha256"] as const) {
@@ -556,20 +560,22 @@ function readDocument(
     issues,
   );
   if (extractorEntry) {
-    pattern(
-      extractorEntry.id,
-      `${extractorPath}.id`,
-      EXTRACTOR_ID,
-      LIMITS.extractorIdCharacters,
-      issues,
-    );
-    pattern(
-      extractorEntry.version,
-      `${extractorPath}.version`,
-      EXTRACTOR_VERSION,
-      LIMITS.extractorVersionCharacters,
-      issues,
-    );
+    for (const [key, expression, max] of [
+      ["id", EXTRACTOR_ID, LIMITS.extractorIdCharacters],
+      ["version", EXTRACTOR_VERSION, LIMITS.extractorVersionCharacters],
+    ] as const)
+      if (!(key in extractorEntry))
+        issues.push(
+          issue(`${extractorPath}.${key}`, "required", `${key} is required.`),
+        );
+      else
+        pattern(
+          extractorEntry[key],
+          `${extractorPath}.${key}`,
+          expression,
+          max,
+          issues,
+        );
   }
 
   if (entry.title !== null)
@@ -654,9 +660,6 @@ function readDocument(
           "text_truncated must be present exactly when truncated is true.",
         ),
       );
-    const crossOrigin =
-      source !== undefined &&
-      new URL(source.requestedUrl).origin !== new URL(source.finalUrl).origin;
     if (source && crossOrigin !== warnings.includes("cross_origin_redirect"))
       issues.push(
         issue(

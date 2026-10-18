@@ -140,6 +140,18 @@ export function validateManifest(
     input.minimumOpsRabbitVersion,
     issues,
   );
+  if (
+    record(input.capabilities) &&
+    input.capabilities.documentCapture !== undefined &&
+    !hasMinimumVersion(input.minimumOpsRabbitVersion, 0, 10, 0)
+  )
+    issues.push(
+      issue(
+        "$.minimumOpsRabbitVersion",
+        "unsupported",
+        "capabilities.documentCapture requires minimumOpsRabbitVersion 0.10.0 or later.",
+      ),
+    );
   validateFrontend(
     input.frontend,
     input.navigation,

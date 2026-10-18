@@ -30,8 +30,9 @@ Declare at least one of `actionIds` or `scheduledJobIds`. The JSON Schema checks
 the shape. Runtime validation also checks that each id refers to a declared
 action or job, and enforces the risk and deployment-admin rules.
 
-Set `minimumOpsRabbitVersion` to `0.10.0` or later. Older SDKs, CLIs and hosts
-reject any manifest that declares `documentCapture`.
+Set `minimumOpsRabbitVersion` to `0.10.0` or later; runtime validation rejects
+a manifest that declares `documentCapture` without it. Older SDKs, CLIs and
+hosts reject any manifest that declares `documentCapture`.
 
 ## Runtime
 

@@ -34,6 +34,7 @@ const manifest: PluginManifest = {
   description: "Captures public documents.",
   apiVersion: "1.0",
   main: "./dist/index.js",
+  minimumOpsRabbitVersion: "0.10.0",
   capabilities: {
     actions: [
       { id: "capture", risk: "external", requiredRole: "operator" },
@@ -206,6 +207,28 @@ describe("document capture manifest", () => {
     };
     expect(() => validateManifest(candidate)).not.toThrow();
     expect(validateManifest(candidate).ok).toBe(false);
+  });
+
+  it("requires minimumOpsRabbitVersion 0.10.0 or later", () => {
+    const unversioned: PluginManifest = { ...manifest };
+    delete unversioned.minimumOpsRabbitVersion;
+    for (const minimumOpsRabbitVersion of [undefined, "0.9.9", "0.10.0-rc.1"]) {
+      const candidate =
+        minimumOpsRabbitVersion === undefined
+          ? unversioned
+          : { ...manifest, minimumOpsRabbitVersion };
+      expect(
+        validateManifest(candidate).issues.map((entry) => entry.path),
+        String(minimumOpsRabbitVersion),
+      ).toContain("$.minimumOpsRabbitVersion");
+    }
+    for (const minimumOpsRabbitVersion of ["0.10.0", "0.11.2", "1.0.0"])
+      expect(
+        validateManifest({ ...manifest, minimumOpsRabbitVersion }).issues,
+      ).toEqual([]);
+    const legacy = withoutCapture();
+    delete legacy.minimumOpsRabbitVersion;
+    expect(validateManifest(legacy).ok).toBe(true);
   });
 
   it("leaves manifests without the capability unchanged", () => {
@@ -483,6 +506,10 @@ describe("document capture result", () => {
       ["$.document.fetchedAt", { fetchedAt: "2026-10-17T10:00:00Z" }],
       ["$.document.byteSha256", { byteSha256: "A".repeat(64) }],
       ["$.document.byteLength", { byteLength: -1 }],
+      [
+        "$.document.byteLength",
+        { byteLength: PLUGIN_DOCUMENT_CAPTURE_LIMITS.maxResponseBytes + 1 },
+      ],
       ["$.document.contentType", { contentType: "image/png" }],
       ["$.document.format", { format: "html" }],
       ["$.document.extractor.id", { extractor: { id: "", version: "1" } }],
@@ -549,6 +576,21 @@ describe("document capture result", () => {
         ).map((entry) => entry.path),
         path,
       ).toContain(path);
+  });
+
+  it("reports missing extractor fields as required", () => {
+    for (const extractor of [{ id: "x" }, { version: "1" }, {}])
+      for (const key of ["id", "version"] as const)
+        if (!(key in extractor))
+          expect(
+            validatePluginDocumentCaptureResultV1(
+              ok(
+                document({
+                  extractor: extractor as PluginCapturedDocumentV1["extractor"],
+                }),
+              ),
+            ).filter((entry) => entry.path === `$.document.extractor.${key}`),
+          ).toEqual([expect.objectContaining({ code: "required" })]);
   });
 
   it("rejects sparse, accessor and non-array warnings", () => {
@@ -886,5 +928,28 @@ describe("document capture test harness", () => {
         { documentCapture: aborting, signal: during.signal },
       ).documentCapture!.fromUrl({ url: "https://example.com/notice" }),
     ).rejects.toThrow("cancelled during");
+
+    // Cancelled while the text digest is being verified.
+    const verifying = new AbortController();
+    const subtle = globalThis.crypto.subtle;
+    const digest = subtle.digest.bind(subtle);
+    const spy = vi
+      .spyOn(subtle, "digest")
+      .mockImplementation(async (...args: Parameters<typeof digest>) => {
+        verifying.abort(new Error("cancelled while verifying"));
+        return digest(...args);
+      });
+    try {
+      await expect(
+        createAuthorizedTestContext(
+          manifest,
+          { kind: "action", id: "capture" },
+          { documentCapture: broker(), signal: verifying.signal },
+        ).documentCapture!.fromUrl({ url: "https://example.com/notice" }),
+      ).rejects.toThrow("cancelled while verifying");
+      expect(spy).toHaveBeenCalledOnce();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

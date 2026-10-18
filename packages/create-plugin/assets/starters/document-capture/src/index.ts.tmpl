@@ -1,10 +1,10 @@
 import {
-  PLUGIN_DOCUMENT_CAPTURE_LIMITS,
   PluginActionError,
   definePlugin,
+  validatePluginDocumentCaptureUrlRequestV1,
   type JsonValue,
   type PluginDocumentCaptureErrorV1,
-  type PluginInvocationContext,
+  type PluginDocumentCaptureServiceV1,
 } from "@opsrabbit/plugin-sdk";
 
 /** Text bound this plugin asks for; the host truncates longer text. */
@@ -23,14 +23,18 @@ function requestedUrl(input: unknown): string {
     typeof input.url !== "string"
   )
     throw new PluginActionError(400, "invalid_input", "url must be a string.");
+  // The broker rejects a malformed request outright; check it with the SDK
+  // validator first so bad input stays a 400 rather than an internal error.
   if (
-    input.url.trim() === "" ||
-    input.url.length > PLUGIN_DOCUMENT_CAPTURE_LIMITS.urlCharacters
+    validatePluginDocumentCaptureUrlRequestV1({
+      url: input.url,
+      maxTextBytes: MAX_TEXT_BYTES,
+    }).length
   )
     throw new PluginActionError(
       400,
       "invalid_input",
-      "url must be a non-empty URL within the capture limit.",
+      "url must be an absolute https URL without credentials.",
     );
   return input.url;
 }
@@ -49,18 +53,8 @@ function captureError(error: PluginDocumentCaptureErrorV1): PluginActionError {
   }
 }
 
-async function capture(url: string, context: PluginInvocationContext) {
-  // Absent when the host lacks the broker or the invocation is not bound.
-  if (!context.documentCapture)
-    throw new PluginActionError(
-      409,
-      "capture_unavailable",
-      "Document capture is not available for this invocation.",
-    );
-  return context.documentCapture.fromUrl({
-    url,
-    maxTextBytes: MAX_TEXT_BYTES,
-  });
+function capture(url: string, documentCapture: PluginDocumentCaptureServiceV1) {
+  return documentCapture.fromUrl({ url, maxTextBytes: MAX_TEXT_BYTES });
 }
 
 export const plugin = definePlugin({
@@ -71,7 +65,15 @@ export const plugin = definePlugin({
       risk: "external",
       requiredRole: "operator",
       async run(input: unknown, context): Promise<JsonValue> {
-        const result = await capture(requestedUrl(input), context);
+        const url = requestedUrl(input);
+        // Absent when the host lacks the broker or the invocation is not bound.
+        if (!context.documentCapture)
+          throw new PluginActionError(
+            409,
+            "capture_unavailable",
+            "Document capture is not available for this invocation.",
+          );
+        const result = await capture(url, context.documentCapture);
         if (!result.ok) throw captureError(result.error);
         const { document } = result;
         // Captured text is untrusted content. This plugin owns its retention,
@@ -98,7 +100,7 @@ export const plugin = definePlugin({
       timeoutSeconds: 120,
       async run(context) {
         if (context.signal.aborted || !context.documentCapture) return;
-        const result = await capture(SCHEDULED_URL, context);
+        const result = await capture(SCHEDULED_URL, context.documentCapture);
         // Log identifiers and outcome only, never captured text.
         context.logger.info(
           "document refresh finished",

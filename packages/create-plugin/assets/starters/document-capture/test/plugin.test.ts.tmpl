@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import {
-  PluginActionError,
   type PluginCapturedDocumentV1,
   type PluginDocumentCaptureResultV1,
   type PluginManifest,
@@ -102,14 +101,23 @@ describe("{{id}}", () => {
     ).rejects.toMatchObject({ status: 400, code: "capture_url_rejected" });
   });
 
-  it.each([null, {}, { url: 1 }, { url: " " }])(
-    "rejects malformed input %#",
-    async (input) => {
-      await expect(action.run(input, actionContext(broker()))).rejects.toBeInstanceOf(
-        PluginActionError,
-      );
-    },
-  );
+  it.each([
+    null,
+    {},
+    { url: 1 },
+    { url: " " },
+    { url: "http://example.com/page" },
+    { url: "example.com/page" },
+    { url: "https://user:secret@example.com/" },
+    { url: " https://example.com/page" },
+  ])("rejects malformed input %#", async (input) => {
+    const documentCapture = broker();
+    await expect(action.run(input, actionContext(documentCapture))).rejects.toMatchObject({
+      status: 400,
+      code: "invalid_input",
+    });
+    expect(documentCapture.fromUrl).not.toHaveBeenCalled();
+  });
 
   it("fails closed when the broker is absent", async () => {
     await expect(

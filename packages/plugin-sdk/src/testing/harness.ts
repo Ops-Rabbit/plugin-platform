@@ -325,13 +325,17 @@ export function createAuthorizedTestContext(
             );
             throwIfCancelled();
             const result = parsePluginDocumentCaptureResultV1(raw, request);
-            if (
-              result.ok &&
-              !(await verifyPluginCapturedDocumentTextV1(result.document))
-            )
-              throw new Error(
-                "Document capture broker returned a textSha256 that does not match text.",
+            if (result.ok) {
+              const matches = await verifyPluginCapturedDocumentTextV1(
+                result.document,
               );
+              // The digest is asynchronous; a cancellation during it still wins.
+              throwIfCancelled();
+              if (!matches)
+                throw new Error(
+                  "Document capture broker returned a textSha256 that does not match text.",
+                );
+            }
             return result;
           },
         }

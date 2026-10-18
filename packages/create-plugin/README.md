@@ -32,6 +32,7 @@ Available starters:
 - `interaction-policy`
 - `structured-classification`
 - `agent-run`
+- `document-capture`
 
 `structured-classification` demonstrates an optional host-governed classifier
 from both a declared action and scheduled job. It uses bounded configurable
@@ -43,6 +44,11 @@ starts a preset with JSON inputs and an output schema, validates untrusted
 completion output, and includes a native-workspace observation adapter. The
 adapter is a reference only: the starter manifest declares no workspace, so add
 one with `agent.runs.observe` before the host provides observation.
+
+`document-capture` asks the host to capture a public URL from an `external`
+action and a scheduled job. It maps typed capture failures to stable action
+errors, fails closed when the broker is absent, and logs no captured text. It
+requires OpsRabbit 0.10.0 or later.
 
 Each starter is also a versioned reference example. Use
 `opsrabbit-plugin create my-reference --example operational-action` to render one.

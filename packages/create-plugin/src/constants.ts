@@ -1,5 +1,5 @@
-export const CLI_VERSION = "0.31.1";
-export const SDK_VERSION = "^0.31.1";
+export const CLI_VERSION = "0.32.0";
+export const SDK_VERSION = "^0.32.0";
 export const STARTER_IDS = [
   "basic-readonly",
   "operational-action",
@@ -15,6 +15,7 @@ export const STARTER_IDS = [
   "interaction-policy",
   "structured-classification",
   "agent-run",
+  "document-capture",
 ] as const;
 
 export type StarterId = (typeof STARTER_IDS)[number];
@@ -46,6 +47,8 @@ export const STARTER_DESCRIPTIONS: Record<StarterId, string> = {
     "Governed structured classification from both an action and a scheduled job.",
   "agent-run":
     "Manifest-bound tenant agent run with status, cancellation, observation, and completion delivery.",
+  "document-capture":
+    "Host URL capture with lineage from an external action and a scheduled job.",
 };
 
 export function isStarterId(value: string): value is StarterId {

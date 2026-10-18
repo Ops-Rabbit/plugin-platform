@@ -1,0 +1,10 @@
+{
+  "id": "{{id}}", "name": "{{displayName}}", "version": "0.1.0",
+  "description": "{{displayName}} host document capture", "apiVersion": "1.0", "main": "./dist/index.js",
+  "minimumOpsRabbitVersion": "0.10.0",
+  "capabilities": {
+    "actions": [{ "id": "capture-document", "risk": "external", "requiredRole": "operator" }],
+    "scheduledJobs": [{ "id": "refresh-document" }],
+    "documentCapture": { "schemaVersion": "1", "sources": ["url"], "actionIds": ["capture-document"], "scheduledJobIds": ["refresh-document"] }
+  }
+}

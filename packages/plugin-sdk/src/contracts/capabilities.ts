@@ -1,4 +1,5 @@
 import type { PluginAgentRunsCapabilityV1 } from "./agent-runs.js";
+import type { PluginDocumentCaptureCapabilityV1 } from "./document-capture.js";
 import type { PluginInboundRegistrationCapabilityV1 } from "./inbound-registration.js";
 import type { PluginResourceRecordsCapabilityV1 } from "./resource-records.js";
 
@@ -129,6 +130,8 @@ export interface PluginDeclaredCapabilities {
   knowledge?: PluginKnowledgeCapability;
   connections?: { selectors: PluginConnectionSelector[] };
   structuredClassification?: PluginStructuredClassificationCapability;
+  /** Host document capture for bound external actions and scheduled jobs. */
+  documentCapture?: PluginDocumentCaptureCapabilityV1;
   structuredEnrichment?: PluginStructuredClassificationCapability;
   knowledgeEmailProcessor?: { schemaVersion: "1" };
   inboundLifecycle?: { schemaVersion: "1" };

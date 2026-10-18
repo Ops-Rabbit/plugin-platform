@@ -36,10 +36,11 @@ needed. Run `opsrabbit-plugin examples list` to see the ids and generate one wit
 | `interaction-policy`          | deployment interaction policy   | Transactional admission, composer status, admin UI, and deletion    |
 | `structured-classification`   | action, job, classification     | Bounded governed recommendation with explicit failure outcomes      |
 | `agent-run`                   | actions, agent runs             | Bound tenant agent run, completion delivery, run observation        |
+| `document-capture`            | action, job, document capture   | Host URL capture with lineage, typed failures, fail-closed absence  |
 
 Each generated repository includes unit tests, coverage enforcement, TypeScript
 checks, a pinned GitHub Actions workflow, README, `AGENTS.md`, manifest, and
-deterministic package command. The platform CI regenerates all fourteen from the
+deterministic package command. The platform CI regenerates all fifteen from the
 packed npm candidates, installs them outside the workspace, and runs every
 documented quality command before either public package can be released.
 

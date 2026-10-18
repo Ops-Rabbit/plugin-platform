@@ -28,6 +28,7 @@ const starterIds = [
   "interaction-policy",
   "structured-classification",
   "agent-run",
+  "document-capture",
 ];
 await mkdir(tarballDirectory);
 execFileSync("node", ["scripts/verify-channel-approval-consumer.mjs"], {

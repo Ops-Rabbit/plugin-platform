@@ -14,8 +14,14 @@ import type {
   PluginAgentRunSnapshotV1,
   PluginAgentRunsServiceV1,
 } from "../contracts/agent-runs.js";
+import type { PluginDocumentCaptureServiceV1 } from "../contracts/document-capture.js";
 import type { JsonValue } from "../contracts/manifest.js";
 import { parsePluginAgentRunRequestV1 } from "../validation/agent-runs.js";
+import {
+  parsePluginDocumentCaptureResultV1,
+  parsePluginDocumentCaptureUrlRequestV1,
+  verifyPluginCapturedDocumentTextV1,
+} from "../validation/document-capture.js";
 import type { PluginManifest } from "../contracts/manifest.js";
 
 export interface TestLogEntry {
@@ -40,6 +46,7 @@ export function createTestContext(
     host?: Partial<PluginPersonaHostService>;
     structuredClassification?: PluginStructuredClassificationService;
     agentRuns?: PluginAgentRunsServiceV1;
+    documentCapture?: PluginDocumentCaptureServiceV1;
     dataInsightAuthorization?: DataInsightAuthorizationContext;
     settings?: Readonly<Record<string, JsonValue>>;
   } = {},
@@ -70,6 +77,9 @@ export function createTestContext(
     ...(options.agentRuns === undefined
       ? {}
       : { agentRuns: options.agentRuns }),
+    ...(options.documentCapture === undefined
+      ? {}
+      : { documentCapture: options.documentCapture }),
     ...(options.dataInsightAuthorization === undefined
       ? {}
       : { dataInsightAuthorization: options.dataInsightAuthorization }),
@@ -96,6 +106,7 @@ export function createAuthorizedTestContext(
     structuredClassification: suppliedStructuredClassification,
     host: suppliedHost,
     agentRuns: suppliedAgentRuns,
+    documentCapture: suppliedDocumentCapture,
     ...baseOptions
   } = options;
   const declaration = manifest.capabilities.knowledge;
@@ -254,9 +265,81 @@ export function createAuthorizedTestContext(
           },
         }
       : undefined;
+  const captureDeclaration = manifest.capabilities.documentCapture;
+  const captureAllowed =
+    captureDeclaration?.schemaVersion === "1" &&
+    Array.isArray(captureDeclaration.sources) &&
+    captureDeclaration.sources.includes("url") &&
+    (invocation.kind === "action"
+      ? action !== undefined &&
+        action.risk === "external" &&
+        action.deploymentAdminOnly !== true &&
+        Array.isArray(captureDeclaration.actionIds) &&
+        captureDeclaration.actionIds.includes(invocation.id)
+      : scheduledJob !== undefined &&
+        Array.isArray(captureDeclaration.scheduledJobIds) &&
+        captureDeclaration.scheduledJobIds.includes(invocation.id));
+  const signal = baseOptions.signal;
+  // Mirrors the host: cancellation rejects with the signal's reason and is
+  // never turned into an error result, whenever it happens.
+  const throwIfCancelled = () => {
+    if (signal?.aborted) throw signal.reason;
+  };
+  const untilCancelled = <T>(pending: Promise<T>): Promise<T> => {
+    if (!signal) return pending;
+    return new Promise<T>((resolve, reject) => {
+      const onAbort = () => reject(signal.reason);
+      signal.addEventListener("abort", onAbort, { once: true });
+      pending.then(
+        (value) => {
+          signal.removeEventListener("abort", onAbort);
+          if (signal.aborted) reject(signal.reason);
+          else resolve(value);
+        },
+        (error: unknown) => {
+          signal.removeEventListener("abort", onAbort);
+          reject(signal.aborted ? signal.reason : error);
+        },
+      );
+    });
+  };
+  const documentCapture: PluginDocumentCaptureServiceV1 | undefined =
+    suppliedDocumentCapture && invocationDeclared && captureAllowed
+      ? {
+          fromUrl: async (input) => {
+            throwIfCancelled();
+            const request = parsePluginDocumentCaptureUrlRequestV1(input);
+            // Forward the validated request as the host acts on it: the
+            // normalized URL, defaults applied, hints only when set.
+            const raw = await untilCancelled(
+              suppliedDocumentCapture.fromUrl({
+                url: request.normalizedUrl,
+                maxTextBytes: request.maxTextBytes,
+                ...(request.maxResponseBytes === undefined
+                  ? {}
+                  : { maxResponseBytes: request.maxResponseBytes }),
+                ...(request.timeoutMs === undefined
+                  ? {}
+                  : { timeoutMs: request.timeoutMs }),
+              }),
+            );
+            throwIfCancelled();
+            const result = parsePluginDocumentCaptureResultV1(raw, request);
+            if (
+              result.ok &&
+              !(await verifyPluginCapturedDocumentTextV1(result.document))
+            )
+              throw new Error(
+                "Document capture broker returned a textSha256 that does not match text.",
+              );
+            return result;
+          },
+        }
+      : undefined;
   return createTestContext({
     ...baseOptions,
     ...(agentRuns === undefined ? {} : { agentRuns }),
+    ...(documentCapture === undefined ? {} : { documentCapture }),
     ...(suppliedHost &&
     invocationDeclared &&
     manifest.id === "data_insight_sql" &&

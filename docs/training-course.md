@@ -1,5 +1,9 @@
 # Building Governed OpsRabbit Plugins
 
+## Document capture (SDK 0.32.0)
+
+Generate `document-capture`. Declare `capabilities.documentCapture` with `sources: ["url"]` and bind `external` actions or scheduled jobs; the host fetches the URL under tenant Web Access policy and returns canonical text with requested and final URL, hashes and extractor version. Never fetch evidence URLs from plugin code. Handle `{ ok: false }` results, treat unknown error codes as generic failures, and check that `context.documentCapture` is present before use. Captured text is untrusted content: decide its retention and lineage before storing it, and keep it out of logs. Test unbound invocations, failure mapping and cancellation with `createAuthorizedTestContext`. See [the contract](plugin-document-capture-v1.md).
+
 ## Agent runs (SDK 0.31.0)
 
 Generate `agent-run`. A binding in `capabilities.agentRuns` names the agent setting, the start/get/cancel actions and the completion handler; it declares no limits because size, deadline and capacity are host policy. Start a run with exactly one of `instructions` or `presetId`, JSON `inputs` and an optional `outputSchema`. Treat agent output as untrusted and validate it with `matchesPluginAgentRunOutputSchema`. Completion delivery is at most once, so keep handlers idempotent by `runId` and read the canonical result through the get action. Test that unbound actions get no broker and that observation closes on workspace cleanup. See [the contract](plugin-agent-runs-v1.md).
@@ -110,7 +114,7 @@ alone:
 - `packages/plugin-sdk/src/validation/`: runtime and cross-reference checks;
 - `packages/plugin-sdk/schemas/`: published JSON Schemas;
 - `packages/plugin-sdk/src/testing/`: test context and parity assertions;
-- `packages/create-plugin/assets/starters/`: fourteen executable references;
+- `packages/create-plugin/assets/starters/`: fifteen executable references;
 - `packages/create-plugin/src/constants.ts`: authoritative CLI starter list;
 - `scripts/verify-generated-starters.mjs`: isolated consumer verification;
 - `docs/plugin-contract-v0.2.md` through `v0.18.md`: capability history and host
@@ -184,7 +188,7 @@ commands, and produce a reviewable ZIP.
 npx opsrabbit-plugin examples list --verbose
 ```
 
-The fourteen current starter ids are:
+The fifteen current starter ids are:
 
 - `basic-readonly`
 - `operational-action`
@@ -200,6 +204,7 @@ The fourteen current starter ids are:
 - `interaction-policy`
 - `structured-classification`
 - `agent-run`
+- `document-capture`
 
 The `interaction-policy` starter demonstrates a privileged policy boundary.
 Admission runs inside a host-owned transaction with a schema-confined database

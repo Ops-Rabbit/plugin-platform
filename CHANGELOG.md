@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.32.0 - Unreleased
+
+- Add the optional `documentCapture` capability. A plugin binds `external` actions or scheduled jobs. The host fetches a public HTTPS URL under tenant Web Access policy and returns canonical text with lineage: requested and final URL, redirect count, byte and text SHA-256, and extractor identity. Expected failures resolve as typed `{ ok: false }` results; cancellation rejects with the invocation signal's reason.
+- Publish JSON Schema and runtime validation, `parsePluginDocumentCaptureUrlRequestV1`, `parsePluginDocumentCaptureResultV1` (optionally bound to its request), `verifyPluginCapturedDocumentTextV1`, a capability-scoped test harness, and the `document-capture` starter.
+- Requests accept two optional tighten-only hints. `maxResponseBytes` (16,384–10,485,760) lowers the response-size limit and `timeoutMs` (1,000–120,000) shortens the whole-capture deadline. Neither can raise a tenant or host limit. A result bound to its request must have `byteLength` within `maxResponseBytes`; any result's `byteLength` is at most 10,485,760.
+- Validators read own data properties once, reject accessors, non-plain objects, sparse arrays, lone surrogates and control characters, and return frozen copies. Error and warning codes are open for forward compatibility; content types, formats and the document shape are closed.
+- A manifest that declares `documentCapture` must set `minimumOpsRabbitVersion` 0.10.0 or later. Existing manifests are unchanged. Align SDK and CLI release versions at 0.32.0.
+
 ## 0.31.1 - 2026-10-17
 
 - Align admin-workspace icon JSON Schema with the same supported icon list enforced at runtime.

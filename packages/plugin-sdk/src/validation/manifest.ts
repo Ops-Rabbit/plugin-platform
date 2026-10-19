@@ -7,6 +7,7 @@ import {
   PLUGIN_TOOL_AUDIENCES,
   type PluginDeclaredCapabilities,
 } from "../contracts/capabilities.js";
+import { PLUGIN_DOCUMENT_CAPTURE_SOURCES } from "../contracts/document-capture.js";
 import type { ValidationIssue } from "../contracts/errors.js";
 import { validatePluginAgentRunBindingV1 } from "./agent-runs.js";
 import {
@@ -139,6 +140,18 @@ export function validateManifest(
     input.minimumOpsRabbitVersion,
     issues,
   );
+  if (
+    record(input.capabilities) &&
+    input.capabilities.documentCapture !== undefined &&
+    !hasMinimumVersion(input.minimumOpsRabbitVersion, 0, 10, 0)
+  )
+    issues.push(
+      issue(
+        "$.minimumOpsRabbitVersion",
+        "unsupported",
+        "capabilities.documentCapture requires minimumOpsRabbitVersion 0.10.0 or later.",
+      ),
+    );
   validateFrontend(
     input.frontend,
     input.navigation,
@@ -1387,6 +1400,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "knowledge",
     "connections",
     "structuredClassification",
+    "documentCapture",
     "agentRuns",
     "structuredEnrichment",
     "resourceRecords",
@@ -1765,6 +1779,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
       },
     );
   }
+  validateDocumentCapture(capabilities, issues);
   namedArray(
     capabilities.routes,
     "routes",
@@ -2599,6 +2614,102 @@ function validateAdminFields(
       keys.add(field.key);
     }
   }
+}
+
+function validateDocumentCapture(
+  capabilities: PluginDeclaredCapabilities,
+  issues: ValidationIssue[],
+): void {
+  const path = "$.capabilities.documentCapture";
+  validateSingletonCapability(
+    capabilities.documentCapture,
+    "documentCapture",
+    ["schemaVersion", "sources", "actionIds", "scheduledJobIds"],
+    issues,
+    (entry) => {
+      if (entry.schemaVersion !== "1")
+        issues.push(
+          issue(
+            `${path}.schemaVersion`,
+            "invalid",
+            "Document capture schema version must be 1.",
+          ),
+        );
+      if (!Array.isArray(entry.sources) || entry.sources.length === 0)
+        issues.push(
+          issue(
+            `${path}.sources`,
+            "required",
+            "Declare at least one document capture source.",
+          ),
+        );
+      else {
+        if (new Set(entry.sources).size !== entry.sources.length)
+          issues.push(
+            issue(`${path}.sources`, "duplicate", "Sources must be unique."),
+          );
+        for (const [index, source] of entry.sources.entries())
+          member(
+            source,
+            PLUGIN_DOCUMENT_CAPTURE_SOURCES,
+            `${path}.sources[${index}]`,
+            issues,
+          );
+      }
+      const actionIds = boundedBindingIds(
+        entry.actionIds,
+        `${path}.actionIds`,
+        issues,
+      );
+      const jobIds = boundedBindingIds(
+        entry.scheduledJobIds,
+        `${path}.scheduledJobIds`,
+        issues,
+      );
+      if (entry.actionIds === undefined && entry.scheduledJobIds === undefined)
+        issues.push(
+          issue(path, "required", "Bind at least one action or scheduled job."),
+        );
+      // Malformed action or job lists are reported by their own validators.
+      const actions = Array.isArray(capabilities.actions)
+        ? capabilities.actions.filter(record)
+        : [];
+      const jobs = Array.isArray(capabilities.scheduledJobs)
+        ? capabilities.scheduledJobs.filter(record)
+        : [];
+      for (const [index, id] of actionIds.entries()) {
+        const action = actions.find((item) => item.id === id);
+        if (!action)
+          issues.push(
+            issue(
+              `${path}.actionIds[${index}]`,
+              "invalid",
+              "Document capture action must be declared in capabilities.actions.",
+            ),
+          );
+        else if (
+          action.risk !== "external" ||
+          action.deploymentAdminOnly === true
+        )
+          issues.push(
+            issue(
+              `${path}.actionIds[${index}]`,
+              "invalid",
+              "Document capture actions must use external risk and must not be deployment-admin actions.",
+            ),
+          );
+      }
+      for (const [index, id] of jobIds.entries())
+        if (!jobs.some((item) => item.id === id))
+          issues.push(
+            issue(
+              `${path}.scheduledJobIds[${index}]`,
+              "invalid",
+              "Document capture job must be declared in capabilities.scheduledJobs.",
+            ),
+          );
+    },
+  );
 }
 
 function validateSingletonCapability(

@@ -1,0 +1,225 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import {
+  type PluginCapturedDocumentV1,
+  type PluginDocumentCaptureResultV1,
+  type PluginManifest,
+} from "@opsrabbit/plugin-sdk";
+import {
+  assertValidPlugin,
+  createAuthorizedTestContext,
+} from "@opsrabbit/plugin-sdk/testing";
+import { describe, expect, it, vi } from "vitest";
+import { plugin } from "../src/index.js";
+
+const manifest = JSON.parse(
+  readFileSync(new URL("../opsrabbit.plugin.json", import.meta.url), "utf8"),
+) as PluginManifest;
+const action = plugin.actions!.find((entry) => entry.id === "capture-document")!;
+const job = plugin.scheduledJobs!.find((entry) => entry.id === "refresh-document")!;
+
+function captured(url: string, text = "# Title\n\nBody."): PluginCapturedDocumentV1 {
+  return {
+    schemaVersion: "1",
+    source: { kind: "url", requestedUrl: url, finalUrl: url, redirectCount: 0 },
+    fetchedAt: "2026-10-17T10:00:00.000Z",
+    contentType: "text/html",
+    byteLength: 128,
+    byteSha256: "0".repeat(64),
+    extractor: { id: "example.extractor", version: "1" },
+    title: "Title",
+    format: "markdown",
+    text,
+    textBytes: new TextEncoder().encode(text).byteLength,
+    textSha256: createHash("sha256").update(text, "utf8").digest("hex"),
+    truncated: false,
+    warnings: [],
+  };
+}
+
+function broker(result?: PluginDocumentCaptureResultV1) {
+  return {
+    fromUrl: vi.fn(
+      async ({ url }: { url: string }): Promise<PluginDocumentCaptureResultV1> =>
+        result ?? { ok: true, document: captured(url) },
+    ),
+  };
+}
+
+const actionContext = (
+  documentCapture: ReturnType<typeof broker>,
+  signal?: AbortSignal,
+) =>
+  createAuthorizedTestContext(
+    manifest,
+    { kind: "action", id: "capture-document" },
+    { documentCapture, ...(signal === undefined ? {} : { signal }) },
+  );
+
+describe("{{id}}", () => {
+  it("keeps manifest and runtime registrations aligned", () => {
+    expect(() => assertValidPlugin(manifest, plugin)).not.toThrow();
+  });
+
+  it("captures a document through the host broker", async () => {
+    const documentCapture = broker();
+    await expect(
+      action.run({ url: "https://example.com/page" }, actionContext(documentCapture)),
+    ).resolves.toMatchObject({
+      finalUrl: "https://example.com/page",
+      textBytes: 14,
+      truncated: false,
+      preview: "# Title\n\nBody.",
+    });
+    expect(documentCapture.fromUrl).toHaveBeenCalledWith({
+      url: "https://example.com/page",
+      maxTextBytes: 65_536,
+    });
+  });
+
+  it("maps capture failures to stable action errors", async () => {
+    const failure = broker({
+      ok: false,
+      error: { code: "timeout", message: "The capture timed out.", retryable: true },
+    });
+    await expect(
+      action.run({ url: "https://example.com/page" }, actionContext(failure)),
+    ).rejects.toMatchObject({ status: 409, code: "capture_timeout" });
+    const unknown = broker({
+      ok: false,
+      error: { code: "future_code", message: "Not captured.", retryable: false },
+    });
+    await expect(
+      action.run({ url: "https://example.com/page" }, actionContext(unknown)),
+    ).rejects.toMatchObject({ status: 422, code: "capture_failed" });
+    const rejected = broker({
+      ok: false,
+      error: { code: "url_rejected", message: "URL not allowed.", retryable: false },
+    });
+    await expect(
+      action.run({ url: "https://example.com/page" }, actionContext(rejected)),
+    ).rejects.toMatchObject({ status: 400, code: "capture_url_rejected" });
+  });
+
+  it.each([
+    null,
+    {},
+    { url: 1 },
+    { url: " " },
+    { url: "http://example.com/page" },
+    { url: "example.com/page" },
+    { url: "https://user:secret@example.com/" },
+    { url: " https://example.com/page" },
+  ])("rejects malformed input %#", async (input) => {
+    const documentCapture = broker();
+    await expect(action.run(input, actionContext(documentCapture))).rejects.toMatchObject({
+      status: 400,
+      code: "invalid_input",
+    });
+    expect(documentCapture.fromUrl).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the broker is absent", async () => {
+    await expect(
+      action.run(
+        { url: "https://example.com/page" },
+        createAuthorizedTestContext(manifest, { kind: "action", id: "capture-document" }),
+      ),
+    ).rejects.toMatchObject({ code: "capture_unavailable" });
+  });
+
+  it("does not expose the broker to a declared but unbound invocation", () => {
+    const actionOnly = {
+      ...manifest,
+      capabilities: {
+        ...manifest.capabilities,
+        documentCapture: {
+          schemaVersion: "1",
+          sources: ["url"],
+          actionIds: ["capture-document"],
+        },
+      },
+    } as PluginManifest;
+    expect(
+      createAuthorizedTestContext(
+        actionOnly,
+        { kind: "scheduledJob", id: "refresh-document" },
+        { documentCapture: broker() },
+      ).documentCapture,
+    ).toBeUndefined();
+    expect(
+      createAuthorizedTestContext(
+        actionOnly,
+        { kind: "action", id: "capture-document" },
+        { documentCapture: broker() },
+      ).documentCapture,
+    ).toBeDefined();
+  });
+
+  it("rejects with the cancellation reason", async () => {
+    const controller = new AbortController();
+    controller.abort(new Error("cancelled"));
+    const documentCapture = broker();
+    await expect(
+      action.run(
+        { url: "https://example.com/page" },
+        actionContext(documentCapture, controller.signal),
+      ),
+    ).rejects.toThrow("cancelled");
+    expect(documentCapture.fromUrl).not.toHaveBeenCalled();
+  });
+
+  it("refreshes on schedule and logs no captured text", async () => {
+    const documentCapture = broker();
+    const context = createAuthorizedTestContext(
+      manifest,
+      { kind: "scheduledJob", id: "refresh-document" },
+      { documentCapture },
+    );
+    await job.run(context);
+    expect(documentCapture.fromUrl).toHaveBeenCalledOnce();
+    expect(JSON.stringify(context.logs)).not.toContain("Body.");
+    expect(context.logs[0]?.fields).toMatchObject({ ok: true });
+  });
+
+  it("logs only the error code when a scheduled refresh fails", async () => {
+    const context = createAuthorizedTestContext(
+      manifest,
+      { kind: "scheduledJob", id: "refresh-document" },
+      {
+        documentCapture: broker({
+          ok: false,
+          error: { code: "no_readable_text", message: "No text.", retryable: false },
+        }),
+      },
+    );
+    await job.run(context);
+    expect(context.logs[0]?.fields).toEqual({ ok: false, code: "no_readable_text" });
+  });
+
+  it("logs a skipped scheduled refresh when the broker is absent", async () => {
+    const context = createAuthorizedTestContext(manifest, {
+      kind: "scheduledJob",
+      id: "refresh-document",
+    });
+    await job.run(context);
+    expect(context.logs).toMatchObject([
+      { level: "warn", message: "document refresh skipped: capture unavailable" },
+    ]);
+  });
+
+  it("returns a preview of at most 280 characters", async () => {
+    const text = "é".repeat(400);
+    const documentCapture = {
+      fromUrl: vi.fn(
+        async ({ url }: { url: string }): Promise<PluginDocumentCaptureResultV1> => ({
+          ok: true,
+          document: captured(url, text),
+        }),
+      ),
+    };
+    await expect(
+      action.run({ url: "https://example.com/page" }, actionContext(documentCapture)),
+    ).resolves.toMatchObject({ preview: "é".repeat(280) });
+  });
+});

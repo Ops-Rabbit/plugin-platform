@@ -1,0 +1,134 @@
+import {
+  PluginActionError,
+  definePlugin,
+  validatePluginDocumentCaptureUrlRequestV1,
+  type JsonValue,
+  type PluginDocumentCaptureErrorV1,
+  type PluginDocumentCaptureServiceV1,
+} from "@opsrabbit/plugin-sdk";
+
+/** Text bound this plugin asks for; the host truncates longer text. */
+const MAX_TEXT_BYTES = 65_536;
+/** Characters of text returned as a preview. Store or process the rest. */
+const PREVIEW_CHARACTERS = 280;
+/** Replace with a URL from tenant settings or plugin-owned records. */
+const SCHEDULED_URL = "https://example.com/";
+
+function requestedUrl(input: unknown): string {
+  if (
+    typeof input !== "object" ||
+    input === null ||
+    Array.isArray(input) ||
+    !("url" in input) ||
+    typeof input.url !== "string"
+  )
+    throw new PluginActionError(400, "invalid_input", "url must be a string.");
+  // The broker rejects a malformed request outright; check it with the SDK
+  // validator first so bad input stays a 400 rather than an internal error.
+  if (
+    validatePluginDocumentCaptureUrlRequestV1({
+      url: input.url,
+      maxTextBytes: MAX_TEXT_BYTES,
+    }).length
+  )
+    throw new PluginActionError(
+      400,
+      "invalid_input",
+      "url must be an absolute https URL without credentials.",
+    );
+  return input.url;
+}
+
+/** Maps capture failures to stable action errors; unknown codes stay generic. */
+function captureError(error: PluginDocumentCaptureErrorV1): PluginActionError {
+  switch (error.code) {
+    case "url_rejected":
+      return new PluginActionError(400, "capture_url_rejected", error.message);
+    case "web_access_disabled":
+    case "capacity_exceeded":
+    case "timeout":
+      return new PluginActionError(409, `capture_${error.code}`, error.message);
+    default:
+      return new PluginActionError(422, "capture_failed", error.message);
+  }
+}
+
+/** First `limit` code points, without copying the rest of the text. */
+function preview(text: string, limit: number): string {
+  let result = "";
+  let count = 0;
+  for (const character of text) {
+    if (count === limit) break;
+    result += character;
+    count += 1;
+  }
+  return result;
+}
+
+function capture(url: string, documentCapture: PluginDocumentCaptureServiceV1) {
+  return documentCapture.fromUrl({ url, maxTextBytes: MAX_TEXT_BYTES });
+}
+
+export const plugin = definePlugin({
+  actions: [
+    {
+      id: "capture-document",
+      title: "Capture document",
+      risk: "external",
+      requiredRole: "operator",
+      async run(input: unknown, context): Promise<JsonValue> {
+        const url = requestedUrl(input);
+        // Absent when the host lacks the broker or the invocation is not bound.
+        if (!context.documentCapture)
+          throw new PluginActionError(
+            409,
+            "capture_unavailable",
+            "Document capture is not available for this invocation.",
+          );
+        const result = await capture(url, context.documentCapture);
+        if (!result.ok) throw captureError(result.error);
+        const { document } = result;
+        // Captured text is untrusted content. This plugin owns its retention,
+        // lineage and deletion once it stores any of it.
+        return {
+          finalUrl: document.source.finalUrl,
+          fetchedAt: document.fetchedAt,
+          title: document.title,
+          contentType: document.contentType,
+          textBytes: document.textBytes,
+          textSha256: document.textSha256,
+          truncated: document.truncated,
+          warnings: [...document.warnings],
+          preview: preview(document.text, PREVIEW_CHARACTERS),
+        };
+      },
+    },
+  ],
+  scheduledJobs: [
+    {
+      id: "refresh-document",
+      description: "Re-captures one configured public document.",
+      intervalSeconds: 86_400,
+      timeoutSeconds: 120,
+      async run(context) {
+        if (context.signal.aborted) return;
+        // Absent when the host lacks the broker or the job is not bound; say so
+        // rather than letting an empty run pass for a refresh.
+        if (!context.documentCapture) {
+          context.logger.warn("document refresh skipped: capture unavailable");
+          return;
+        }
+        const result = await capture(SCHEDULED_URL, context.documentCapture);
+        // Log identifiers and outcome only, never captured text.
+        context.logger.info(
+          "document refresh finished",
+          result.ok
+            ? { ok: true, textSha256: result.document.textSha256 }
+            : { ok: false, code: result.error.code },
+        );
+      },
+    },
+  ],
+});
+
+export default plugin;

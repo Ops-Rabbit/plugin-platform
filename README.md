@@ -21,7 +21,7 @@ This repository publishes:
 - [`@opsrabbit/plugin-sdk`](./packages/plugin-sdk): contracts, manifest schema,
   validation, compatibility checks, governed service-plugin contracts, package
   inventory, and an isolated test harness.
-- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, fourteen starters,
+- [`@opsrabbit/create-plugin`](./packages/create-plugin): CLI, fifteen starters,
   reference implementations, generated tests, CI, README, and `AGENTS.md`.
 
 ## Create a plugin
@@ -105,6 +105,10 @@ documents how host 0.6.0 executes reviewed helpers packaged in attached skills w
 ## Agent runs v1
 
 SDK 0.31.0 exports `PluginAgentRunsServiceV1`, completion and observation types, and request, output-schema and state validators. See [host responsibilities and reference](docs/plugin-agent-runs-v1.md). Runtime availability requires an implementing host; a binding requests access and grants none, and limits remain host policy.
+
+## Document capture v1
+
+SDK 0.32.0 exports `PluginDocumentCaptureServiceV1`, `PluginCapturedDocumentV1` and request and result validators. See [host responsibilities and reference](docs/plugin-document-capture-v1.md). A binding requests access and grants none; the host fetches under tenant Web Access policy, and plugins never open the connection themselves.
 
 ## Channel messaging v1
 

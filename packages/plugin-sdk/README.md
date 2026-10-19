@@ -259,6 +259,10 @@ evidence references.
 
 SDK 0.31.0 exports `PluginAgentRunsServiceV1`, completion and observation types, and request, output-schema and state validators. See [host responsibilities and reference](../../docs/plugin-agent-runs-v1.md). Runtime availability requires an implementing host; a binding requests access and grants none, and limits remain host policy.
 
+## Document capture v1
+
+SDK 0.32.0 exports `PluginDocumentCaptureServiceV1`, `PluginCapturedDocumentV1` and request and result validators. See [host responsibilities and reference](../../docs/plugin-document-capture-v1.md). A binding requests access and grants none; the host fetches under tenant Web Access policy, and plugins never open the connection themselves.
+
 ## Channel messaging v1
 
 SDK 0.27.0 exports `ChannelMessagingContextV1`, `ChannelMessagingAdapterV1`, and message input validation/schema. See [host responsibilities and reference](../../docs/channel-messaging-v1.md). Runtime availability requires an implementing host; a saved connection alone grants no messaging authority.

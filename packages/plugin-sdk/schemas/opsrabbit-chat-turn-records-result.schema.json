@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.dev/schemas/opsrabbit-chat-turn-records-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["turns"],
+  "properties": {
+    "turns": {
+      "type": "array",
+      "maxItems": 25,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "turnId",
+          "threadId",
+          "userMessage",
+          "userMessageTruncated",
+          "feedback",
+          "feedbackUpdatedAt"
+        ],
+        "properties": {
+          "turnId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+          },
+          "threadId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+          },
+          "userMessage": {
+            "type": ["string", "null"],
+            "maxLength": 2000
+          },
+          "userMessageTruncated": {
+            "type": "boolean"
+          },
+          "feedback": {
+            "enum": ["thumbs_up", "thumbs_down", null]
+          },
+          "feedbackUpdatedAt": {
+            "type": ["string", "null"],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,9})?Z$"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "feedback": {
+                  "const": null
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "feedbackUpdatedAt": {
+                  "const": null
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "feedbackUpdatedAt": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "userMessage": {
+                  "const": null
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "userMessageTruncated": {
+                  "const": false
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

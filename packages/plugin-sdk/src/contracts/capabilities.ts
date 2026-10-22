@@ -137,6 +137,7 @@ export interface PluginDeclaredCapabilities {
   inboundLifecycle?: { schemaVersion: "1" };
   chatTurnAdmission?: { schemaVersion: "1"; scope: "deployment" };
   chatComposerStatus?: { schemaVersion: "1" };
+  chatTurnRecords?: { schemaVersion: "1"; read: true };
   deploymentAdminWorkspace?: { schemaVersion: "1" };
   identityDirectory?: { read: true };
   personaHost?: { schemaVersion: "1" };

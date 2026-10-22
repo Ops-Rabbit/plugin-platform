@@ -73,6 +73,8 @@ try {
         "schemas/opsrabbit-plugin-source-inbound-binding.schema.json",
         "schemas/opsrabbit-structured-enrichment-input.schema.json",
         "schemas/opsrabbit-structured-enrichment-result.schema.json",
+        "schemas/opsrabbit-chat-turn-records-request.schema.json",
+        "schemas/opsrabbit-chat-turn-records-result.schema.json",
       ])
         if (!paths.includes(schema))
           throw new Error(`SDK package is missing public schema ${schema}`);

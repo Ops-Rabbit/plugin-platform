@@ -52,6 +52,36 @@ describe("createPlugin", () => {
     expect(course).toContain(`The ${documentedCount} current starter ids`);
   });
 
+  it("pins repository and generated starters to a patched Node runtime", async () => {
+    const root = join(import.meta.dirname, "..", "..", "..");
+    const patchedEngines = "^22.23.4 || ^24.22.1 || >=26.12.1";
+    const repoNvmrc = await readFile(join(root, ".nvmrc"), "utf8");
+    expect(repoNvmrc.trim()).toBe("24.22.1");
+    expect(
+      await readFile(
+        join(root, "packages", "create-plugin", "assets", "common", ".nvmrc"),
+        "utf8",
+      ),
+    ).toBe(repoNvmrc);
+    for (const path of [
+      "package.json",
+      join("packages", "plugin-sdk", "package.json"),
+      join("packages", "create-plugin", "package.json"),
+      join(
+        "packages",
+        "create-plugin",
+        "assets",
+        "common",
+        "package.json.tmpl",
+      ),
+    ]) {
+      const engines = (await readFile(join(root, path), "utf8")).match(
+        /"node": "([^"]+)"/,
+      )?.[1];
+      expect(engines, path).toBe(patchedEngines);
+    }
+  });
+
   it.each(STARTER_IDS)("creates a complete %s repository", async (starter) => {
     const parent = await mkdtemp(join(tmpdir(), "opsrabbit-create-"));
     const target = join(parent, starter);

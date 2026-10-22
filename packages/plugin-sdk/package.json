@@ -1,6 +1,6 @@
 {
   "name": "@opsrabbit/plugin-sdk",
-  "version": "0.32.0",
+  "version": "0.32.1",
   "description": "Public contracts, validation, and testing utilities for OpsRabbit plugins",
   "type": "module",
   "license": "Apache-2.0",
@@ -12,7 +12,7 @@
   "homepage": "https://github.com/Ops-Rabbit/plugin-platform#readme",
   "bugs": "https://github.com/Ops-Rabbit/plugin-platform/issues",
   "engines": {
-    "node": ">=22.14.0"
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "files": [
     "dist",

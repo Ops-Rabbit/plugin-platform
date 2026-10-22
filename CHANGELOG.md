@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.32.1 - Unreleased
+
+- Adopt the [October 21, 2026 Node.js security release](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases). The repository and generated starter `.nvmrc` now select Node 24.22.1, so platform CI, publishing and generated plugin CI/release workflows run on a patched runtime.
+- Raise the SDK, CLI and generated starter `engines.node` range to `^22.23.4 || ^24.22.1 || >=26.12.1`. Unpatched 22.x, 24.x and 26.x releases and the end-of-life 23.x and 25.x lines are no longer declared as supported. Existing generated plugin repositories should update their `.nvmrc` and `engines.node` to match.
+- No contract, schema or starter behavior changes. Align SDK and CLI release versions at 0.32.1.
+
 ## 0.32.0 - Unreleased
 
 - Add the optional `documentCapture` capability. A plugin binds `external` actions or scheduled jobs. The host fetches a public HTTPS URL under tenant Web Access policy and returns canonical text with lineage: requested and final URL, redirect count, byte and text SHA-256, and extractor identity. Expected failures resolve as typed `{ ok: false }` results; cancellation rejects with the invocation signal's reason.

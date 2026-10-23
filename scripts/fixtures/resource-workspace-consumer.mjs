@@ -182,21 +182,17 @@ await assert.rejects(
 import.meta.resolve("@opsrabbit/plugin-sdk/plugin-resource-capability-schema");
 import.meta.resolve("@opsrabbit/plugin-sdk/plugin-resource-deletion-schema");
 import.meta.resolve("@opsrabbit/plugin-sdk/plugin-resource-query-schema");
-import.meta.resolve(
-  "@opsrabbit/plugin-sdk/plugin-resource-registration-schema",
-);
+import.meta
+  .resolve("@opsrabbit/plugin-sdk/plugin-resource-registration-schema");
 import.meta.resolve("@opsrabbit/plugin-sdk/plugin-resource-transaction-schema");
-import.meta.resolve(
-  "@opsrabbit/plugin-sdk/plugin-source-inbound-binding-schema",
-);
+import.meta
+  .resolve("@opsrabbit/plugin-sdk/plugin-source-inbound-binding-schema");
 import.meta.resolve("@opsrabbit/plugin-sdk/structured-enrichment-input-schema");
-import.meta.resolve(
-  "@opsrabbit/plugin-sdk/structured-enrichment-result-schema",
-);
+import.meta
+  .resolve("@opsrabbit/plugin-sdk/structured-enrichment-result-schema");
 
-const { saveInboundBusinessConfiguration } = await import(
-  "./inbound-registration.mjs"
-);
+const { saveInboundBusinessConfiguration } =
+  await import("./inbound-registration.mjs");
 const {
   validatePluginInboundRegistration,
   PLUGIN_INBOUND_REGISTRATION_SCHEMA,
@@ -224,9 +220,7 @@ assert.deepEqual(validatePluginInboundRegistration(registrationCapability), []);
 assert.deepEqual(
   JSON.parse(
     readFileSync(
-      require.resolve(
-        "@opsrabbit/plugin-sdk/plugin-inbound-registration-schema",
-      ),
+      require.resolve("@opsrabbit/plugin-sdk/plugin-inbound-registration-schema"),
       "utf8",
     ),
   ),

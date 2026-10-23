@@ -59,16 +59,10 @@ export type PluginAgentRunStatus =
   | "access_revoked";
 
 export type PluginAgentRunDeliveryStatus =
-  | "pending"
-  | "delivering"
-  | "delivered"
-  | "delivery_failed";
+  "pending" | "delivering" | "delivered" | "delivery_failed";
 
 export type PluginAgentRunProgressCode =
-  | "queued"
-  | "running"
-  | "preparing_result"
-  | "delivering_result";
+  "queued" | "running" | "preparing_result" | "delivering_result";
 
 export type PluginAgentRunErrorCode =
   | "EXECUTION_FAILED"

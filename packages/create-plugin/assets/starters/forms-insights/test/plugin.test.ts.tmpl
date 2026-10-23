@@ -141,4 +141,33 @@ describe("{{displayName}}", () => {
       ),
     ).rejects.toThrow("not authorized");
   });
+
+  it("rejects missing references and policies without the matching namespace", async () => {
+    const context = createTestContext({
+      tenantId: "tenant-a",
+      dataInsightAuthorization: {
+        schemaVersion: 1,
+        mode: "resource_action",
+        policyKey: "records_reviewer",
+        dashboardId: "dashboard-a",
+        subject: { type: "group", id: "group-a" },
+        allowedReferences: {},
+      },
+    });
+    await expect(plugin.actions?.[0]?.run({}, context)).rejects.toThrow(
+      "not authorized",
+    );
+    await expect(plugin.actions?.[1]?.run({}, context)).rejects.toThrow(
+      "not authorized",
+    );
+    await expect(
+      plugin.actions?.[0]?.run(
+        { saved_query_id: "records-by-category" },
+        context,
+      ),
+    ).rejects.toThrow("not authorized");
+    await expect(
+      plugin.actions?.[1]?.run({ report_id: "records-overview" }, context),
+    ).rejects.toThrow("not authorized");
+  });
 });

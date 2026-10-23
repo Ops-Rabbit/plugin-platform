@@ -9,12 +9,7 @@ export interface ChannelApprovalActorV1 {
 }
 
 export type ChannelApprovalStateV1 =
-  | "pending"
-  | "approved"
-  | "denied"
-  | "expired"
-  | "cancelled"
-  | "disabled";
+  "pending" | "approved" | "denied" | "expired" | "cancelled" | "disabled";
 
 export interface ChannelApprovalDeliveryV1 {
   schemaVersion: typeof CHANNEL_APPROVAL_VERSION;

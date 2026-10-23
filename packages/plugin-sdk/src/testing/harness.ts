@@ -87,8 +87,7 @@ export function createTestContext(
 }
 
 export type TestInvocation =
-  | { kind: "action"; id: string }
-  | { kind: "scheduledJob"; id: string };
+  { kind: "action"; id: string } | { kind: "scheduledJob"; id: string };
 
 /**
  * Builds the public service surface authorized by a manifest and invocation.

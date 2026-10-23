@@ -60,8 +60,7 @@ export type DataInsightPluginTemplateQuery = {
 };
 
 export type DataInsightTemplateQuery =
-  | DataInsightFormsTemplateQuery
-  | DataInsightPluginTemplateQuery;
+  DataInsightFormsTemplateQuery | DataInsightPluginTemplateQuery;
 
 export type DataInsightTemplateWidgetType =
   | "metric"

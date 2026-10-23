@@ -94,12 +94,12 @@ keeping those responsibilities separate.
 This course is for TypeScript developers and solution engineers who can read
 `async` functions, JSON, and Vitest tests. Learners need:
 
-- Node 24.18.0, selected from the repository `.nvmrc` with `nvm use`;
+- Node 24.22.1 (patched for the October 2026 Node.js security release), selected from the repository `.nvmrc` with `nvm use`;
 - npm for generated plugin repositories;
 - familiarity with tenant-scoped SaaS concepts;
 - an OpsRabbit deployment only for the optional installation lab.
 
-The repository itself uses pnpm 10.34.0. Generated plugins use npm and are
+The repository itself uses pnpm 12.14.0. Generated plugins use npm and are
 deliberately verified outside the platform workspace.
 
 ## Format

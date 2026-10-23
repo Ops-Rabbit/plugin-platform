@@ -87,12 +87,10 @@ function setup(input = job) {
     failCleanup: vi.fn(async () => undefined),
   };
   const provider = {
-    recover: vi.fn(
-      async (): Promise<unknown> => ({
-        messageId: "123.457",
-        receiptMessageId: "123.458",
-      }),
-    ),
+    recover: vi.fn(async (): Promise<unknown> => ({
+      messageId: "123.457",
+      receiptMessageId: "123.458",
+    })),
     remove: vi.fn(async (locator: { messageId: string }) =>
       messages.delete(locator.messageId) ? "deleted" : "already_absent",
     ),

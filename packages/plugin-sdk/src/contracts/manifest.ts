@@ -10,9 +10,7 @@ export const PLUGIN_API_VERSION = "1.0" as const;
 
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue =
-  | JsonPrimitive
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
 export type PluginSetting = {
   key: string;
@@ -83,8 +81,7 @@ export type PluginStandaloneWorkspaceNavigation = Omit<
   "kind" | "workflow"
 > & { kind: "plugin_workspace"; workflow?: never };
 export type PluginWorkspaceNavigation =
-  | PluginFormsWorkspaceNavigation
-  | PluginStandaloneWorkspaceNavigation;
+  PluginFormsWorkspaceNavigation | PluginStandaloneWorkspaceNavigation;
 
 export interface PluginFormsWorkflowNavigation {
   rootStarterKey: string;

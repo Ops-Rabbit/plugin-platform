@@ -25,9 +25,7 @@ export type PluginStructuredEnrichmentResultV1 =
   | {
       readonly status: "unavailable";
       readonly reason:
-        | "not_configured"
-        | "policy_blocked"
-        | "capacity_unavailable";
+        "not_configured" | "policy_blocked" | "capacity_unavailable";
     }
   | { readonly status: "timeout" };
 export interface PluginStructuredEnrichmentService {

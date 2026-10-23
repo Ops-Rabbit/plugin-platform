@@ -289,11 +289,10 @@ export type TransactionBoundPluginDatabase = Pick<
 >;
 
 /** Host-authorized deployment-admin action context bound to one transaction. */
-export interface DeploymentAdminActionContext
-  extends Omit<
-    PluginInvocationContext,
-    "actor" | "database" | "identityDirectory" | "audit" | "chatTurnRecords"
-  > {
+export interface DeploymentAdminActionContext extends Omit<
+  PluginInvocationContext,
+  "actor" | "database" | "identityDirectory" | "audit" | "chatTurnRecords"
+> {
   readonly actor: PluginUserActor & { readonly role: "admin" };
   readonly database: TransactionBoundPluginDatabase;
   readonly identityDirectory: PluginIdentityDirectoryService;

@@ -12,9 +12,7 @@ export interface PluginResourceKindV1 {
   readonly retention: {
     readonly defaultMode: "retain_indefinitely";
     readonly supportedModes: readonly (
-      | "do_not_persist"
-      | "retain_for_days"
-      | "retain_indefinitely"
+      "do_not_persist" | "retain_for_days" | "retain_indefinitely"
     )[];
   };
 }
@@ -162,10 +160,7 @@ export interface PluginResourceDeletionV1 {
   readonly kind: string;
   readonly ids: readonly string[];
   readonly reason:
-    | "retention"
-    | "manual"
-    | "tenant_deleted"
-    | "restore_reconciliation";
+    "retention" | "manual" | "tenant_deleted" | "restore_reconciliation";
 }
 export interface PluginResourceLifecycleDefinitionV1 {
   readonly schemaVersion: "1";

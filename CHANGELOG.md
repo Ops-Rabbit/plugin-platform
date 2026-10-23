@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.33.0 - Unreleased
+
+- Add the read-only `chatTurnRecords/v1` broker so deployment interaction policies can show administrators the user question and answer feedback for turns they admitted, without storing message content.
+- Validate the `chatTurnRecords` declaration and its `chatTurnAdmission`, `deploymentAdminWorkspace`, and `audit` dependencies in runtime validation and the published manifest JSON Schema.
+- Publish request and result JSON Schemas, plus validators that also enforce request membership, request order, RFC 3339 UTC timestamps, and cross-field rules.
+- A manifest that declares `chatTurnRecords` must set `minimumOpsRabbitVersion` 0.11.0 or later. Existing manifests are unchanged.
+- Define the error contract (400, 429, 500) and the per-invocation read limit. The broker is available only to admin workspace routes, never to deployment admin actions.
+- Add an executable reference and a packed clean-consumer verification. Align SDK and CLI release versions at 0.33.0.
+
 ## 0.32.0 - Unreleased
 
 - Add the optional `documentCapture` capability. A plugin binds `external` actions or scheduled jobs. The host fetches a public HTTPS URL under tenant Web Access policy and returns canonical text with lineage: requested and final URL, redirect count, byte and text SHA-256, and extractor identity. Expected failures resolve as typed `{ ok: false }` results; cancellation rejects with the invocation signal's reason.

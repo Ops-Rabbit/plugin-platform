@@ -47,6 +47,10 @@ execFileSync("node", ["scripts/verify-channel-messaging-consumer.mjs"], {
   cwd: root,
   stdio: "inherit",
 });
+execFileSync("node", ["scripts/verify-chat-turn-records-consumer.mjs"], {
+  cwd: root,
+  stdio: "inherit",
+});
 
 try {
   const sdk = pack("packages/plugin-sdk");

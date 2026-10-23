@@ -5,6 +5,7 @@ import type { PluginStructuredClassificationService } from "./structured-classif
 import type { DataInsightAuthorizationContext } from "./data-insight.js";
 import type { PluginAgentRunsServiceV1 } from "./agent-runs.js";
 import type { PluginDocumentCaptureServiceV1 } from "./document-capture.js";
+import type { PluginChatTurnRecordsService } from "./chat-turn-records.js";
 
 export interface PluginActor {
   readonly id: string;
@@ -56,6 +57,11 @@ export interface PluginInvocationContext {
   readonly connections?: PluginConnectionsService;
   /** Available only for host-authorized deployment-admin route/action calls. */
   readonly identityDirectory?: PluginIdentityDirectoryService;
+  /**
+   * Available only to `requiredRole: "admin"` deployment workspace route calls when the manifest
+   * declares chatTurnRecords v1; never to actions, jobs, or tools.
+   */
+  readonly chatTurnRecords?: PluginChatTurnRecordsService;
   readonly audit?: PluginAuditService;
   /**
    * Host-governed classifier, exposed only to manifest-bound actions and jobs.
@@ -285,7 +291,7 @@ export type TransactionBoundPluginDatabase = Pick<
 /** Host-authorized deployment-admin action context bound to one transaction. */
 export interface DeploymentAdminActionContext extends Omit<
   PluginInvocationContext,
-  "actor" | "database" | "identityDirectory" | "audit"
+  "actor" | "database" | "identityDirectory" | "audit" | "chatTurnRecords"
 > {
   readonly actor: PluginUserActor & { readonly role: "admin" };
   readonly database: TransactionBoundPluginDatabase;

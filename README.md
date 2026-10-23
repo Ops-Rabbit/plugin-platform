@@ -110,6 +110,10 @@ SDK 0.31.0 exports `PluginAgentRunsServiceV1`, completion and observation types,
 
 SDK 0.32.0 exports `PluginDocumentCaptureServiceV1`, `PluginCapturedDocumentV1` and request and result validators. See [host responsibilities and reference](docs/plugin-document-capture-v1.md). A binding requests access and grants none; the host fetches under tenant Web Access policy, and plugins never open the connection themselves.
 
+## Chat turn records v1
+
+SDK 0.33.0 exports the read-only `chatTurnRecords` broker contract, request/result validators and JSON Schemas, and an executable [reference](packages/plugin-sdk/reference/chat-turn-records.mjs). A deployment interaction policy's admin route can show the question and answer feedback for turns it admitted; the plugin never stores them. See [host responsibilities](docs/chat-turn-records-v1.md). Runtime availability requires an implementing host.
+
 ## Channel messaging v1
 
 SDK 0.27.0 exports `ChannelMessagingContextV1`, `ChannelMessagingAdapterV1`, and message input validation/schema. See [host responsibilities and reference](docs/channel-messaging-v1.md). Runtime availability requires an implementing host; a saved connection alone grants no messaging authority.

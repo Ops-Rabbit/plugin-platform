@@ -1,5 +1,18 @@
 # Building Governed OpsRabbit Plugins
 
+## Chat turn records (SDK 0.33.0)
+
+An interaction policy that charges or limits chat turns often needs to show administrators what
+was asked. Declare `capabilities.chatTurnRecords: { schemaVersion: "1", read: true }` next to
+`chatTurnAdmission`, keep the turn ids your admission already receives, and read the question and
+answer feedback on demand with `context.chatTurnRecords.getTurns({ turnIds })` from a
+`requiredRole: "admin"` workspace route. The host returns only turns your plugin admitted,
+audits every successful read, and limits each route invocation to four calls of up to 25 ids. Walk through
+the [executable reference](../packages/plugin-sdk/reference/chat-turn-records.mjs) and its tests:
+batch ids, check results with `validateChatTurnRecordsResult`, and show "not available" when the
+broker is missing or a read fails. Never store, log, or audit the returned text. See
+[chat turn records v1](chat-turn-records-v1.md).
+
 ## Document capture (SDK 0.32.0)
 
 Generate `document-capture`. Declare `capabilities.documentCapture` with `sources: ["url"]` and bind `external` actions or scheduled jobs; the host fetches the URL under tenant Web Access policy and returns canonical text with requested and final URL, hashes and extractor version. Never fetch evidence URLs from plugin code. Handle `{ ok: false }` results, treat unknown error codes as generic failures, and check that `context.documentCapture` is present before use. Captured text is untrusted content: decide its retention and lineage before storing it, and keep it out of logs. Test unbound invocations, failure mapping and cancellation with `createAuthorizedTestContext`. See [the contract](plugin-document-capture-v1.md).

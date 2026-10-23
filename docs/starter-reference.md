@@ -11,6 +11,14 @@ human attribution and first-writer decision handling against the packed public S
 in `scripts/verify-channel-approval-consumer.mjs`. It is a supporting-host adapter
 reference, not a new generated starter or an arbitrary approval resolver.
 
+The chat turn records reference is
+`packages/plugin-sdk/reference/chat-turn-records.mjs`. It shows an `interaction-policy`
+deployment-admin route reading question text and answer feedback for turns the plugin admitted,
+in bounded batches, degrading to "not available" without the broker or on a read failure. It is
+verified against the packed public SDK in `scripts/verify-chat-turn-records-consumer.mjs`. It is a
+reference, not a new generated starter: the broker requires a host that implements
+[chat turn records v1](chat-turn-records-v1.md).
+
 The `forms-workflow` starter declares `navigation.section: "operations"`.
 See [navigation sections](plugin-navigation-sections-v1.md) for all four groups
 and the release dependency. Host authorization remains independent of placement.

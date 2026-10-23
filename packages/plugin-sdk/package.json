@@ -1,6 +1,6 @@
 {
   "name": "@opsrabbit/plugin-sdk",
-  "version": "0.32.1",
+  "version": "0.33.0",
   "description": "Public contracts, validation, and testing utilities for OpsRabbit plugins",
   "type": "module",
   "license": "Apache-2.0",
@@ -55,7 +55,9 @@
     "./structured-enrichment-result-schema": "./schemas/opsrabbit-structured-enrichment-result.schema.json",
     "./plugin-inbound-registration-schema": "./schemas/opsrabbit-plugin-inbound-registration.schema.json",
     "./plugin-inbound-configuration-request-schema": "./schemas/opsrabbit-plugin-inbound-configuration-request.schema.json",
-    "./plugin-inbound-configuration-schema": "./schemas/opsrabbit-plugin-inbound-configuration.schema.json"
+    "./plugin-inbound-configuration-schema": "./schemas/opsrabbit-plugin-inbound-configuration.schema.json",
+    "./chat-turn-records-request-schema": "./schemas/opsrabbit-chat-turn-records-request.schema.json",
+    "./chat-turn-records-result-schema": "./schemas/opsrabbit-chat-turn-records-result.schema.json"
   },
   "scripts": {
     "build": "node ../../scripts/clean-directory.mjs dist && tsc -p tsconfig.build.json",

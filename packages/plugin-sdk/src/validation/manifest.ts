@@ -152,6 +152,18 @@ export function validateManifest(
         "capabilities.documentCapture requires minimumOpsRabbitVersion 0.10.0 or later.",
       ),
     );
+  if (
+    record(input.capabilities) &&
+    input.capabilities.chatTurnRecords !== undefined &&
+    !hasMinimumVersion(input.minimumOpsRabbitVersion, 0, 11, 0)
+  )
+    issues.push(
+      issue(
+        "$.minimumOpsRabbitVersion",
+        "unsupported",
+        "capabilities.chatTurnRecords requires minimumOpsRabbitVersion 0.11.0 or later.",
+      ),
+    );
   validateFrontend(
     input.frontend,
     input.navigation,
@@ -319,6 +331,11 @@ function validateInteractionDependencies(
     "localization",
   ]);
   requireCapabilities("chatComposerStatus", ["database", "localization"]);
+  requireCapabilities("chatTurnRecords", [
+    "chatTurnAdmission",
+    "deploymentAdminWorkspace",
+    "audit",
+  ]);
   requireCapabilities("deploymentAdminWorkspace", [
     "identityDirectory",
     "localization",
@@ -1409,6 +1426,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "knowledgeEmailProcessor",
     "chatTurnAdmission",
     "chatComposerStatus",
+    "chatTurnRecords",
     "deploymentAdminWorkspace",
     "identityDirectory",
     "personaHost",
@@ -1880,6 +1898,30 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
       },
     );
   validateSingletonCapability(
+    capabilities.chatTurnRecords,
+    "chatTurnRecords",
+    ["schemaVersion", "read"],
+    issues,
+    (entry) => {
+      if (entry.schemaVersion !== "1")
+        issues.push(
+          issue(
+            "$.capabilities.chatTurnRecords.schemaVersion",
+            "invalid",
+            "chatTurnRecords schema version must be 1.",
+          ),
+        );
+      if (entry.read !== true)
+        issues.push(
+          issue(
+            "$.capabilities.chatTurnRecords.read",
+            "invalid",
+            "Chat turn record read access must be explicitly enabled.",
+          ),
+        );
+    },
+  );
+  validateSingletonCapability(
     capabilities.identityDirectory,
     "identityDirectory",
     ["read"],
@@ -2077,6 +2119,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     !capabilities.knowledgeEmailProcessor &&
     !capabilities.chatTurnAdmission &&
     !capabilities.chatComposerStatus &&
+    !capabilities.chatTurnRecords &&
     !capabilities.deploymentAdminWorkspace &&
     !capabilities.identityDirectory &&
     !capabilities.personaHost &&

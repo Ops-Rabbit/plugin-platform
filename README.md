@@ -129,3 +129,5 @@ The [resource workspace contract](docs/resource-workspaces-v1.md) covers standal
 SDK/CLI 0.30.0 adds declarative source Inbound business configuration for host-owned registration controls. Core owns the checkbox, grants and delivery; plugins declare bounded localized mapping/enrichment fields and tenant-admin read/write actions. Configuration uses revision/incarnation fences. See [the Inbound registration contract](docs/inbound-registration-v1.md).
 
 SDK 0.31.1 adds the `siren` navigation icon for operational incidents. Hosts must render this icon key before plugins select it; see [navigation compatibility](docs/plugin-navigation-sections-v1.md).
+
+SDK 0.34.0 adds adapter-only channel messaging references for trusted Teams routing and confirmed sent-message quoting. No new send authority, authentication or content store is granted. See [host responsibilities](docs/channel-messaging-v1.md). Runtime use requires coordinated host support.

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "null"
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "channelId", "routing"],
+      "properties": {
+        "kind": {
+          "const": "destination"
+        },
+        "channelId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+        },
+        "routing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "provider",
+            "serviceUrl",
+            "conversationId",
+            "providerTenantId",
+            "teamId",
+            "botId"
+          ],
+          "properties": {
+            "provider": {
+              "const": "teams"
+            },
+            "serviceUrl": {
+              "type": "string",
+              "maxLength": 2048,
+              "pattern": "^https://[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::443)?(?:/[A-Za-z0-9/_-]*)?(?![\\s\\S])"
+            },
+            "conversationId": {
+              "type": "string",
+              "pattern": "^[^\\u0000-\\u001f\\u007f]{1,1024}(?![\\s\\S])"
+            },
+            "providerTenantId": {
+              "type": "string",
+              "pattern": "^[^\\u0000-\\u001f\\u007f]{1,1024}(?![\\s\\S])"
+            },
+            "teamId": {
+              "type": "string",
+              "pattern": "^[^\\u0000-\\u001f\\u007f]{1,1024}(?![\\s\\S])"
+            },
+            "botId": {
+              "type": "string",
+              "pattern": "^[^\\u0000-\\u001f\\u007f]{1,1024}(?![\\s\\S])"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "channelId", "messageId", "text"],
+      "properties": {
+        "kind": {
+          "const": "sent_message"
+        },
+        "channelId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+        },
+        "messageId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000,
+          "pattern": "\\S"
+        }
+      }
+    }
+  ]
+}

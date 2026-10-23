@@ -61,6 +61,8 @@ try {
         "schemas/opsrabbit-channel-approval-decision.schema.json",
         "schemas/opsrabbit-channel-approval-cleanup.schema.json",
         "schemas/opsrabbit-channel-messaging-input.schema.json",
+        "schemas/opsrabbit-channel-messaging-reference-request.schema.json",
+        "schemas/opsrabbit-channel-messaging-reference-result.schema.json",
         "schemas/opsrabbit-inbound-lifecycle-event.schema.json",
         "schemas/opsrabbit-plugin-inbound-registration.schema.json",
         "schemas/opsrabbit-plugin-inbound-configuration-request.schema.json",

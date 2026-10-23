@@ -1033,3 +1033,7 @@ Teach the ownership boundary before adding configuration: OpsRabbit owns Inbound
 ### Distinct navigation icons
 
 Choose an icon from the published SDK icon enum and avoid reusing the icons of other installed navigation items. SDK 0.31.1 adds `siren` for operational incidents. Use it only with a host that renders that key; menu placement and icons never grant workspace access.
+
+## Adapter messaging references (SDK 0.34.0)
+
+Use the optional adapter-only resolver for trusted Teams routing or a confirmed outgoing message needed for a WhatsApp quote. Never expose it as a model tool or use it to enumerate chat history. Validate results against the exact request, handle unavailable/deleted references before sending, and retain the shared approval and live authorization gates. The host owns permission checks, source retention and audit; SDK installation alone does not provide runtime support. See [channel messaging](channel-messaging-v1.md) and the executable `channel-messaging-references.mjs` reference.

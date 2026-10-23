@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.34.0 - Unreleased
+
+- Add optional adapter-only `messagingReferences/v1` lookups for trusted Teams routing and confirmed outgoing messages in the current host chat, with live host authorization and existing data lifecycle.
+- Publish bounded request/result schemas, validators with request binding, executable reference, test harness and packed-consumer checks. Existing messaging inputs, receipts and older adapters remain compatible.
+- Align SDK and CLI at 0.34.0. Host implementation and publication remain coordinated release dependencies; no new auth or database migration is required by the contract.
+
 ## 0.33.0 - Unreleased
 
 - Add the read-only `chatTurnRecords/v1` broker so deployment interaction policies can show administrators the user question and answer feedback for turns they admitted, without storing message content.

@@ -38,12 +38,31 @@ try {
     join(root, "packages/plugin-sdk/reference/channel-messaging.mjs"),
     join(target, "reference.mjs"),
   );
+  await copyFile(
+    join(
+      root,
+      "packages/plugin-sdk/reference/channel-messaging-references.mjs",
+    ),
+    join(target, "references.mjs"),
+  );
   await writeFile(
     join(target, "verify.mjs"),
     `
 import assert from "node:assert/strict";
 import { validateChannelMessagingInput, CHANNEL_MESSAGING_VERSION } from "@opsrabbit/plugin-sdk";
 import { sendChannelMessage } from "./reference.mjs";
+import { resolveChannelMessagingReference } from "./references.mjs";
+import { createChannelMessagingReferencesHarness } from "@opsrabbit/plugin-sdk/testing";
+import requestSchema from "@opsrabbit/plugin-sdk/channel-messaging-reference-request-schema" with { type: "json" };
+import resultSchema from "@opsrabbit/plugin-sdk/channel-messaging-reference-result-schema" with { type: "json" };
+assert.equal(requestSchema.oneOf.length, 2);
+assert.equal(resultSchema.oneOf.length, 3);
+const referenceRequest = {kind: "sent_message", channelId: "wa:chat", messageId: "ABC123"};
+const originalMessage = {...referenceRequest, text: "First message"};
+const references = createChannelMessagingReferencesHarness([originalMessage]);
+assert.deepEqual(await resolveChannelMessagingReference({messagingReferences: references}, referenceRequest), originalMessage);
+assert.equal(await references.resolve({...referenceRequest, messageId: "missing"}), null);
+await assert.rejects(() => resolveChannelMessagingReference({}, referenceRequest), /unavailable/);
 assert.equal(CHANNEL_MESSAGING_VERSION, "1");
 const input = { instanceId: "slack-main", channelId: "C123", text: "hello" };
 assert.deepEqual(validateChannelMessagingInput(input), []);

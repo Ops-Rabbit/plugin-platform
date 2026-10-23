@@ -1,3 +1,5 @@
+import type { ChannelMessagingReferencesContextV1 } from "./channel-messaging-references.js";
+
 /** Credentials never cross the model/tool boundary. Host binds actor, tenant and agent. */
 export const CHANNEL_MESSAGING_VERSION = "1" as const;
 
@@ -59,7 +61,7 @@ export interface ChannelMessagingAdapterV1<Context> {
   }>;
   /** New message or explicit thread reply. Never downgrade a reply to a new message or retry ambiguity. */
   sendMessage(
-    context: Context,
+    context: Context & ChannelMessagingReferencesContextV1,
     input: Omit<ChannelMessagingInputV1, "instanceId">,
   ): Promise<ChannelMessagingReceiptV1>;
 }

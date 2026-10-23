@@ -63,11 +63,11 @@ and host compatibility evidence before publication and host consumption.
 
 ## Adapter reference lookup (SDK 0.34.0)
 
-`ChannelMessagingAdapterV1` receives an optional
+Providers opt in with `ChannelMessagingAdapterV1<Context, Context & ChannelMessagingReferencesContextV1>` to receive an optional
 `ChannelMessagingReferencesContextV1.messagingReferences`. This is an adapter-only
 service, **not** `PluginContext.messaging` and not available to model tools,
 configuration routes, arbitrary actions or jobs. Check `schemaVersion === "1"`.
-The existing send input and receipt contracts remain unchanged.
+The existing send input and receipt contracts remain unchanged. The second generic parameter defaults to `Context`, preserving older generic dispatchers and non-object contexts such as `void`; listing retains the original context.
 
 `resolve({kind: "destination", channelId})` returns a Teams routing record
 containing only `provider`, `serviceUrl`, `conversationId`, `providerTenantId`,
@@ -104,7 +104,7 @@ ceilings, runtime identity, enabled state, destination and agent allowlists and
 revocation. The resolver is only available during its adapter invocation; retained
 service handles reject after it ends. Allow at most
 `CHANNEL_MESSAGING_REFERENCES_MAX_CALLS` (four) calls per invocation; further calls
-reject. Malformed requests reject; host errors reject rather than masquerading as
+reject, including calls made with malformed arguments. Malformed requests reject; host errors reject rather than masquerading as
 missing data. Do not return partial or mismatched results. Validate request/result
 schemas and bind each result to its exact request with
 `validateChannelMessagingReferenceResult(result, request)`.
@@ -123,8 +123,8 @@ not message bodies, credentials or full routing records. Local deletion does not
 delete provider messages, backups or customer exports.
 
 The executable `packages/plugin-sdk/reference/channel-messaging-references.mjs`
-checks availability, validates the request, and binds the returned result.
+checks availability, snapshots and freezes the validated original request before awaiting the broker, and binds the returned result to that original snapshot. Returned references (including nested Teams routing) are detached and frozen so later broker mutations cannot change validated data.
 `createChannelMessagingReferencesHarness` in `@opsrabbit/plugin-sdk/testing`
 simulates a bounded already-authorized host fixture; it does not prove production
 resource authorization. The packed consumer verifies the exports, both schemas,
-reference and harness outside this workspace. No provider network calls are made.
+reference and harness outside this workspace. A strict TypeScript consumer additionally checks the packed service types, result narrowing, inferred adapter context and older adapter/host compatibility; a negative fixture must reject a sent-message request without messageId. No provider network calls are made.

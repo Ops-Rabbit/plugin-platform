@@ -22,11 +22,11 @@ export function createChannelMessagingReferencesHarness(
   return {
     schemaVersion: "1",
     async resolve(input) {
-      if (validateChannelMessagingReferenceRequest(input).length)
-        throw new Error("Invalid channel messaging reference request.");
       calls += 1;
       if (calls > CHANNEL_MESSAGING_REFERENCES_MAX_CALLS)
         throw new Error("Channel messaging reference lookup limit exceeded.");
+      if (validateChannelMessagingReferenceRequest(input).length)
+        throw new Error("Invalid channel messaging reference request.");
       const found = snapshot.find(
         (record) =>
           record.kind === input.kind &&

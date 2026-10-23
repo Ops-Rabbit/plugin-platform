@@ -192,6 +192,78 @@ describe("channel messaging references", () => {
       createChannelMessagingReferencesHarness([{ ...sentResult, text: "" }]),
     ).toThrow("Invalid");
   });
+  it("counts malformed resolver attempts toward the invocation budget", async () => {
+    const broker = createChannelMessagingReferencesHarness([]);
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await expect(broker.resolve({ ...sent, messageId: "" })).rejects.toThrow(
+        "Invalid",
+      );
+    }
+    await expect(broker.resolve(sent)).rejects.toThrow("limit");
+  });
+  it("binds pending lookups to the original request despite caller mutation", async () => {
+    const { resolveChannelMessagingReference } = await import(
+      new URL("../reference/channel-messaging-references.mjs", import.meta.url)
+        .href
+    );
+    let complete: ((value: ChannelMessagingReferenceV1) => void) | undefined;
+    const resolve = vi.fn<
+      (input: { messageId: string }) => Promise<ChannelMessagingReferenceV1>
+    >(
+      () =>
+        new Promise<ChannelMessagingReferenceV1>((done) => {
+          complete = done;
+        }),
+    );
+    const request = { ...sent, messageId: "A" };
+    const pending = resolveChannelMessagingReference(
+      { messagingReferences: { schemaVersion: "1", resolve } },
+      request,
+    );
+    request.messageId = "B";
+    if (!complete) throw new Error("Broker was not reached.");
+    complete({ ...sentResult, messageId: "A" });
+    await expect(pending).resolves.toMatchObject({ messageId: "A" });
+    expect(resolve.mock.calls[0]?.[0]).not.toBe(request);
+  });
+  it("rejects broker mutation that would change the original message binding", async () => {
+    const { resolveChannelMessagingReference } = await import(
+      new URL("../reference/channel-messaging-references.mjs", import.meta.url)
+        .href
+    );
+    const request = { ...sent, messageId: "A" };
+    const resolve = vi.fn(async (input: { messageId: string }) => {
+      Reflect.set(input, "messageId", "B");
+      return { ...sentResult, messageId: "B" };
+    });
+    await expect(
+      resolveChannelMessagingReference(
+        { messagingReferences: { schemaVersion: "1", resolve } },
+        request,
+      ),
+    ).rejects.toThrow("mismatched");
+    expect(request.messageId).toBe("A");
+  });
+  it("detaches validated routing results from later broker mutation", async () => {
+    const { resolveChannelMessagingReference } = await import(
+      new URL("../reference/channel-messaging-references.mjs", import.meta.url)
+        .href
+    );
+    const providerResult = { ...destinationResult, routing: { ...routing } };
+    const result = await resolveChannelMessagingReference(
+      {
+        messagingReferences: {
+          schemaVersion: "1",
+          resolve: async () => providerResult,
+        },
+      },
+      destination,
+    );
+    providerResult.routing.serviceUrl = "https://example.com/changed/";
+    expect(result.routing.serviceUrl).toBe(routing.serviceUrl);
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.routing)).toBe(true);
+  });
   it("runs the reference with an adapter-only host broker", async () => {
     const { resolveChannelMessagingReference } = await import(
       new URL("../reference/channel-messaging-references.mjs", import.meta.url)

@@ -1037,3 +1037,7 @@ Choose an icon from the published SDK icon enum and avoid reusing the icons of o
 ## Adapter messaging references (SDK 0.34.0)
 
 Use the optional adapter-only resolver for trusted Teams routing or a confirmed outgoing message needed for a WhatsApp quote. Never expose it as a model tool or use it to enumerate chat history. Validate results against the exact request, handle unavailable/deleted references before sending, and retain the shared approval and live authorization gates. The host owns permission checks, source retention and audit; SDK installation alone does not provide runtime support. See [channel messaging](channel-messaging-v1.md) and the executable `channel-messaging-references.mjs` reference.
+
+The channel messaging reference helper snapshots and freezes requests before asynchronous lookup and returns detached frozen results. Its packed TypeScript consumer verifies optional adapter-context inference and older-adapter compatibility. Count rejected malformed requests toward the four-call budget as well as successful lookups.
+
+Opt into the adapter reference context with `ChannelMessagingAdapterV1<Context, Context & ChannelMessagingReferencesContextV1>`. The send-context parameter defaults to the original Context, preserving generic dispatchers and void-context adapters; no resolver is added to configuration discovery.

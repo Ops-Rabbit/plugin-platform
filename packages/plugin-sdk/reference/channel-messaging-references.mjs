@@ -7,13 +7,17 @@ import {
 export async function resolveChannelMessagingReference(context, input) {
   if (validateChannelMessagingReferenceRequest(input).length)
     throw new Error("Invalid channel messaging reference request.");
+  const request = Object.freeze(globalThis.structuredClone(input));
   const references = context.messagingReferences;
   if (references?.schemaVersion !== "1")
     throw new Error("Channel messaging references are unavailable.");
-  const reference = await references.resolve(input);
-  if (validateChannelMessagingReferenceResult(reference, input).length)
+  const reference = await references.resolve(request);
+  if (validateChannelMessagingReferenceResult(reference, request).length)
     throw new Error(
       "Invalid or mismatched channel messaging reference result.",
     );
-  return reference;
+  if (reference === null) return null;
+  const result = globalThis.structuredClone(reference);
+  if (result.kind === "destination") Object.freeze(result.routing);
+  return Object.freeze(result);
 }

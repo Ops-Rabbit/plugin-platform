@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -78,6 +78,49 @@ await assert.rejects(() => sendChannelMessage({}, input));
 `,
   );
   execFileSync("node", ["verify.mjs"], { cwd: target, stdio: "inherit" });
+  await copyFile(
+    join(root, "packages/plugin-sdk/reference/channel-messaging-consumer.ts"),
+    join(target, "verify-types.ts"),
+  );
+  const typeArguments = [
+    "--strict",
+    "--noEmit",
+    "--target",
+    "ES2022",
+    "--module",
+    "NodeNext",
+    "--moduleResolution",
+    "NodeNext",
+    "verify-types.ts",
+  ];
+  // Use the pinned compiler, but resolve all SDK imports from the isolated packed consumer.
+  const compiler = join(root, "node_modules/typescript/bin/tsc");
+  execFileSync("node", [compiler, ...typeArguments], {
+    cwd: target,
+    stdio: "inherit",
+  });
+  await writeFile(
+    join(target, "invalid-types.ts"),
+    `
+import type { ChannelMessagingReferenceRequestV1 } from "@opsrabbit/plugin-sdk";
+const request: ChannelMessagingReferenceRequestV1 = {kind: "sent_message", channelId: "wa:chat"};
+void request;
+`,
+  );
+  const negative = spawnSync(
+    "node",
+    [compiler, ...typeArguments.slice(0, -1), "invalid-types.ts"],
+    { cwd: target, encoding: "utf8" },
+  );
+  if (
+    negative.error ||
+    negative.status !== 2 ||
+    !negative.stdout.includes("messageId")
+  )
+    throw new Error(
+      "Packed reference types must reject a sent-message request without messageId.",
+    );
+
   const schema = JSON.parse(
     await readFile(
       join(

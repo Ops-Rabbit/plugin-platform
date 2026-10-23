@@ -74,8 +74,7 @@ export const PLUGIN_DOCUMENT_CAPTURE_WARNINGS = [
 export type PluginDocumentCaptureKnownWarning =
   (typeof PLUGIN_DOCUMENT_CAPTURE_WARNINGS)[number];
 export type PluginDocumentCaptureWarning =
-  | PluginDocumentCaptureKnownWarning
-  | PluginDocumentCaptureUnknownCode;
+  PluginDocumentCaptureKnownWarning | PluginDocumentCaptureUnknownCode;
 
 /** Error codes known to this SDK. */
 export const PLUGIN_DOCUMENT_CAPTURE_ERROR_CODES = [
@@ -94,8 +93,7 @@ export const PLUGIN_DOCUMENT_CAPTURE_ERROR_CODES = [
 export type PluginDocumentCaptureKnownErrorCode =
   (typeof PLUGIN_DOCUMENT_CAPTURE_ERROR_CODES)[number];
 export type PluginDocumentCaptureErrorCode =
-  | PluginDocumentCaptureKnownErrorCode
-  | PluginDocumentCaptureUnknownCode;
+  PluginDocumentCaptureKnownErrorCode | PluginDocumentCaptureUnknownCode;
 
 /**
  * Binds host capture to declared invocations. Bound actions must use

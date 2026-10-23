@@ -95,10 +95,7 @@ export interface SubjectLifecycleDefinitionV1 {
 }
 
 export type AdminWorkspaceColumnFormat =
-  | "text"
-  | "decimal"
-  | "timestamp"
-  | "status";
+  "text" | "decimal" | "timestamp" | "status";
 
 export interface DeploymentAdminWorkspaceColumnV1 {
   readonly key: string;

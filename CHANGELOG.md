@@ -4,7 +4,11 @@
 
 - Adopt the [October 21, 2026 Node.js security release](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases). The repository and generated starter `.nvmrc` now select Node 24.22.1, so platform CI, publishing and generated plugin CI/release workflows run on a patched runtime.
 - Raise the SDK, CLI and generated starter `engines.node` range to `^22.23.4 || ^24.22.1 || >=26.12.1`. Unpatched 22.x, 24.x and 26.x releases and the end-of-life 23.x and 25.x lines are no longer declared as supported. Existing generated plugin repositories should update their `.nvmrc` and `engines.node` to match.
-- No contract, schema or starter behavior changes. Align SDK and CLI release versions at 0.32.1.
+- Upgrade repository tooling to pnpm 12.14.0, TypeScript 6.0.3, ESLint 10.12.0, typescript-eslint 8.71.2, Vitest 5.0.5, Prettier 3.9.10, Ajv 8.20.0 and `@types/node` 24.19.2. pnpm 12 replaces `onlyBuiltDependencies` with `allowBuilds`. TypeScript stays on 6.0.x until typescript-eslint supports TypeScript 7. Versions respect the workspace's seven-day `minimumReleaseAge`.
+- Update the CLI's `fflate` dependency to 0.8.3.
+- Generated starters now depend on TypeScript `^7.0.2`, Vitest and `@vitest/coverage-v8` `^5.0.5`, happy-dom `^21.0.3` and `@types/node` `^22.20.5`. Their tsconfig declares `"types": ["node"]`, which TypeScript 6 and later require. The `forms-insights` and `native-workspace` starters add tests for branches that Vitest 5 coverage now counts.
+- Pin `actions/checkout` v7.0.1, `actions/setup-node` v7.1.0 and `actions/upload-artifact` v7.0.2 by commit SHA in platform and generated workflows. Pin `actions/attest-build-provenance` v4.2.2 in the generated release workflow.
+- No contract or schema changes. Align SDK and CLI release versions at 0.32.1.
 
 ## 0.32.0 - Unreleased
 

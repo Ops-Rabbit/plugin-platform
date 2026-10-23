@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "@opsrabbit/plugin-sdk": "workspace:^",
-    "fflate": "0.8.2"
+    "fflate": "0.8.3"
   },
   "scripts": {
     "build": "node ../../scripts/clean-directory.mjs dist && tsc -p tsconfig.build.json",

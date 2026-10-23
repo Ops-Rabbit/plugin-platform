@@ -47,7 +47,10 @@ export interface ChannelMessagingChannelV1 {
 }
 
 /** Host supplies the existing channel context only after authorization. */
-export interface ChannelMessagingAdapterV1<Context> {
+export interface ChannelMessagingAdapterV1<
+  Context,
+  SendContext extends Context = Context,
+> {
   readonly supportsThreadReplies?: boolean;
   /** Admin-only configuration discovery; pagination is explicit and bounded. */
   listMessagingChannels(
@@ -59,7 +62,7 @@ export interface ChannelMessagingAdapterV1<Context> {
   }>;
   /** New message or explicit thread reply. Never downgrade a reply to a new message or retry ambiguity. */
   sendMessage(
-    context: Context,
+    context: SendContext,
     input: Omit<ChannelMessagingInputV1, "instanceId">,
   ): Promise<ChannelMessagingReceiptV1>;
 }

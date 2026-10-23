@@ -39,3 +39,6 @@ export * from "./validation/structured-enrichment.js";
 
 export * from "./contracts/inbound-registration.js";
 export * from "./validation/inbound-registration.js";
+
+export * from "./contracts/channel-messaging-references.js";
+export * from "./validation/channel-messaging-references.js";

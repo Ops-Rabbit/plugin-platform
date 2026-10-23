@@ -57,3 +57,7 @@ The next-release [resource workspace reference](../packages/plugin-sdk/reference
 ## Inbound registration configuration reference
 
 SDK 0.30.0 provides `packages/plugin-sdk/reference/inbound-registration.mjs` alongside the resource-workspace reference. Use it when adding business mapping/profile configuration to host-owned Inbound controls. Core owns enablement and grants; configuration actions preserve enablement and bind immutable configuration using revision and incarnation checks. This is a reference rather than a new generated starter, so the generated-starter inventory is unchanged. The clean resource-workspace consumer executes this reference against the packed SDK.
+
+The adapter-only messaging reference `packages/plugin-sdk/reference/channel-messaging-references.mjs` demonstrates bounded destination routing and confirmed-message lookup. It is verified with the packed SDK and testing harness by `scripts/verify-channel-messaging-consumer.mjs`. This extends the existing messaging reference rather than adding a new starter id. See [channel messaging](channel-messaging-v1.md).
+
+`packages/plugin-sdk/reference/channel-messaging-consumer.ts` compiles outside the workspace against the packed SDK, covering request/result types, optional resolver context and existing adapters. The same consumer script checks a deliberately invalid request fails compilation without using type suppression comments.

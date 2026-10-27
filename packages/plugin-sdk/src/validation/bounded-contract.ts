@@ -9,14 +9,15 @@ export const CONTRACT_UTC =
 // Tenant provisioning v1 (canonical host tenant slug, retry keys, mailbox, host paths).
 export const CONTRACT_TENANT_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*(?![\s\S])/u;
 export const CONTRACT_REQUEST_ID = /^[A-Za-z0-9_-]{16,128}(?![\s\S])/u;
+// The local part is a dot-atom of at most 64 characters: no leading, trailing or doubled dots.
 export const CONTRACT_EMAIL =
-  /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\s\S])/u;
+  /^(?=[^@]{1,64}@)[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\s\S])/u;
 // Display text: trimmed, with no control, invisible-format, blank-rendering or bidi-override
-// characters, no unpaired surrogates, and no Plane 14 tag characters or supplementary variation
-// selectors, so names cannot hide line breaks or text, or render blank or as a different name.
-// The pattern matches the same in schema validators with and without the `u` flag: complete
-// surrogate pairs have their own branch, and Plane 14 characters are listed as escaped pairs
-// because a range above U+FFFF has no form that is valid in both modes.
+// characters, no unpaired surrogates, and no invisible characters above U+FFFF (format controls,
+// tag characters, supplementary variation selectors), so names cannot hide line breaks or text,
+// or render blank or as a different name. The pattern matches the same in schema validators
+// with and without the `u` flag: complete surrogate pairs have their own branch, and characters
+// above U+FFFF are listed as escaped pairs because such a range has no form valid in both modes.
 const escapeUnit = (unit: number) =>
   `\\u${unit.toString(16).toUpperCase().padStart(4, "0")}`;
 const span = (from: number, to: number) =>
@@ -46,7 +47,14 @@ const UNSAFE_TEXT = [
       : `${escapeUnit(from!)}-${escapeUnit(to)}`,
   )
   .join("");
-const PLANE_14 = [0xe0001, ...span(0xe0020, 0xe007f), ...span(0xe0100, 0xe01ef)]
+const SUPPLEMENTARY_HIDDEN = [
+  ...span(0x13430, 0x1343f), // Egyptian hieroglyph format controls
+  ...span(0x1bca0, 0x1bca3), // shorthand format controls
+  ...span(0x1d173, 0x1d17a), // musical symbol format controls
+  0xe0001, // language tag
+  ...span(0xe0020, 0xe007f), // tag characters
+  ...span(0xe0100, 0xe01ef), // supplementary variation selectors
+]
   .map(
     (codePoint) =>
       escapeUnit(0xd800 + ((codePoint - 0x10000) >> 10)) +
@@ -57,7 +65,7 @@ const SURROGATE_PAIR = `[${escapeUnit(0xd800)}-${escapeUnit(0xdbff)}][${escapeUn
 const DISPLAY_EDGE = `(?:[^\\s${UNSAFE_TEXT}]|${SURROGATE_PAIR})`;
 const DISPLAY_INNER = `(?:[^${UNSAFE_TEXT}]|${SURROGATE_PAIR})`;
 export const CONTRACT_TRIMMED_TEXT = new RegExp(
-  `^(?![\\s\\S]*(?:${PLANE_14}))${DISPLAY_EDGE}(?:${DISPLAY_INNER}*${DISPLAY_EDGE})?(?![\\s\\S])`,
+  `^(?![\\s\\S]*(?:${SUPPLEMENTARY_HIDDEN}))${DISPLAY_EDGE}(?:${DISPLAY_INNER}*${DISPLAY_EDGE})?(?![\\s\\S])`,
   "u",
 );
 export const CONTRACT_CURSOR = /^[A-Za-z0-9_-]{1,512}(?![\s\S])/u;

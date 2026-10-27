@@ -387,6 +387,9 @@ describe("tenant provisioning requests", () => {
       ["tag character", 0xe0041],
       ["cancel tag", 0xe007f],
       ["supplementary variation selector", 0xe0100],
+      ["musical symbol format control", 0x1d173],
+      ["shorthand format control", 0x1bca0],
+      ["Egyptian hieroglyph format control", 0x13430],
     ].map(([label, code]) => ({
       name: `display name with a ${label}`,
       value: {
@@ -406,6 +409,21 @@ describe("tenant provisioning requests", () => {
       },
       valid: false,
     },
+    ...[
+      ["dotted local part", "first.last@acme.test", true],
+      ["64-character local part", `${"o".repeat(64)}@acme.test`, true],
+      ["65-character local part", `${"o".repeat(65)}@acme.test`, false],
+      ["leading dot", ".owner@acme.test", false],
+      ["trailing dot", "owner.@acme.test", false],
+      ["doubled dot", "own..er@acme.test", false],
+    ].map(([label, email, valid]) => ({
+      name: `email with a ${label}`,
+      value: {
+        ...createRequest,
+        admin: { email: email as string, displayName: "Owner" },
+      },
+      valid: valid as boolean,
+    })),
     {
       name: "password at the top level",
       value: { ...createRequest, password: "Chosen-by-admin-123" },
@@ -459,6 +477,18 @@ describe("tenant provisioning requests", () => {
     expect(validateListProvisionedTenantsRequestV1(undefined)).toEqual([]);
     expect(parseListProvisionedTenantsRequestV1(undefined)).toEqual({});
     expect(validateListProvisionedTenantsRequestV1("page")).not.toEqual([]);
+    // null is a value, not an omission: rejected here as by the published schema.
+    expect(validateListProvisionedTenantsRequestV1(null)).not.toEqual([]);
+    expect(() => parseListProvisionedTenantsRequestV1(null)).toThrow(
+      PluginValidationError,
+    );
+    const listSchema = ajv();
+    listSchema.addSchema(TENANT_PROVISIONING_REQUEST_SCHEMA);
+    expect(
+      listSchema.getSchema(
+        `${TENANT_PROVISIONING_REQUEST_SCHEMA.$id}#/$defs/listTenants`,
+      )!(null),
+    ).toBe(false);
     expect(
       validateListProvisionedTenantsRequestV1({
         limit: TENANT_PROVISIONING_MAX_PAGE_SIZE,

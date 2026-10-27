@@ -1,9 +1,21 @@
 import {
   TENANT_PROVISIONING_LOGO_MAX_BYTES,
-  validateCreateCustomerRequestV1,
-  validateCreateCustomerResultV1,
-  validateProvisionedTenantLogoV1,
+  parseCreateCustomerRequestV1,
+  parseCreateCustomerResultV1,
+  parseProvisionedTenantLogoV1,
 } from "@opsrabbit/plugin-sdk";
+
+/**
+ * Returns the frozen copy a `parse*V1` function checked, or undefined. Use that copy, never the
+ * original value: a getter or proxy could answer differently after the check.
+ */
+function parsed(parse, value) {
+  try {
+    return parse(value);
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Executable reference for a native workspace that onboards customers. The same bundle serves
@@ -77,22 +89,24 @@ export async function createCustomer(
   attempts = 3,
   retryDelayMs = 500,
 ) {
-  const request = { ...input, requestId: input.requestId ?? newRequestId() };
-  const { requestId } = request;
+  const requestId = input.requestId ?? newRequestId();
   // A password left from an earlier submission must never be shown with this customer.
   credential.clear();
-  if (validateCreateCustomerRequestV1(request).length > 0)
-    return { ok: false, code: "invalid_request", requestId };
+  const request = parsed(parseCreateCustomerRequestV1, { ...input, requestId });
+  if (!request) return { ok: false, code: "invalid_request", requestId };
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     if (attempt > 0)
       await new Promise((resolve) =>
         globalThis.setTimeout(resolve, retryDelayMs * 2 ** (attempt - 1)),
       );
     try {
-      const result = await context.tenantProvisioning.createCustomer(request);
+      const result = parsed(
+        parseCreateCustomerResultV1,
+        await context.tenantProvisioning.createCustomer(request),
+      );
       // An unexpected result shape is not trusted, but the customer may already exist and any
       // password it carried is unusable: tell the admin to check the tenant list and reset.
-      if (validateCreateCustomerResultV1(result).length > 0)
+      if (!result)
         return {
           ok: false,
           code: "host_error",
@@ -129,13 +143,17 @@ export async function createCustomer(
  * checked here; only the size is checked early to avoid a wasted upload.
  */
 export async function uploadLogo(context, tenantId, file) {
+  if (!(file instanceof globalThis.Blob))
+    return { ok: false, code: "logo_invalid" };
   if (file.size > TENANT_PROVISIONING_LOGO_MAX_BYTES)
     return { ok: false, code: "logo_too_large" };
   try {
-    const logo = await context.tenantProvisioning.uploadLogo(tenantId, file);
+    const logo = parsed(
+      parseProvisionedTenantLogoV1,
+      await context.tenantProvisioning.uploadLogo(tenantId, file),
+    );
     // An unexpected result shape is not trusted, in particular not as an `<img>` source.
-    if (validateProvisionedTenantLogoV1(logo).length > 0)
-      return { ok: false, code: "host_error" };
+    if (!logo) return { ok: false, code: "host_error" };
     return { ok: true, logo };
   } catch (error) {
     return {

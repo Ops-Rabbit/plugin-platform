@@ -103,9 +103,11 @@ const result = await broker.createCustomer({
 Display names are 1 to 160 characters with no leading or trailing whitespace, and must not
 contain control characters, invisible formatting characters (such as zero-width spaces),
 bidirectional overrides, blank-looking fillers (such as Hangul fillers and the braille blank),
-tag characters or supplementary variation selectors. A name therefore cannot hide line breaks
-or text, look blank, or display as a different name. Emoji, including the basic variation
-selectors that give them their emoji form, are allowed. The
+tag characters, supplementary variation selectors or other format controls above U+FFFF. A
+name therefore cannot hide line breaks or text, look blank, or display as a different name.
+Emoji, including the basic variation selectors that give them their emoji form, are allowed.
+The part of `email` before the `@` is at most 64 characters with no leading, trailing or
+doubled dots. The
 host commits all of the following in one transaction, so a failure leaves no partial customer:
 
 - the tenant;
@@ -192,8 +194,10 @@ branding:
   `file.type` (a browser may report it empty); checking the size early is fine;
 - the plugin keeps no copy and reads the logo back with `getLogo` or the returned `url`, which
   it may use as an `<img>` source. The SDK validates the URL as a path or an absolute http(s) URL;
-  the host is responsible for serving it from its own API origin. Validate the upload result
-  before using it, as the reference does;
+  the host is responsible for serving it from its own API origin. This is intentional: the SDK
+  cannot know that origin, and plain `http` is needed for local development hosts. Parse the
+  upload result with `parseProvisionedTenantLogoV1` and use the returned copy, as the
+  reference does;
 - `getLogo` returns `null` when the tenant has no logo. The published result schema describes
   this as `#/$defs/getLogo`; `#/$defs/logo` is the non-null logo `uploadLogo` returns.
 
@@ -230,7 +234,10 @@ Treat unknown codes as failures.
   `u` (Unicode) flag.
 - The `validate*V1` functions return issues.
 - The `parse*V1` functions return frozen copies of own data properties or throw
-  `PluginValidationError`.
+  `PluginValidationError`. Use the returned copy rather than the value you passed in: a getter
+  or proxy could answer differently after the check.
+- An omitted `listTenants` request is the first default-sized page; `null` is rejected, as by
+  the published schema.
 - No request type has a password field, and every object rejects unknown keys.
 - A `replayed` result that carries a temporary password is invalid.
 

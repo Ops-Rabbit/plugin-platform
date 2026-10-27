@@ -68,6 +68,8 @@ const input = { requestId: "consumer-request-0001", tenant: { slug: "acme", disp
 const created = await createCustomer(context, input, credential);
 assert.equal(created.ok, true);
 assert.equal(created.outcome, "created");
+// The reference returns the frozen copy that was checked, never the host's original object.
+assert.ok(Object.isFrozen(created.tenant) && Object.isFrozen(created.admin));
 const shown = credential.take();
 assert.equal(typeof shown, "string");
 assert.equal(credential.take(), null);
@@ -83,6 +85,11 @@ assert.equal((await uploadLogo(context, created.tenant.id, new Blob(["x"], { typ
 assert.equal((await uploadLogo(context, created.tenant.id, new Blob([await png.arrayBuffer()], { type: "" }))).ok, true);
 const badLogoHost = { tenantProvisioning: { uploadLogo: async () => ({ url: "javascript:alert(1)" }) } };
 assert.deepEqual(await uploadLogo(badLogoHost, created.tenant.id, png), { ok: false, code: "host_error" });
+assert.ok(Object.isFrozen(logo.logo));
+assert.deepEqual(await uploadLogo(context, created.tenant.id, undefined), { ok: false, code: "logo_invalid" });
+// A reply whose fields are getters could answer differently after a check; it is rejected.
+const shiftingHost = { tenantProvisioning: { createCustomer: async () => { const reply = await fake.service.createCustomer({ ...input, requestId: "consumer-request-0002", tenant: { slug: "shift", displayName: "Shift" }, admin: { email: "owner@shift.test", displayName: "Owner" } }); return { ...reply, get credential() { return reply.credential; } }; } } };
+assert.equal((await createCustomer(shiftingHost, { ...input, requestId: "consumer-request-0002" }, credential)).checkTenantsAndReset, true);
 // A password not yet shown for one customer is dropped before the next customer is created, so
 // an existing-account result can never display it.
 const pendingFake = createTestTenantProvisioningService({ existingAccounts: ["known@beta.test"] });

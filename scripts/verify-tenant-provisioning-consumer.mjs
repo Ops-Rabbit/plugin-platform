@@ -60,6 +60,9 @@ assert.deepEqual(await loadProvisioningAccess({}), { available: false, deploymen
 const fake = createTestTenantProvisioningService({ logo: true });
 const context = { tenantProvisioning: fake.service };
 assert.deepEqual(await loadProvisioningAccess(context), { available: true, deploymentAdmin: true });
+const failingAuthority = (code) => ({ tenantProvisioning: { getAuthority: async () => { throw { code }; } } });
+assert.deepEqual(await loadProvisioningAccess(failingAuthority("not_available")), { available: false, deploymentAdmin: false });
+assert.deepEqual(await loadProvisioningAccess(failingAuthority("host_error")), { available: true, deploymentAdmin: false });
 const credential = createShowOnceCredential();
 const input = { requestId: "consumer-request-0001", tenant: { slug: "acme", displayName: "Acme" }, admin: { email: "owner@acme.test", displayName: "Owner" } };
 const created = await createCustomer(context, input, credential);
@@ -85,6 +88,17 @@ assert.equal(calls, 1);
 calls = 0;
 assert.equal((await createCustomer(flaky({ code: "host_error" }), input, credential, 3, 1)).code, "host_error");
 assert.equal(calls, 3);
+// Every response is lost after the host commits: the returned requestId lets the next submit
+// of the same form come back as replayed instead of slug_taken.
+const lossy = { tenantProvisioning: { createCustomer: async (request) => { await fake.service.createCustomer(request); throw { code: "host_error" }; } } };
+const lostInput = { tenant: { slug: "lost-co", displayName: "Lost Co" }, admin: { email: "owner@lost.test", displayName: "Owner" } };
+const lost = await createCustomer(lossy, lostInput, credential, 2, 1);
+assert.equal(lost.ok, false);
+assert.equal(typeof lost.requestId, "string");
+const resubmitted = await createCustomer(context, { ...lostInput, requestId: lost.requestId }, credential);
+assert.equal(resubmitted.outcome, "replayed");
+assert.equal(resubmitted.requestId, lost.requestId);
+assert.equal(credential.pending, false);
 const manifest = validateManifest({
   id: "onboarding", name: "Onboarding", version: "1.0.0", description: "Onboarding", apiVersion: "1.0", main: "./dist/index.js", minimumOpsRabbitVersion: "0.12.0",
   navigation: { kind: "plugin_workspace", moduleKey: "customer_app", path: "/apps/customer_app", icon: "alert_triangle", fallbackTitle: "Customers" },

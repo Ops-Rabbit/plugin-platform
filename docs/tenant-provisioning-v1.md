@@ -134,6 +134,10 @@ The rules for retries:
   `resetAdminCredential`.
 - **What to retry:** only `host_error`, with a growing delay. Other codes, and failures without
   a code, will not succeed on retry.
+- **Keep the key with the form:** if every attempt fails, keep the `requestId` and send it again
+  when the admin resubmits the same form. A customer created by an attempt whose response was
+  lost then comes back as `replayed`; a new `requestId` would fail with `slug_taken`. The
+  reference returns the `requestId` it used in every result.
 
 ## Credentials
 
@@ -184,7 +188,9 @@ branding:
   `file.type` (a browser may report it empty); checking the size early is fine;
 - the plugin keeps no copy and reads the logo back with `getLogo` or the returned `url`, which
   it may use as an `<img>` source. The SDK validates the URL as a path or an absolute http(s) URL;
-  the host is responsible for serving it from its own API origin.
+  the host is responsible for serving it from its own API origin;
+- `getLogo` returns `null` when the tenant has no logo. The published result schema describes
+  this as `#/$defs/getLogo`; `#/$defs/logo` is the non-null logo `uploadLogo` returns.
 
 Upload is separate from creation. A failed upload leaves the customer in place and can be
 retried, and each retry replaces the previous logo.
@@ -215,7 +221,8 @@ Treat unknown codes as failures.
 - Request and result shapes are published as JSON Schemas
   (`@opsrabbit/plugin-sdk/tenant-provisioning-request-schema` and
   `@opsrabbit/plugin-sdk/tenant-provisioning-result-schema`). Select an operation with
-  `#/$defs/<name>`.
+  `#/$defs/<name>`. The patterns give the same result with or without the regular-expression
+  `u` (Unicode) flag.
 - The `validate*V1` functions return issues.
 - The `parse*V1` functions return frozen copies of own data properties or throw
   `PluginValidationError`.

@@ -16,8 +16,12 @@ export async function loadProvisioningAccess(context) {
   try {
     const { deploymentAdmin } = await broker.getAuthority();
     return { available: true, deploymentAdmin: deploymentAdmin === true };
-  } catch {
-    return { available: true, deploymentAdmin: false };
+  } catch (error) {
+    // `not_available`: the host does not offer the broker to this workspace right now.
+    return {
+      available: error?.code !== "not_available",
+      deploymentAdmin: false,
+    };
   }
 }
 
@@ -60,6 +64,10 @@ export function createShowOnceCredential() {
  * issues a second password: if the first response was lost, the result is `replayed` and the
  * admin must use an explicit reset to get a new temporary password. Only a `host_error` is
  * retried, with a growing delay; any other failure, including one without a code, stops.
+ *
+ * Every result carries the `requestId` that was used. Keep it with the form and pass it back as
+ * `input.requestId` when the admin resubmits the same form, so a customer created by an attempt
+ * whose response was lost comes back as `replayed` instead of `slug_taken`.
  */
 export async function createCustomer(
   context,
@@ -69,8 +77,9 @@ export async function createCustomer(
   retryDelayMs = 500,
 ) {
   const request = { ...input, requestId: input.requestId ?? newRequestId() };
+  const { requestId } = request;
   if (validateCreateCustomerRequestV1(request).length > 0)
-    return { ok: false, code: "invalid_request" };
+    return { ok: false, code: "invalid_request", requestId };
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     if (attempt > 0)
       await new Promise((resolve) =>
@@ -81,11 +90,17 @@ export async function createCustomer(
       // An unexpected result shape is not trusted, but the customer may already exist and any
       // password it carried is unusable: tell the admin to check the tenant list and reset.
       if (validateCreateCustomerResultV1(result).length > 0)
-        return { ok: false, code: "host_error", checkTenantsAndReset: true };
+        return {
+          ok: false,
+          code: "host_error",
+          requestId,
+          checkTenantsAndReset: true,
+        };
       if (result.credential.kind === "temporary_password")
         credential.set(result.credential.value);
       return {
         ok: true,
+        requestId,
         outcome: result.outcome,
         tenant: result.tenant,
         admin: result.admin,
@@ -98,10 +113,11 @@ export async function createCustomer(
         return {
           ok: false,
           code: typeof error?.code === "string" ? error.code : "host_error",
+          requestId,
         };
     }
   }
-  return { ok: false, code: "host_error" };
+  return { ok: false, code: "host_error", requestId };
 }
 
 /**

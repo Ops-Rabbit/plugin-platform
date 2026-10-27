@@ -32,8 +32,8 @@ async function schemaFile(name: string) {
   );
 }
 
-function ajv() {
-  return new Ajv2020({ allErrors: true, strict: true });
+function ajv(options: { unicodeRegExp?: boolean } = {}) {
+  return new Ajv2020({ allErrors: true, strict: true, ...options });
 }
 
 function provisioningManifest(
@@ -319,6 +319,28 @@ describe("tenant provisioning requests", () => {
       valid: false,
     },
     {
+      name: "display name with supplementary CJK characters",
+      value: {
+        ...createRequest,
+        tenant: {
+          slug: "acme",
+          displayName: `${String.fromCodePoint(0x20000, 0x2a6d6)} ${String.fromCodePoint(0x1f600)}`,
+        },
+      },
+      valid: true,
+    },
+    {
+      name: "display name with a reversed surrogate pair",
+      value: {
+        ...createRequest,
+        tenant: {
+          slug: "acme",
+          displayName: `A${String.fromCharCode(0xdc00, 0xd800)}B`,
+        },
+      },
+      valid: false,
+    },
+    {
       name: "overlong display name",
       value: {
         ...createRequest,
@@ -381,16 +403,21 @@ describe("tenant provisioning requests", () => {
   ];
 
   it("validates createCustomer requests the same way as the published schema", () => {
-    const compiled = ajv();
-    compiled.addSchema(TENANT_PROVISIONING_REQUEST_SCHEMA);
-    const validate = compiled.getSchema(
-      `${TENANT_PROVISIONING_REQUEST_SCHEMA.$id}#/$defs/createCustomer`,
-    )!;
-    for (const { name, value, valid } of cases) {
-      expect(validateCreateCustomerRequestV1(value).length === 0, name).toBe(
-        valid,
-      );
-      expect(Boolean(validate(value)), name).toBe(valid);
+    // Schema validators differ on the regex `u` flag; the published patterns must not.
+    for (const unicodeRegExp of [true, false]) {
+      const compiled = ajv({ unicodeRegExp });
+      compiled.addSchema(TENANT_PROVISIONING_REQUEST_SCHEMA);
+      const validate = compiled.getSchema(
+        `${TENANT_PROVISIONING_REQUEST_SCHEMA.$id}#/$defs/createCustomer`,
+      )!;
+      for (const { name, value, valid } of cases) {
+        expect(validateCreateCustomerRequestV1(value).length === 0, name).toBe(
+          valid,
+        );
+        expect(Boolean(validate(value)), `${name} (u: ${unicodeRegExp})`).toBe(
+          valid,
+        );
+      }
     }
   });
 
@@ -465,6 +492,29 @@ describe("tenant provisioning results", () => {
     expect(
       await schemaFile("opsrabbit-tenant-provisioning-result.schema.json"),
     ).toEqual(TENANT_PROVISIONING_RESULT_SCHEMA);
+  });
+
+  it("publishes a getLogo result that is a logo or null", () => {
+    const compiled = ajv();
+    compiled.addSchema(TENANT_PROVISIONING_RESULT_SCHEMA);
+    const getLogo = compiled.getSchema(
+      `${TENANT_PROVISIONING_RESULT_SCHEMA.$id}#/$defs/getLogo`,
+    )!;
+    const logo = {
+      url: "/branding/logo?tenant_id=tenant-1&v=1",
+      mimeType: "image/png",
+      sizeBytes: 8,
+      sha256: "a".repeat(64),
+      version: 1,
+    };
+    expect(getLogo(null)).toBe(true);
+    expect(getLogo(logo)).toBe(true);
+    expect(getLogo({ ...logo, version: 0 })).toBe(false);
+    const anyResult = compiled.getSchema(
+      TENANT_PROVISIONING_RESULT_SCHEMA.$id,
+    )!;
+    expect(anyResult(null)).toBe(true);
+    expect(anyResult(logo)).toBe(true);
   });
 
   const createResults: Array<{ name: string; value: unknown; valid: boolean }> =

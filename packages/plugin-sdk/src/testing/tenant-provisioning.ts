@@ -119,12 +119,17 @@ export function createTestTenantProvisioningService(
       tenantIds: new Set(),
     });
 
+  // Rejection sampling: bytes at or above the largest multiple of the alphabet size are
+  // skipped, so every character is equally likely (a plain modulo would favor some).
   const password = () => {
-    const bytes = new Uint8Array(24);
-    globalThis.crypto.getRandomValues(bytes);
-    return Array.from(bytes, (byte) => ALPHABET[byte % ALPHABET.length]).join(
-      "",
-    );
+    const limit = 256 - (256 % ALPHABET.length);
+    const bytes = new Uint8Array(1);
+    let value = "";
+    while (value.length < 24) {
+      globalThis.crypto.getRandomValues(bytes);
+      if (bytes[0]! < limit) value += ALPHABET[bytes[0]! % ALPHABET.length];
+    }
+    return value;
   };
   const admin = () => {
     if (!deploymentAdmin) throw error("forbidden", 403);
@@ -134,8 +139,8 @@ export function createTestTenantProvisioningService(
     if (!entry || entry.foreign) throw error("not_found", 404);
     return entry;
   };
-  const userByEmail = (email: string) =>
-    [...users.values()].find((user) => user.email === email);
+  // `users` is keyed by lower-cased email.
+  const userByEmail = (email: string) => users.get(email);
   const userById = (userId: string) =>
     [...users.values()].find((user) => user.userId === userId);
   const view = (entry: FakeTenant): ProvisionedTenantV1 => {

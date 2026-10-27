@@ -302,6 +302,8 @@ export const TENANT_PROVISIONING_RESULT_SCHEMA = {
   $defs: {
     authority: AUTHORITY,
     logo: LOGO,
+    // `getLogo` answers null when the tenant has no logo; `uploadLogo` always returns a logo.
+    getLogo: { oneOf: [{ type: "null" }, { $ref: "#/$defs/logo" }] },
     tenant: TENANT,
     tenantPage: TENANT_PAGE,
     createCustomer: {
@@ -311,7 +313,7 @@ export const TENANT_PROVISIONING_RESULT_SCHEMA = {
   },
   oneOf: [
     { $ref: "#/$defs/authority" },
-    { $ref: "#/$defs/logo" },
+    { $ref: "#/$defs/getLogo" },
     { $ref: "#/$defs/tenant" },
     { $ref: "#/$defs/tenantPage" },
     { $ref: "#/$defs/createCustomer" },
@@ -454,8 +456,9 @@ export const validateResetAdminCredentialRequestV1 = validator(
   RESET_ADMIN_CREDENTIAL_REQUEST,
 );
 // The list request is optional: an omitted one means the first default-sized page.
+const validateListRequest = validator(LIST_TENANTS_REQUEST);
 export const validateListProvisionedTenantsRequestV1 = (value: unknown) =>
-  validator(LIST_TENANTS_REQUEST)(value ?? {});
+  validateListRequest(value ?? {});
 export const validateUpdateProvisionedTenantRequestV1 = validator(
   UPDATE_TENANT_REQUEST,
 );

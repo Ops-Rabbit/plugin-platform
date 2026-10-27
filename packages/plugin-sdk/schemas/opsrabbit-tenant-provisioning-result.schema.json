@@ -41,6 +41,16 @@
         }
       }
     },
+    "getLogo": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/logo"
+        }
+      ]
+    },
     "tenant": {
       "type": "object",
       "additionalProperties": false,
@@ -69,7 +79,7 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 160,
-          "pattern": "^[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB](?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]*[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB])?(?![\\s\\S])"
+          "pattern": "^(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])(?:(?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]))?(?![\\s\\S])"
         },
         "status": {
           "enum": ["active", "disabled", "archived"]
@@ -112,7 +122,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 160,
-                  "pattern": "^[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB](?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]*[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB])?(?![\\s\\S])"
+                  "pattern": "^(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])(?:(?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]))?(?![\\s\\S])"
                 },
                 "account": {
                   "enum": ["created", "existing"]
@@ -198,7 +208,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 160,
-                "pattern": "^[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB](?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]*[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB])?(?![\\s\\S])"
+                "pattern": "^(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])(?:(?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]))?(?![\\s\\S])"
               },
               "status": {
                 "enum": ["active", "disabled", "archived"]
@@ -241,7 +251,7 @@
                         "type": "string",
                         "minLength": 1,
                         "maxLength": 160,
-                        "pattern": "^[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB](?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]*[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB])?(?![\\s\\S])"
+                        "pattern": "^(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])(?:(?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]))?(?![\\s\\S])"
                       },
                       "account": {
                         "enum": ["created", "existing"]
@@ -353,7 +363,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 160,
-                  "pattern": "^[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB](?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]*[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB])?(?![\\s\\S])"
+                  "pattern": "^(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])(?:(?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]))?(?![\\s\\S])"
                 },
                 "status": {
                   "enum": ["active", "disabled", "archived"]
@@ -396,7 +406,7 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 160,
-                          "pattern": "^[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB](?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]*[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB])?(?![\\s\\S])"
+                          "pattern": "^(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])(?:(?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]))?(?![\\s\\S])"
                         },
                         "account": {
                           "enum": ["created", "existing"]
@@ -544,7 +554,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 160,
-                  "pattern": "^[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB](?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]*[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB])?(?![\\s\\S])"
+                  "pattern": "^(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])(?:(?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]))?(?![\\s\\S])"
                 },
                 "status": {
                   "enum": ["active", "disabled", "archived"]
@@ -587,7 +597,7 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 160,
-                          "pattern": "^[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB](?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]*[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB])?(?![\\s\\S])"
+                          "pattern": "^(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])(?:(?:[^\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?:[^\\s\\x00-\\x1F\\x7F-\\x9F\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2028-\\u202E\\u2060-\\u206F\\uD800-\\uDFFF\\uFEFF\\uFFF9-\\uFFFB]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]))?(?![\\s\\S])"
                         },
                         "account": {
                           "enum": ["created", "existing"]
@@ -756,7 +766,7 @@
       "$ref": "#/$defs/authority"
     },
     {
-      "$ref": "#/$defs/logo"
+      "$ref": "#/$defs/getLogo"
     },
     {
       "$ref": "#/$defs/tenant"

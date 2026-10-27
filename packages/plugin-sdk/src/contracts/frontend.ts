@@ -1,5 +1,6 @@
 import type { JsonValue } from "./manifest.js";
 import type { PluginAgentRunFrontendServiceV1 } from "./agent-runs.js";
+import type { PluginTenantProvisioningServiceV1 } from "./tenant-provisioning.js";
 
 export const PLUGIN_FRONTEND_SDK_VERSION = "1" as const;
 export const PLUGIN_FRONTEND_CAPABILITIES = [
@@ -13,6 +14,7 @@ export const PLUGIN_FRONTEND_CAPABILITIES = [
   "agent.runs.observe",
   "plugin.resources.manage",
   "plugin.investigations.open",
+  "tenant.provisioning.manage",
 ] as const;
 
 export type PluginFrontendCapability =
@@ -65,6 +67,11 @@ export interface OpsRabbitWorkspaceContext {
   overlayRoot: HTMLElement;
   /** Present only when the workspace declares agent.runs.observe. */
   agentRuns?: PluginAgentRunFrontendServiceV1;
+  /**
+   * Present only when the manifest declares tenantProvisioning and the workspace requests
+   * tenant.provisioning.manage on a supporting host. Treat absence as "not available".
+   */
+  tenantProvisioning?: PluginTenantProvisioningServiceV1;
   /** Resolve a declared asset to an authenticated, lifecycle-bound object URL. */
   assets: { url(path: string): Promise<string> };
   /** Invoke a manifest-declared action owned by the currently mounted plugin. */

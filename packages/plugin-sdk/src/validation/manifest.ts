@@ -8,6 +8,10 @@ import {
   type PluginDeclaredCapabilities,
 } from "../contracts/capabilities.js";
 import { PLUGIN_DOCUMENT_CAPTURE_SOURCES } from "../contracts/document-capture.js";
+import {
+  TENANT_PROVISIONING_FRONTEND_CAPABILITY,
+  TENANT_PROVISIONING_SCHEMA_VERSION,
+} from "../contracts/tenant-provisioning.js";
 import type { ValidationIssue } from "../contracts/errors.js";
 import { validatePluginAgentRunBindingV1 } from "./agent-runs.js";
 import {
@@ -164,6 +168,24 @@ export function validateManifest(
         "capabilities.chatTurnRecords requires minimumOpsRabbitVersion 0.11.0 or later.",
       ),
     );
+  if (
+    record(input.capabilities) &&
+    input.capabilities.tenantProvisioning !== undefined &&
+    !hasMinimumVersion(input.minimumOpsRabbitVersion, 0, 12, 0)
+  )
+    issues.push(
+      issue(
+        "$.minimumOpsRabbitVersion",
+        "unsupported",
+        "capabilities.tenantProvisioning requires minimumOpsRabbitVersion 0.12.0 or later.",
+      ),
+    );
+  validateTenantProvisioningSurface(
+    input.capabilities,
+    input.frontend,
+    input.navigation,
+    issues,
+  );
   validateFrontend(
     input.frontend,
     input.navigation,
@@ -342,6 +364,52 @@ function validateInteractionDependencies(
   ]);
   requireCapabilities("subjectLifecycle", ["database", "audit"]);
   requireCapabilities("structuredEnrichment", ["audit", "resourceRecords"]);
+}
+
+/**
+ * The provisioning broker lives in the plugin's single native workspace, which also becomes the
+ * home page of every tenant it provisions, so customer users must be able to open it.
+ */
+function validateTenantProvisioningSurface(
+  capabilitiesValue: unknown,
+  frontendValue: unknown,
+  navigationValue: unknown,
+  issues: ValidationIssue[],
+): void {
+  const declared =
+    record(capabilitiesValue) &&
+    capabilitiesValue.tenantProvisioning !== undefined;
+  const requested =
+    record(frontendValue) &&
+    Array.isArray(frontendValue.capabilities) &&
+    frontendValue.capabilities.includes(
+      TENANT_PROVISIONING_FRONTEND_CAPABILITY,
+    );
+  if (requested && !declared)
+    issues.push(
+      issue(
+        "$.frontend.capabilities",
+        "invalid",
+        "tenant.provisioning.manage requires the tenantProvisioning capability.",
+      ),
+    );
+  if (!declared) return;
+  if (!requested)
+    issues.push(
+      issue(
+        "$.capabilities.tenantProvisioning",
+        "invalid",
+        "tenantProvisioning requires a native frontend that requests tenant.provisioning.manage.",
+      ),
+    );
+  if (record(navigationValue) && navigationValue.adminOnly === true)
+    issues.push(
+      issue(
+        "$.navigation.adminOnly",
+        "invalid",
+        "tenantProvisioning opens new tenants on this workspace, so it cannot be admin-only.",
+      ),
+    );
 }
 
 function validateFrontend(
@@ -1427,6 +1495,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     "chatTurnAdmission",
     "chatComposerStatus",
     "chatTurnRecords",
+    "tenantProvisioning",
     "deploymentAdminWorkspace",
     "identityDirectory",
     "personaHost",
@@ -1922,6 +1991,30 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     },
   );
   validateSingletonCapability(
+    capabilities.tenantProvisioning,
+    "tenantProvisioning",
+    ["schemaVersion", "logo"],
+    issues,
+    (entry) => {
+      if (entry.schemaVersion !== TENANT_PROVISIONING_SCHEMA_VERSION)
+        issues.push(
+          issue(
+            "$.capabilities.tenantProvisioning.schemaVersion",
+            "invalid",
+            "tenantProvisioning schema version must be 1.",
+          ),
+        );
+      if (entry.logo !== undefined && typeof entry.logo !== "boolean")
+        issues.push(
+          issue(
+            "$.capabilities.tenantProvisioning.logo",
+            "type",
+            "tenantProvisioning.logo must be a boolean.",
+          ),
+        );
+    },
+  );
+  validateSingletonCapability(
     capabilities.identityDirectory,
     "identityDirectory",
     ["read"],
@@ -2120,6 +2213,7 @@ function validateCapabilities(value: unknown, issues: ValidationIssue[]): void {
     !capabilities.chatTurnAdmission &&
     !capabilities.chatComposerStatus &&
     !capabilities.chatTurnRecords &&
+    !capabilities.tenantProvisioning &&
     !capabilities.deploymentAdminWorkspace &&
     !capabilities.identityDirectory &&
     !capabilities.personaHost &&

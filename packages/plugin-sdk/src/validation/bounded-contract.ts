@@ -6,12 +6,33 @@ export const CONTRACT_COLUMN = /^[a-z][a-z0-9_]{0,62}(?![\s\S])/u;
 export const CONTRACT_MESSAGE_KEY = /^[a-z][a-z0-9_.-]{0,119}(?![\s\S])/u;
 export const CONTRACT_UTC =
   /^(?:[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{3}Z(?![\s\S])/u;
+// Tenant provisioning v1 (canonical host tenant slug, retry keys, mailbox, host paths).
+export const CONTRACT_TENANT_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*(?![\s\S])/u;
+export const CONTRACT_REQUEST_ID = /^[A-Za-z0-9_-]{16,128}(?![\s\S])/u;
+export const CONTRACT_EMAIL =
+  /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\s\S])/u;
+export const CONTRACT_TRIMMED_TEXT = /^\S(?:[\s\S]*\S)?(?![\s\S])/u;
+export const CONTRACT_CURSOR = /^[A-Za-z0-9_-]{1,512}(?![\s\S])/u;
+export const CONTRACT_SHA256 = /^[a-f0-9]{64}(?![\s\S])/u;
+export const CONTRACT_RENDER_URL =
+  /^(?:https?:\/\/[A-Za-z0-9.-]+(?::[0-9]{1,5})?)?\/(?![/\\])[A-Za-z0-9._~/%?&=+-]{0,1023}(?![\s\S])/u;
+export const CONTRACT_APPS_PATH = /^\/apps\/[a-z][a-z0-9_-]*(?![\s\S])/u;
+export const CONTRACT_PRINTABLE_SECRET = /^[\x21-\x7E]{15,128}(?![\s\S])/u;
 const patterns = [
   CONTRACT_KEY,
   CONTRACT_IDENTIFIER,
   CONTRACT_COLUMN,
   CONTRACT_MESSAGE_KEY,
   CONTRACT_UTC,
+  CONTRACT_TENANT_SLUG,
+  CONTRACT_REQUEST_ID,
+  CONTRACT_EMAIL,
+  CONTRACT_TRIMMED_TEXT,
+  CONTRACT_CURSOR,
+  CONTRACT_SHA256,
+  CONTRACT_RENDER_URL,
+  CONTRACT_APPS_PATH,
+  CONTRACT_PRINTABLE_SECRET,
 ];
 
 export type ContractShape = {

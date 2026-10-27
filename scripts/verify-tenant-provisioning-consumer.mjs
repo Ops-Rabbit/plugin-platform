@@ -1,0 +1,95 @@
+import { execFileSync } from "node:child_process";
+import { copyFile, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+
+const root = resolve(import.meta.dirname, "..");
+const target = await mkdtemp(
+  join(tmpdir(), "opsrabbit-tenant-provisioning-consumer-"),
+);
+try {
+  const raw = execFileSync(
+    "pnpm",
+    [
+      "--dir",
+      "packages/plugin-sdk",
+      "pack",
+      "--pack-destination",
+      target,
+      "--json",
+    ],
+    { cwd: root, encoding: "utf8" },
+  );
+  const packed = JSON.parse(raw);
+  await writeFile(
+    join(target, "package.json"),
+    JSON.stringify({
+      private: true,
+      type: "module",
+      dependencies: { "@opsrabbit/plugin-sdk": `file:${packed.filename}` },
+    }),
+  );
+  execFileSync(
+    "npm",
+    ["install", "--ignore-scripts", "--no-audit", "--no-fund"],
+    { cwd: target, stdio: "inherit" },
+  );
+  await copyFile(
+    join(root, "packages/plugin-sdk/reference/tenant-provisioning.mjs"),
+    join(target, "reference.mjs"),
+  );
+  await writeFile(
+    join(target, "verify.mjs"),
+    `
+import assert from "node:assert/strict";
+import requestSchema from "@opsrabbit/plugin-sdk/tenant-provisioning-request-schema" with { type: "json" };
+import resultSchema from "@opsrabbit/plugin-sdk/tenant-provisioning-result-schema" with { type: "json" };
+import {
+  TENANT_PROVISIONING_SCHEMA_VERSION,
+  TENANT_PROVISIONING_FRONTEND_CAPABILITY,
+  PLUGIN_FRONTEND_CAPABILITIES,
+  validateManifest,
+} from "@opsrabbit/plugin-sdk";
+import { createTestTenantProvisioningService } from "@opsrabbit/plugin-sdk/testing";
+import { createCustomer, createShowOnceCredential, loadProvisioningAccess, uploadLogo } from "./reference.mjs";
+assert.equal(TENANT_PROVISIONING_SCHEMA_VERSION, "1");
+assert.ok(PLUGIN_FRONTEND_CAPABILITIES.includes(TENANT_PROVISIONING_FRONTEND_CAPABILITY));
+assert.ok(requestSchema.$defs.createCustomer);
+assert.ok(resultSchema.$defs.createCustomer);
+assert.deepEqual(await loadProvisioningAccess({}), { available: false, deploymentAdmin: false });
+const fake = createTestTenantProvisioningService({ logo: true });
+const context = { tenantProvisioning: fake.service };
+assert.deepEqual(await loadProvisioningAccess(context), { available: true, deploymentAdmin: true });
+const credential = createShowOnceCredential();
+const input = { requestId: "consumer-request-0001", tenant: { slug: "acme", displayName: "Acme" }, admin: { email: "owner@acme.test", displayName: "Owner" } };
+const created = await createCustomer(context, input, credential);
+assert.equal(created.ok, true);
+assert.equal(created.outcome, "created");
+const shown = credential.take();
+assert.equal(typeof shown, "string");
+assert.equal(credential.take(), null);
+assert.ok(!fake.snapshot().includes(shown));
+const replayed = await createCustomer(context, input, credential);
+assert.equal(replayed.outcome, "replayed");
+assert.equal(replayed.needsReset, true);
+assert.equal(credential.pending, false);
+const png = new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], { type: "image/png" });
+const logo = await uploadLogo(context, created.tenant.id, png);
+assert.equal(logo.ok, true);
+assert.equal((await uploadLogo(context, created.tenant.id, new Blob(["x"], { type: "image/gif" }))).code, "logo_invalid");
+const manifest = validateManifest({
+  id: "onboarding", name: "Onboarding", version: "1.0.0", description: "Onboarding", apiVersion: "1.0", main: "./dist/index.js", minimumOpsRabbitVersion: "0.12.0",
+  navigation: { kind: "plugin_workspace", moduleKey: "customer_app", path: "/apps/customer_app", icon: "alert_triangle", fallbackTitle: "Customers" },
+  frontend: { kind: "native_workspace", entry: "./dist/workspace.js", styles: [], assets: [], sdkVersion: "1", mountIsolation: "shadow_dom", capabilities: ["tenant.provisioning.manage"] },
+  capabilities: { tenantProvisioning: { schemaVersion: "1", logo: true } },
+});
+assert.equal(manifest.ok, true, JSON.stringify(manifest.issues));
+`,
+  );
+  execFileSync("node", ["verify.mjs"], { cwd: target, stdio: "inherit" });
+  process.stdout.write(
+    "Tenant provisioning reference verified against packed SDK outside workspace.\n",
+  );
+} finally {
+  await rm(target, { recursive: true, force: true });
+}

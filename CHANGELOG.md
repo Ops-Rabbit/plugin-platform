@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.35.0 - Unreleased
+
+- Add `tenantProvisioning/v1`, a browser broker on `OpsRabbitWorkspaceContext.tenantProvisioning` for native workspaces that request `tenant.provisioning.manage`. Deployment admins can check authority, create a customer (tenant, first admin, admin access and enablement of the calling plugin) in one host transaction, reset the first admin's temporary password, list, read and update tenants the plugin provisioned, and upload and read the tenant logo.
+- Results carry a host-generated temporary password only on the response that issued it; replays carry none. Request types have no password field.
+- Validate the declaration in runtime validation and the published manifest JSON Schema: the capability and the frontend capability must be declared together, the workspace navigation cannot be admin-only, and `minimumOpsRabbitVersion` must be 0.12.0 or later. Existing manifests are unchanged.
+- Publish `tenant-provisioning-request-schema` and `tenant-provisioning-result-schema`, `validate*V1` and frozen-copy `parse*V1` functions, open error codes, an in-memory `createTestTenantProvisioningService` fake, an executable reference and a packed clean-consumer verification.
+- `PluginFrontendCapability` gains `tenant.provisioning.manage`. Code that exhaustively switches over, or keys a complete record by, that union needs the new member; manifest validation results for existing plugins are unchanged.
+- Align SDK and CLI at 0.35.0. Host implementation and publication remain coordinated release dependencies.
+
 ## 0.34.0 - Unreleased
 
 - Preserve existing generic/void adapter contexts by making the reference-bearing send context an explicit opt-in generic with a backward-compatible default.

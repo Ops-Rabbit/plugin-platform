@@ -1,0 +1,774 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.dev/schemas/opsrabbit-tenant-provisioning-result.schema.json",
+  "$defs": {
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deploymentAdmin"],
+      "properties": {
+        "deploymentAdmin": {
+          "type": "boolean"
+        }
+      }
+    },
+    "logo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "mimeType", "sizeBytes", "sha256", "version"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^(?:https?:\\/\\/[A-Za-z0-9.-]+(?::[0-9]{1,5})?)?\\/(?![/\\\\])[A-Za-z0-9._~/%?&=+-]{0,1023}(?![\\s\\S])"
+        },
+        "mimeType": {
+          "enum": ["image/png", "image/jpeg", "image/webp"]
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2097152
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "tenant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "displayName",
+        "status",
+        "homePath",
+        "createdAt",
+        "admin",
+        "logo"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+        },
+        "slug": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?![\\s\\S])"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+        },
+        "status": {
+          "enum": ["active", "disabled", "archived"]
+        },
+        "homePath": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^\\/apps\\/[a-z][a-z0-9_-]*(?![\\s\\S])"
+        },
+        "createdAt": {
+          "type": "string",
+          "pattern": "^(?:[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z(?![\\s\\S])"
+        },
+        "admin": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "userId",
+                "email",
+                "displayName",
+                "account",
+                "credentialState"
+              ],
+              "properties": {
+                "userId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+                },
+                "email": {
+                  "type": "string",
+                  "maxLength": 254,
+                  "pattern": "^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\\s\\S])"
+                },
+                "displayName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+                },
+                "account": {
+                  "enum": ["created", "existing"]
+                },
+                "credentialState": {
+                  "enum": ["pending_first_sign_in", "active", "not_managed"]
+                }
+              }
+            }
+          ]
+        },
+        "logo": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["url", "mimeType", "sizeBytes", "sha256", "version"],
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "maxLength": 2048,
+                  "pattern": "^(?:https?:\\/\\/[A-Za-z0-9.-]+(?::[0-9]{1,5})?)?\\/(?![/\\\\])[A-Za-z0-9._~/%?&=+-]{0,1023}(?![\\s\\S])"
+                },
+                "mimeType": {
+                  "enum": ["image/png", "image/jpeg", "image/webp"]
+                },
+                "sizeBytes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 2097152
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "tenantPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenants", "nextCursor"],
+      "properties": {
+        "tenants": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "slug",
+              "displayName",
+              "status",
+              "homePath",
+              "createdAt",
+              "admin",
+              "logo"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+              },
+              "slug": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 80,
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?![\\s\\S])"
+              },
+              "displayName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160,
+                "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+              },
+              "status": {
+                "enum": ["active", "disabled", "archived"]
+              },
+              "homePath": {
+                "type": "string",
+                "maxLength": 200,
+                "pattern": "^\\/apps\\/[a-z][a-z0-9_-]*(?![\\s\\S])"
+              },
+              "createdAt": {
+                "type": "string",
+                "pattern": "^(?:[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z(?![\\s\\S])"
+              },
+              "admin": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "userId",
+                      "email",
+                      "displayName",
+                      "account",
+                      "credentialState"
+                    ],
+                    "properties": {
+                      "userId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+                      },
+                      "email": {
+                        "type": "string",
+                        "maxLength": 254,
+                        "pattern": "^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\\s\\S])"
+                      },
+                      "displayName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 160,
+                        "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+                      },
+                      "account": {
+                        "enum": ["created", "existing"]
+                      },
+                      "credentialState": {
+                        "enum": [
+                          "pending_first_sign_in",
+                          "active",
+                          "not_managed"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              "logo": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "url",
+                      "mimeType",
+                      "sizeBytes",
+                      "sha256",
+                      "version"
+                    ],
+                    "properties": {
+                      "url": {
+                        "type": "string",
+                        "maxLength": 2048,
+                        "pattern": "^(?:https?:\\/\\/[A-Za-z0-9.-]+(?::[0-9]{1,5})?)?\\/(?![/\\\\])[A-Za-z0-9._~/%?&=+-]{0,1023}(?![\\s\\S])"
+                      },
+                      "mimeType": {
+                        "enum": ["image/png", "image/jpeg", "image/webp"]
+                      },
+                      "sizeBytes": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 2097152
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "nextCursor": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,512}(?![\\s\\S])"
+            }
+          ]
+        }
+      }
+    },
+    "createCustomer": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["outcome", "tenant", "admin", "credential"],
+          "properties": {
+            "outcome": {
+              "const": "created"
+            },
+            "tenant": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "slug",
+                "displayName",
+                "status",
+                "homePath",
+                "createdAt",
+                "admin",
+                "logo"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+                },
+                "slug": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 80,
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?![\\s\\S])"
+                },
+                "displayName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+                },
+                "status": {
+                  "enum": ["active", "disabled", "archived"]
+                },
+                "homePath": {
+                  "type": "string",
+                  "maxLength": 200,
+                  "pattern": "^\\/apps\\/[a-z][a-z0-9_-]*(?![\\s\\S])"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "pattern": "^(?:[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z(?![\\s\\S])"
+                },
+                "admin": {
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "userId",
+                        "email",
+                        "displayName",
+                        "account",
+                        "credentialState"
+                      ],
+                      "properties": {
+                        "userId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+                        },
+                        "email": {
+                          "type": "string",
+                          "maxLength": 254,
+                          "pattern": "^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\\s\\S])"
+                        },
+                        "displayName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 160,
+                          "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+                        },
+                        "account": {
+                          "enum": ["created", "existing"]
+                        },
+                        "credentialState": {
+                          "enum": [
+                            "pending_first_sign_in",
+                            "active",
+                            "not_managed"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "logo": {
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "url",
+                        "mimeType",
+                        "sizeBytes",
+                        "sha256",
+                        "version"
+                      ],
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "maxLength": 2048,
+                          "pattern": "^(?:https?:\\/\\/[A-Za-z0-9.-]+(?::[0-9]{1,5})?)?\\/(?![/\\\\])[A-Za-z0-9._~/%?&=+-]{0,1023}(?![\\s\\S])"
+                        },
+                        "mimeType": {
+                          "enum": ["image/png", "image/jpeg", "image/webp"]
+                        },
+                        "sizeBytes": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 2097152
+                        },
+                        "sha256": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "admin": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["userId", "email", "account"],
+              "properties": {
+                "userId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+                },
+                "email": {
+                  "type": "string",
+                  "maxLength": 254,
+                  "pattern": "^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\\s\\S])"
+                },
+                "account": {
+                  "enum": ["created", "existing"]
+                }
+              }
+            },
+            "credential": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "value"],
+                  "properties": {
+                    "kind": {
+                      "const": "temporary_password"
+                    },
+                    "value": {
+                      "type": "string",
+                      "pattern": "^[\\x21-\\x7E]{15,128}(?![\\s\\S])"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "reason"],
+                  "properties": {
+                    "kind": {
+                      "const": "none"
+                    },
+                    "reason": {
+                      "enum": ["existing_account"]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["outcome", "tenant", "admin", "credential"],
+          "properties": {
+            "outcome": {
+              "const": "replayed"
+            },
+            "tenant": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "slug",
+                "displayName",
+                "status",
+                "homePath",
+                "createdAt",
+                "admin",
+                "logo"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+                },
+                "slug": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 80,
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?![\\s\\S])"
+                },
+                "displayName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+                },
+                "status": {
+                  "enum": ["active", "disabled", "archived"]
+                },
+                "homePath": {
+                  "type": "string",
+                  "maxLength": 200,
+                  "pattern": "^\\/apps\\/[a-z][a-z0-9_-]*(?![\\s\\S])"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "pattern": "^(?:[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z(?![\\s\\S])"
+                },
+                "admin": {
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "userId",
+                        "email",
+                        "displayName",
+                        "account",
+                        "credentialState"
+                      ],
+                      "properties": {
+                        "userId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+                        },
+                        "email": {
+                          "type": "string",
+                          "maxLength": 254,
+                          "pattern": "^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\\s\\S])"
+                        },
+                        "displayName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 160,
+                          "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+                        },
+                        "account": {
+                          "enum": ["created", "existing"]
+                        },
+                        "credentialState": {
+                          "enum": [
+                            "pending_first_sign_in",
+                            "active",
+                            "not_managed"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "logo": {
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "url",
+                        "mimeType",
+                        "sizeBytes",
+                        "sha256",
+                        "version"
+                      ],
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "maxLength": 2048,
+                          "pattern": "^(?:https?:\\/\\/[A-Za-z0-9.-]+(?::[0-9]{1,5})?)?\\/(?![/\\\\])[A-Za-z0-9._~/%?&=+-]{0,1023}(?![\\s\\S])"
+                        },
+                        "mimeType": {
+                          "enum": ["image/png", "image/jpeg", "image/webp"]
+                        },
+                        "sizeBytes": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 2097152
+                        },
+                        "sha256": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "admin": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["userId", "email", "account"],
+              "properties": {
+                "userId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+                },
+                "email": {
+                  "type": "string",
+                  "maxLength": 254,
+                  "pattern": "^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\\s\\S])"
+                },
+                "account": {
+                  "enum": ["created", "existing"]
+                }
+              }
+            },
+            "credential": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "reason"],
+              "properties": {
+                "kind": {
+                  "const": "none"
+                },
+                "reason": {
+                  "enum": ["existing_account", "already_issued"]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "resetAdminCredential": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["outcome", "tenantId", "userId", "credential"],
+          "properties": {
+            "outcome": {
+              "const": "reset"
+            },
+            "tenantId": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+            },
+            "userId": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+            },
+            "credential": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "value"],
+              "properties": {
+                "kind": {
+                  "const": "temporary_password"
+                },
+                "value": {
+                  "type": "string",
+                  "pattern": "^[\\x21-\\x7E]{15,128}(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["outcome", "tenantId", "userId", "credential"],
+          "properties": {
+            "outcome": {
+              "const": "replayed"
+            },
+            "tenantId": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+            },
+            "userId": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+            },
+            "credential": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "reason"],
+              "properties": {
+                "kind": {
+                  "const": "none"
+                },
+                "reason": {
+                  "enum": ["already_issued"]
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/authority"
+    },
+    {
+      "$ref": "#/$defs/logo"
+    },
+    {
+      "$ref": "#/$defs/tenant"
+    },
+    {
+      "$ref": "#/$defs/tenantPage"
+    },
+    {
+      "$ref": "#/$defs/createCustomer"
+    },
+    {
+      "$ref": "#/$defs/resetAdminCredential"
+    }
+  ]
+}

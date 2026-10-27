@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opsrabbit.dev/schemas/opsrabbit-tenant-provisioning-request.schema.json",
+  "$defs": {
+    "createCustomer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestId", "tenant", "admin"],
+      "properties": {
+        "requestId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{16,128}(?![\\s\\S])"
+        },
+        "tenant": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["slug", "displayName"],
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 80,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?![\\s\\S])"
+            },
+            "displayName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+            }
+          }
+        },
+        "admin": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["email", "displayName"],
+          "properties": {
+            "email": {
+              "type": "string",
+              "maxLength": 254,
+              "pattern": "^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\\s\\S])"
+            },
+            "displayName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+            }
+          }
+        }
+      }
+    },
+    "resetAdminCredential": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestId", "tenantId", "userId"],
+      "properties": {
+        "requestId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{16,128}(?![\\s\\S])"
+        },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+        },
+        "userId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}(?![\\s\\S])"
+        }
+      }
+    },
+    "listTenants": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,512}(?![\\s\\S])"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    },
+    "updateTenant": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"
+        },
+        "status": {
+          "enum": ["active", "disabled", "archived"]
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/createCustomer"
+    },
+    {
+      "$ref": "#/$defs/resetAdminCredential"
+    },
+    {
+      "$ref": "#/$defs/listTenants"
+    },
+    {
+      "$ref": "#/$defs/updateTenant"
+    }
+  ]
+}

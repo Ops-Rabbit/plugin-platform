@@ -263,6 +263,10 @@ SDK 0.31.0 exports `PluginAgentRunsServiceV1`, completion and observation types,
 
 SDK 0.32.0 exports `PluginDocumentCaptureServiceV1`, `PluginCapturedDocumentV1` and request and result validators. See [host responsibilities and reference](../../docs/plugin-document-capture-v1.md). A binding requests access and grants none; the host fetches under tenant Web Access policy, and plugins never open the connection themselves.
 
+## Tenant provisioning v1
+
+SDK 0.35.0 exports `PluginTenantProvisioningServiceV1`, the request, result, tenant and logo types, `validate*V1`/`parse*V1` functions, the open error codes, the `tenant-provisioning-request-schema` and `tenant-provisioning-result-schema` JSON Schemas, and `createTestTenantProvisioningService` from `./testing`. A native workspace that requests `tenant.provisioning.manage` receives `context.tenantProvisioning` on a supporting host (0.12.0 or later). The host owns tenants, users, credentials, sign-in and branding. See [host responsibilities](../../docs/tenant-provisioning-v1.md).
+
 ## Chat turn records v1
 
 SDK 0.33.0 exports `PluginChatTurnRecordsService`, `ChatTurnRecordV1`, request/result validators, the error statuses, and the `chat-turn-records-request-schema` and `chat-turn-records-result-schema` JSON Schemas for the read-only `chatTurnRecords` broker. Deployment-admin routes of an interaction policy can read the user question and answer feedback for turns they admitted; runtime availability requires an implementing host. See [host responsibilities](../../docs/chat-turn-records-v1.md).

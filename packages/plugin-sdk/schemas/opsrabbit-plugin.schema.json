@@ -3698,6 +3698,11 @@
           },
           "navigation": {
             "type": "object",
+            "properties": {
+              "kind": {
+                "const": "plugin_workspace"
+              }
+            },
             "not": {
               "required": ["adminOnly"],
               "properties": {

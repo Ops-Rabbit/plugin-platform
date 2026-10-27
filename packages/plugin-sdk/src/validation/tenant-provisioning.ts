@@ -453,8 +453,9 @@ export const validateCreateCustomerRequestV1 = validator(
 export const validateResetAdminCredentialRequestV1 = validator(
   RESET_ADMIN_CREDENTIAL_REQUEST,
 );
-export const validateListProvisionedTenantsRequestV1 =
-  validator(LIST_TENANTS_REQUEST);
+// The list request is optional: an omitted one means the first default-sized page.
+export const validateListProvisionedTenantsRequestV1 = (value: unknown) =>
+  validator(LIST_TENANTS_REQUEST)(value ?? {});
 export const validateUpdateProvisionedTenantRequestV1 = validator(
   UPDATE_TENANT_REQUEST,
 );
@@ -499,7 +500,9 @@ export function parseResetAdminCredentialRequestV1(
 export function parseListProvisionedTenantsRequestV1(
   value: unknown,
 ): ListProvisionedTenantsRequestV1 {
-  return parse(value, (copy) => contractIssues(copy, LIST_TENANTS_REQUEST));
+  return parse(value ?? {}, (copy) =>
+    contractIssues(copy, LIST_TENANTS_REQUEST),
+  );
 }
 export function parseUpdateProvisionedTenantRequestV1(
   value: unknown,

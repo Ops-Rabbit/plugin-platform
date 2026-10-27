@@ -410,6 +410,14 @@ function validateTenantProvisioningSurface(
         "tenantProvisioning opens new tenants on this workspace, so it cannot be admin-only.",
       ),
     );
+  if (record(navigationValue) && navigationValue.kind !== "plugin_workspace")
+    issues.push(
+      issue(
+        "$.navigation.kind",
+        "invalid",
+        "tenantProvisioning opens new tenants on a standalone plugin_workspace.",
+      ),
+    );
 }
 
 function validateFrontend(

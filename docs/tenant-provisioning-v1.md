@@ -49,6 +49,7 @@ error.
   together.
 - `logo` (default `false`) enables `uploadLogo` and `getLogo`.
 - The plugin's single workspace becomes the home page of every tenant it provisions, so
+  `navigation.kind` must be `plugin_workspace` (not a Forms workspace) and
   `navigation.adminOnly` must not be `true`. Customer users must be able to open it.
 - `minimumOpsRabbitVersion` must be `0.12.0` or later, the first host release that implements
   the broker.
@@ -80,7 +81,7 @@ const { deploymentAdmin } = await broker.getAuthority();
 | `getAuthority()`                            | Live deployment-admin check. A UX hint only.                           |
 | `createCustomer(request)`                   | One-transaction customer creation.                                     |
 | `resetAdminCredential(request)`             | New temporary password; the old password and its sessions are revoked. |
-| `listTenants({ cursor?, limit? })`          | Tenants this plugin provisioned, at most 100 per page.                 |
+| `listTenants({ cursor?, limit? }?)`         | Tenants this plugin provisioned, at most 100 per page.                 |
 | `getTenant(id)` / `updateTenant(id, patch)` | Read; change `displayName` or `status`.                                |
 | `uploadLogo(id, file)` / `getLogo(id)`      | Host branding logo (`logo: true` only).                                |
 
@@ -98,7 +99,10 @@ const result = await broker.createCustomer({
 });
 ```
 
-`slug` must already be canonical: 2 to 80 lowercase letters, digits or single inner dashes. The
+`slug` must already be canonical: 2 to 80 lowercase letters, digits or single inner dashes.
+Display names are 1 to 160 characters with no leading or trailing whitespace, and must not
+contain control characters, invisible formatting characters (such as zero-width spaces) or
+bidirectional overrides, so a name cannot hide line breaks or display as a different name. The
 host commits all of the following in one transaction, so a failure leaves no partial customer:
 
 - the tenant;
@@ -128,6 +132,8 @@ The rules for retries:
 - **Same `requestId`, different payload:** fails with `request_conflict`.
 - **First response lost:** the password cannot be recovered by retrying. Use
   `resetAdminCredential`.
+- **What to retry:** only `host_error`, with a growing delay. Other codes, and failures without
+  a code, will not succeed on retry.
 
 ## Credentials
 
@@ -174,7 +180,8 @@ show-once container that forgets it on first read.
 branding:
 
 - formats are PNG, JPEG or WebP, at most `TENANT_PROVISIONING_LOGO_MAX_BYTES` (2 MiB);
-- the host checks the bytes, not the declared type;
+- the host checks the bytes, not the declared type, so a plugin should not filter on
+  `file.type` (a browser may report it empty); checking the size early is fine;
 - the plugin keeps no copy and reads the logo back with `getLogo` or the returned `url`, which
   it may use as an `<img>` source. The SDK validates the URL as a path or an absolute http(s) URL;
   the host is responsible for serving it from its own API origin.

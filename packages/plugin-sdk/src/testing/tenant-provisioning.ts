@@ -18,6 +18,10 @@ import {
   parseUpdateProvisionedTenantRequestV1,
 } from "../validation/tenant-provisioning.js";
 
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+const RIFF = [0x52, 0x49, 0x46, 0x46];
+const WEBP = [0x57, 0x45, 0x42, 0x50];
+
 export interface TestTenantProvisioningOptions {
   /** Result of `getAuthority`; non-admin callers get `forbidden` everywhere else. */
   deploymentAdmin?: boolean;
@@ -108,7 +112,8 @@ export function createTestTenantProvisioningService(
     users.set(email.toLowerCase(), {
       userId: nextId("user"),
       email: email.toLowerCase(),
-      displayName: email,
+      // Display names are capped at 160 characters; emails can be longer.
+      displayName: email.slice(0, 160),
       credentialGeneration: 0,
       mustChange: false,
       tenantIds: new Set(),
@@ -327,15 +332,17 @@ export function createTestTenantProvisioningService(
       if (file.size > TENANT_PROVISIONING_LOGO_MAX_BYTES)
         throw error("logo_too_large", 413);
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const mimeType =
-        bytes[0] === 0x89 && bytes[1] === 0x50
-          ? "image/png"
-          : bytes[0] === 0xff && bytes[1] === 0xd8
-            ? "image/jpeg"
-            : bytes[8] === 0x57 && bytes[9] === 0x45
-              ? "image/webp"
-              : undefined;
-      if (!mimeType || bytes.length === 0) throw error("logo_invalid", 400);
+      // Same full signatures the host checks; the declared `file.type` is ignored.
+      const starts = (offset: number, signature: readonly number[]) =>
+        signature.every((byte, index) => bytes[offset + index] === byte);
+      const mimeType = starts(0, PNG_SIGNATURE)
+        ? "image/png"
+        : starts(0, [0xff, 0xd8, 0xff])
+          ? "image/jpeg"
+          : starts(0, RIFF) && starts(8, WEBP)
+            ? "image/webp"
+            : undefined;
+      if (!mimeType) throw error("logo_invalid", 400);
       const digest = new Uint8Array(
         await globalThis.crypto.subtle.digest("SHA-256", bytes),
       );

@@ -1,6 +1,5 @@
 import {
   TENANT_PROVISIONING_LOGO_MAX_BYTES,
-  TENANT_PROVISIONING_LOGO_MIME_TYPES,
   validateCreateCustomerRequestV1,
   validateCreateCustomerResultV1,
 } from "@opsrabbit/plugin-sdk";
@@ -59,14 +58,24 @@ export function createShowOnceCredential() {
 /**
  * Creates a customer, retrying transient failures with the same request id. A retry never
  * issues a second password: if the first response was lost, the result is `replayed` and the
- * admin must use an explicit reset to get a new temporary password.
+ * admin must use an explicit reset to get a new temporary password. Only a `host_error` is
+ * retried, with a growing delay; any other failure, including one without a code, stops.
  */
-export async function createCustomer(context, input, credential, attempts = 3) {
+export async function createCustomer(
+  context,
+  input,
+  credential,
+  attempts = 3,
+  retryDelayMs = 500,
+) {
   const request = { ...input, requestId: input.requestId ?? newRequestId() };
   if (validateCreateCustomerRequestV1(request).length > 0)
     return { ok: false, code: "invalid_request" };
-  let lastCode = "host_error";
   for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (attempt > 0)
+      await new Promise((resolve) =>
+        globalThis.setTimeout(resolve, retryDelayMs * 2 ** (attempt - 1)),
+      );
     try {
       const result = await context.tenantProvisioning.createCustomer(request);
       // An unexpected result shape is not trusted, but the customer may already exist and any
@@ -85,17 +94,22 @@ export async function createCustomer(context, input, credential, attempts = 3) {
           result.credential.reason === "already_issued",
       };
     } catch (error) {
-      lastCode = typeof error?.code === "string" ? error.code : "host_error";
-      if (lastCode !== "host_error") break;
+      if (error?.code !== "host_error")
+        return {
+          ok: false,
+          code: typeof error?.code === "string" ? error.code : "host_error",
+        };
     }
   }
-  return { ok: false, code: lastCode };
+  return { ok: false, code: "host_error" };
 }
 
-/** Logo upload is separate from creation; a failure leaves the customer and can be retried. */
+/**
+ * Logo upload is separate from creation; a failure leaves the customer and can be retried. The
+ * host decides the image type from the bytes, so the browser's declared `file.type` is not
+ * checked here; only the size is checked early to avoid a wasted upload.
+ */
 export async function uploadLogo(context, tenantId, file) {
-  if (!TENANT_PROVISIONING_LOGO_MIME_TYPES.includes(file.type))
-    return { ok: false, code: "logo_invalid" };
   if (file.size > TENANT_PROVISIONING_LOGO_MAX_BYTES)
     return { ok: false, code: "logo_too_large" };
   try {

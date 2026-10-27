@@ -11,7 +11,11 @@ export const CONTRACT_TENANT_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*(?![\s\S])/u;
 export const CONTRACT_REQUEST_ID = /^[A-Za-z0-9_-]{16,128}(?![\s\S])/u;
 export const CONTRACT_EMAIL =
   /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\s\S])/u;
-export const CONTRACT_TRIMMED_TEXT = /^\S(?:[\s\S]*\S)?(?![\s\S])/u;
+// Display text: trimmed, with no control, invisible-format or bidi-override characters and no
+// unpaired surrogates, so names cannot hide line breaks or render as a different name.
+export const CONTRACT_TRIMMED_TEXT =
+  // eslint-disable-next-line no-control-regex -- control characters are listed so they are rejected.
+  /^[^\s\x00-\x1F\x7F-\x9F\u00AD\u061C\u180E\u200B-\u200F\u2028-\u202E\u2060-\u206F\uD800-\uDFFF\uFEFF\uFFF9-\uFFFB](?:[^\x00-\x1F\x7F-\x9F\u00AD\u061C\u180E\u200B-\u200F\u2028-\u202E\u2060-\u206F\uD800-\uDFFF\uFEFF\uFFF9-\uFFFB]*[^\s\x00-\x1F\x7F-\x9F\u00AD\u061C\u180E\u200B-\u200F\u2028-\u202E\u2060-\u206F\uD800-\uDFFF\uFEFF\uFFF9-\uFFFB])?(?![\s\S])/u;
 export const CONTRACT_CURSOR = /^[A-Za-z0-9_-]{1,512}(?![\s\S])/u;
 export const CONTRACT_SHA256 = /^[a-f0-9]{64}(?![\s\S])/u;
 export const CONTRACT_RENDER_URL =

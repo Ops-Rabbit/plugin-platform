@@ -77,6 +77,14 @@ const png = new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 
 const logo = await uploadLogo(context, created.tenant.id, png);
 assert.equal(logo.ok, true);
 assert.equal((await uploadLogo(context, created.tenant.id, new Blob(["x"], { type: "image/gif" }))).code, "logo_invalid");
+assert.equal((await uploadLogo(context, created.tenant.id, new Blob([await png.arrayBuffer()], { type: "" }))).ok, true);
+let calls = 0;
+const flaky = (error) => ({ tenantProvisioning: { createCustomer: async () => { calls += 1; throw error; } } });
+assert.equal((await createCustomer(flaky(new TypeError("boom")), input, credential, 3, 1)).code, "host_error");
+assert.equal(calls, 1);
+calls = 0;
+assert.equal((await createCustomer(flaky({ code: "host_error" }), input, credential, 3, 1)).code, "host_error");
+assert.equal(calls, 3);
 const manifest = validateManifest({
   id: "onboarding", name: "Onboarding", version: "1.0.0", description: "Onboarding", apiVersion: "1.0", main: "./dist/index.js", minimumOpsRabbitVersion: "0.12.0",
   navigation: { kind: "plugin_workspace", moduleKey: "customer_app", path: "/apps/customer_app", icon: "alert_triangle", fallbackTitle: "Customers" },

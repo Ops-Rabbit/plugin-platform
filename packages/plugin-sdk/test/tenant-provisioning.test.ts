@@ -12,6 +12,7 @@ import {
   TENANT_PROVISIONING_RESULT_SCHEMA,
   parseCreateCustomerRequestV1,
   parseCreateCustomerResultV1,
+  parseListProvisionedTenantsRequestV1,
   parseProvisionedTenantV1,
   validateCreateCustomerRequestV1,
   validateCreateCustomerResultV1,
@@ -149,6 +150,16 @@ const rejected: Array<{ name: string; manifest: Record<string, unknown> }> = [
       navigation: { ...navigation, adminOnly: true },
     }),
   },
+  {
+    name: "Forms workspace navigation",
+    manifest: provisioningManifest({
+      navigation: { ...navigation, kind: "forms_workspace" },
+      formStarterPack: {
+        moduleKey: "customer_app",
+        path: "./forms/customers.json",
+      },
+    }),
+  },
 ];
 
 function strip(manifest: Record<string, unknown>) {
@@ -197,6 +208,23 @@ describe("tenantProvisioning manifest capability", () => {
     ).toContain(
       "capabilities.tenantProvisioning requires minimumOpsRabbitVersion 0.12.0 or later.",
     );
+    expect(
+      validateManifest(
+        provisioningManifest({
+          navigation: { ...navigation, kind: "forms_workspace" },
+          formStarterPack: {
+            moduleKey: "customer_app",
+            path: "./forms/customers.json",
+          },
+        }),
+      ).issues,
+    ).toEqual([
+      expect.objectContaining({
+        path: "$.navigation.kind",
+        message:
+          "tenantProvisioning opens new tenants on a standalone plugin_workspace.",
+      }),
+    ]);
   });
 
   it("leaves manifests without the capability unchanged", () => {
@@ -299,6 +327,37 @@ describe("tenant provisioning requests", () => {
       valid: false,
     },
     {
+      name: "display name with accents, inner spaces and emoji",
+      value: {
+        ...createRequest,
+        tenant: {
+          slug: "acme",
+          displayName: `Ac${String.fromCodePoint(0xe9)}me ${String.fromCodePoint(0x1f600)} Ltd`,
+        },
+      },
+      valid: true,
+    },
+    ...[
+      ["line break", 0x0a],
+      ["NUL", 0x00],
+      ["C1 control", 0x85],
+      ["right-to-left override", 0x202e],
+      ["right-to-left isolate", 0x2067],
+      ["zero-width space", 0x200b],
+      ["byte order mark", 0xfeff],
+      ["unpaired surrogate", 0xd800],
+    ].map(([label, code]) => ({
+      name: `display name with a ${label}`,
+      value: {
+        ...createRequest,
+        admin: {
+          email: "owner@acme.test",
+          displayName: `Ow${String.fromCharCode(code as number)}ner`,
+        },
+      },
+      valid: false,
+    })),
+    {
       name: "invalid email",
       value: {
         ...createRequest,
@@ -350,6 +409,10 @@ describe("tenant provisioning requests", () => {
       }),
     ).not.toEqual([]);
     expect(validateListProvisionedTenantsRequestV1({})).toEqual([]);
+    // The request is optional on listTenants, so omitting it is the first default page.
+    expect(validateListProvisionedTenantsRequestV1(undefined)).toEqual([]);
+    expect(parseListProvisionedTenantsRequestV1(undefined)).toEqual({});
+    expect(validateListProvisionedTenantsRequestV1("page")).not.toEqual([]);
     expect(
       validateListProvisionedTenantsRequestV1({
         limit: TENANT_PROVISIONING_MAX_PAGE_SIZE,
@@ -625,6 +688,18 @@ describe("createTestTenantProvisioningService", () => {
     ).rejects.toMatchObject({ code: "request_conflict" });
   });
 
+  it("keeps existing accounts' display names within the contract", async () => {
+    const email = `${"o".repeat(64)}@${"a".repeat(63)}.${"b".repeat(63)}.test`;
+    const fake = createTestTenantProvisioningService({
+      existingAccounts: [email],
+    });
+    const created = await fake.service.createCustomer({
+      ...createRequest,
+      admin: { email, displayName: "Owner" },
+    });
+    expect(validateCreateCustomerResultV1(created)).toEqual([]);
+  });
+
   it("never issues a credential for an existing account", async () => {
     const fake = createTestTenantProvisioningService({
       existingAccounts: ["Owner@Acme.test"],
@@ -730,6 +805,32 @@ describe("createTestTenantProvisioningService", () => {
     ).rejects.toMatchObject({
       code: "logo_invalid",
     });
+    // Like the host, the fake reads the bytes: the declared type is ignored and partial
+    // signatures, such as "WE" at byte 8 without RIFF/WEBP, are rejected.
+    expect(
+      (
+        await fake.service.uploadLogo(
+          id,
+          new Blob([await png().arrayBuffer()], { type: "" }),
+        )
+      ).mimeType,
+    ).toBe("image/png");
+    const webp = new Uint8Array(12);
+    webp.set([0x52, 0x49, 0x46, 0x46], 0);
+    webp.set([0x57, 0x45, 0x42, 0x50], 8);
+    expect((await fake.service.uploadLogo(id, new Blob([webp]))).mimeType).toBe(
+      "image/webp",
+    );
+    const looseWebp = new Uint8Array(12);
+    looseWebp.set([0x57, 0x45], 8);
+    for (const bytes of [
+      looseWebp,
+      new Uint8Array(0),
+      new Uint8Array([0x89, 0x50]),
+    ])
+      await expect(
+        fake.service.uploadLogo(id, new Blob([bytes], { type: "image/png" })),
+      ).rejects.toMatchObject({ code: "logo_invalid" });
     await expect(
       createTestTenantProvisioningService().service.getLogo(id),
     ).rejects.toMatchObject({ code: "not_available" });

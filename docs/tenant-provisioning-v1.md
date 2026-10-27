@@ -101,8 +101,11 @@ const result = await broker.createCustomer({
 
 `slug` must already be canonical: 2 to 80 lowercase letters, digits or single inner dashes.
 Display names are 1 to 160 characters with no leading or trailing whitespace, and must not
-contain control characters, invisible formatting characters (such as zero-width spaces) or
-bidirectional overrides, so a name cannot hide line breaks or display as a different name. The
+contain control characters, invisible formatting characters (such as zero-width spaces),
+bidirectional overrides, blank-looking fillers (such as Hangul fillers and the braille blank),
+tag characters or supplementary variation selectors. A name therefore cannot hide line breaks
+or text, look blank, or display as a different name. Emoji, including the basic variation
+selectors that give them their emoji form, are allowed. The
 host commits all of the following in one transaction, so a failure leaves no partial customer:
 
 - the tenant;
@@ -176,7 +179,8 @@ The plugin must show the value once and drop it. It must never:
 - audit it.
 
 The [reference](../packages/plugin-sdk/reference/tenant-provisioning.mjs) holds it in a
-show-once container that forgets it on first read.
+show-once container that forgets it on first read, and empties it before every new
+`createCustomer` call so a password that was never shown cannot appear with the next customer.
 
 ## Logo
 
@@ -188,7 +192,8 @@ branding:
   `file.type` (a browser may report it empty); checking the size early is fine;
 - the plugin keeps no copy and reads the logo back with `getLogo` or the returned `url`, which
   it may use as an `<img>` source. The SDK validates the URL as a path or an absolute http(s) URL;
-  the host is responsible for serving it from its own API origin;
+  the host is responsible for serving it from its own API origin. Validate the upload result
+  before using it, as the reference does;
 - `getLogo` returns `null` when the tenant has no logo. The published result schema describes
   this as `#/$defs/getLogo`; `#/$defs/logo` is the non-null logo `uploadLogo` returns.
 

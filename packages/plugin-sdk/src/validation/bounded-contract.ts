@@ -11,12 +11,55 @@ export const CONTRACT_TENANT_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*(?![\s\S])/u;
 export const CONTRACT_REQUEST_ID = /^[A-Za-z0-9_-]{16,128}(?![\s\S])/u;
 export const CONTRACT_EMAIL =
   /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![\s\S])/u;
-// Display text: trimmed, with no control, invisible-format or bidi-override characters and no
-// unpaired surrogates, so names cannot hide line breaks or render as a different name. The explicit
-// surrogate-pair branch keeps the result the same in schema validators that omit the `u` flag.
-export const CONTRACT_TRIMMED_TEXT =
-  // eslint-disable-next-line no-control-regex -- control characters are listed so they are rejected.
-  /^(?:[^\s\x00-\x1F\x7F-\x9F\u00AD\u061C\u180E\u200B-\u200F\u2028-\u202E\u2060-\u206F\uD800-\uDFFF\uFEFF\uFFF9-\uFFFB]|[\uD800-\uDBFF][\uDC00-\uDFFF])(?:(?:[^\x00-\x1F\x7F-\x9F\u00AD\u061C\u180E\u200B-\u200F\u2028-\u202E\u2060-\u206F\uD800-\uDFFF\uFEFF\uFFF9-\uFFFB]|[\uD800-\uDBFF][\uDC00-\uDFFF])*(?:[^\s\x00-\x1F\x7F-\x9F\u00AD\u061C\u180E\u200B-\u200F\u2028-\u202E\u2060-\u206F\uD800-\uDFFF\uFEFF\uFFF9-\uFFFB]|[\uD800-\uDBFF][\uDC00-\uDFFF]))?(?![\s\S])/u;
+// Display text: trimmed, with no control, invisible-format, blank-rendering or bidi-override
+// characters, no unpaired surrogates, and no Plane 14 tag characters or supplementary variation
+// selectors, so names cannot hide line breaks or text, or render blank or as a different name.
+// The pattern matches the same in schema validators with and without the `u` flag: complete
+// surrogate pairs have their own branch, and Plane 14 characters are listed as escaped pairs
+// because a range above U+FFFF has no form that is valid in both modes.
+const escapeUnit = (unit: number) =>
+  `\\u${unit.toString(16).toUpperCase().padStart(4, "0")}`;
+const span = (from: number, to: number) =>
+  Array.from({ length: to - from + 1 }, (_, index) => from + index);
+const UNSAFE_TEXT = [
+  [0x00, 0x1f],
+  [0x7f, 0x9f],
+  [0xad],
+  [0x34f],
+  [0x61c],
+  [0x115f, 0x1160],
+  [0x17b4, 0x17b5],
+  [0x180e],
+  [0x200b, 0x200f],
+  [0x2028, 0x202e],
+  [0x2060, 0x206f],
+  [0x2800],
+  [0x3164],
+  [0xd800, 0xdfff],
+  [0xfeff],
+  [0xffa0],
+  [0xfff9, 0xfffb],
+]
+  .map(([from, to]) =>
+    to === undefined
+      ? escapeUnit(from!)
+      : `${escapeUnit(from!)}-${escapeUnit(to)}`,
+  )
+  .join("");
+const PLANE_14 = [0xe0001, ...span(0xe0020, 0xe007f), ...span(0xe0100, 0xe01ef)]
+  .map(
+    (codePoint) =>
+      escapeUnit(0xd800 + ((codePoint - 0x10000) >> 10)) +
+      escapeUnit(0xdc00 + ((codePoint - 0x10000) & 0x3ff)),
+  )
+  .join("|");
+const SURROGATE_PAIR = `[${escapeUnit(0xd800)}-${escapeUnit(0xdbff)}][${escapeUnit(0xdc00)}-${escapeUnit(0xdfff)}]`;
+const DISPLAY_EDGE = `(?:[^\\s${UNSAFE_TEXT}]|${SURROGATE_PAIR})`;
+const DISPLAY_INNER = `(?:[^${UNSAFE_TEXT}]|${SURROGATE_PAIR})`;
+export const CONTRACT_TRIMMED_TEXT = new RegExp(
+  `^(?![\\s\\S]*(?:${PLANE_14}))${DISPLAY_EDGE}(?:${DISPLAY_INNER}*${DISPLAY_EDGE})?(?![\\s\\S])`,
+  "u",
+);
 export const CONTRACT_CURSOR = /^[A-Za-z0-9_-]{1,512}(?![\s\S])/u;
 export const CONTRACT_SHA256 = /^[a-f0-9]{64}(?![\s\S])/u;
 export const CONTRACT_RENDER_URL =

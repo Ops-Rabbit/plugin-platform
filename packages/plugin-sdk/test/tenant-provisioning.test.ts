@@ -359,6 +359,18 @@ describe("tenant provisioning requests", () => {
       },
       valid: true,
     },
+    {
+      // Emoji presentation depends on the basic variation selectors, which stay allowed.
+      name: "display name with an emoji variation selector",
+      value: {
+        ...createRequest,
+        tenant: {
+          slug: "acme",
+          displayName: `Acme ${String.fromCodePoint(0x2764, 0xfe0f)}`,
+        },
+      },
+      valid: true,
+    },
     ...[
       ["line break", 0x0a],
       ["NUL", 0x00],
@@ -368,13 +380,20 @@ describe("tenant provisioning requests", () => {
       ["zero-width space", 0x200b],
       ["byte order mark", 0xfeff],
       ["unpaired surrogate", 0xd800],
+      ["Hangul filler", 0x3164],
+      ["halfwidth Hangul filler", 0xffa0],
+      ["braille blank", 0x2800],
+      ["combining grapheme joiner", 0x34f],
+      ["tag character", 0xe0041],
+      ["cancel tag", 0xe007f],
+      ["supplementary variation selector", 0xe0100],
     ].map(([label, code]) => ({
       name: `display name with a ${label}`,
       value: {
         ...createRequest,
         admin: {
           email: "owner@acme.test",
-          displayName: `Ow${String.fromCharCode(code as number)}ner`,
+          displayName: `Ow${String.fromCodePoint(code as number)}ner`,
         },
       },
       valid: false,
@@ -790,13 +809,20 @@ describe("createTestTenantProvisioningService", () => {
       outcome: "replayed",
       credential: { kind: "none", reason: "already_issued" },
     });
-    fake.addForeignTenant({ slug: "elsewhere", adminEmail: "owner@acme.test" });
+    const foreign = fake.addForeignTenant({
+      slug: "elsewhere",
+      adminEmail: "owner@acme.test",
+    });
     await expect(
       fake.service.resetAdminCredential({
         ...request,
         requestId: "reset-000000000002",
       }),
     ).rejects.toMatchObject({ code: "credential_not_resettable" });
+    // Like the host, a reused key on another plugin's tenant is not_found, not a replay or conflict.
+    await expect(
+      fake.service.resetAdminCredential({ ...request, tenantId: foreign }),
+    ).rejects.toMatchObject({ code: "not_found" });
   });
 
   it("hides tenants of other plugins and denies non-admins", async () => {

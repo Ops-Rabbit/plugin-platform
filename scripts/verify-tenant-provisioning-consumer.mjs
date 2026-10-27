@@ -81,6 +81,17 @@ const logo = await uploadLogo(context, created.tenant.id, png);
 assert.equal(logo.ok, true);
 assert.equal((await uploadLogo(context, created.tenant.id, new Blob(["x"], { type: "image/gif" }))).code, "logo_invalid");
 assert.equal((await uploadLogo(context, created.tenant.id, new Blob([await png.arrayBuffer()], { type: "" }))).ok, true);
+const badLogoHost = { tenantProvisioning: { uploadLogo: async () => ({ url: "javascript:alert(1)" }) } };
+assert.deepEqual(await uploadLogo(badLogoHost, created.tenant.id, png), { ok: false, code: "host_error" });
+// A password not yet shown for one customer is dropped before the next customer is created, so
+// an existing-account result can never display it.
+const pendingFake = createTestTenantProvisioningService({ existingAccounts: ["known@beta.test"] });
+const pendingContext = { tenantProvisioning: pendingFake.service };
+await createCustomer(pendingContext, { tenant: { slug: "alpha", displayName: "Alpha" }, admin: { email: "new@alpha.test", displayName: "New" } }, credential);
+assert.equal(credential.pending, true);
+const existing = await createCustomer(pendingContext, { tenant: { slug: "beta", displayName: "Beta" }, admin: { email: "known@beta.test", displayName: "Known" } }, credential);
+assert.equal(existing.ok, true);
+assert.equal(credential.pending, false);
 let calls = 0;
 const flaky = (error) => ({ tenantProvisioning: { createCustomer: async () => { calls += 1; throw error; } } });
 assert.equal((await createCustomer(flaky(new TypeError("boom")), input, credential, 3, 1)).code, "host_error");

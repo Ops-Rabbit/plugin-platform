@@ -2,6 +2,7 @@ import {
   TENANT_PROVISIONING_LOGO_MAX_BYTES,
   validateCreateCustomerRequestV1,
   validateCreateCustomerResultV1,
+  validateProvisionedTenantLogoV1,
 } from "@opsrabbit/plugin-sdk";
 
 /**
@@ -78,6 +79,8 @@ export async function createCustomer(
 ) {
   const request = { ...input, requestId: input.requestId ?? newRequestId() };
   const { requestId } = request;
+  // A password left from an earlier submission must never be shown with this customer.
+  credential.clear();
   if (validateCreateCustomerRequestV1(request).length > 0)
     return { ok: false, code: "invalid_request", requestId };
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -129,10 +132,11 @@ export async function uploadLogo(context, tenantId, file) {
   if (file.size > TENANT_PROVISIONING_LOGO_MAX_BYTES)
     return { ok: false, code: "logo_too_large" };
   try {
-    return {
-      ok: true,
-      logo: await context.tenantProvisioning.uploadLogo(tenantId, file),
-    };
+    const logo = await context.tenantProvisioning.uploadLogo(tenantId, file);
+    // An unexpected result shape is not trusted, in particular not as an `<img>` source.
+    if (validateProvisionedTenantLogoV1(logo).length > 0)
+      return { ok: false, code: "host_error" };
+    return { ok: true, logo };
   } catch (error) {
     return {
       ok: false,

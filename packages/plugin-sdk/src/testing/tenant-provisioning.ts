@@ -103,13 +103,19 @@ export function createTestTenantProvisioningService(
   let deploymentAdmin = options.deploymentAdmin ?? true;
   const homePath = options.homePath ?? "/apps/customer_app";
   const tenants = new Map<string, FakeTenant>();
+  // The same accounts, keyed by lower-cased email and by user id.
   const users = new Map<string, FakeUser>();
+  const usersById = new Map<string, FakeUser>();
+  const addUser = (user: FakeUser) => {
+    users.set(user.email, user);
+    usersById.set(user.userId, user);
+  };
   const retries = new Map<string, RetryRecord>();
   let sequence = 0;
   const nextId = (prefix: string) =>
     `${prefix}-${String(++sequence).padStart(4, "0")}`;
   for (const email of options.existingAccounts ?? [])
-    users.set(email.toLowerCase(), {
+    addUser({
       userId: nextId("user"),
       email: email.toLowerCase(),
       // Display names are capped at 160 characters; emails can be longer.
@@ -123,11 +129,13 @@ export function createTestTenantProvisioningService(
   // skipped, so every character is equally likely (a plain modulo would favor some).
   const password = () => {
     const limit = 256 - (256 % ALPHABET.length);
-    const bytes = new Uint8Array(1);
+    const bytes = new Uint8Array(64);
     let value = "";
     while (value.length < 24) {
       globalThis.crypto.getRandomValues(bytes);
-      if (bytes[0]! < limit) value += ALPHABET[bytes[0]! % ALPHABET.length];
+      for (const byte of bytes)
+        if (byte < limit && value.length < 24)
+          value += ALPHABET[byte % ALPHABET.length];
     }
     return value;
   };
@@ -139,10 +147,8 @@ export function createTestTenantProvisioningService(
     if (!entry || entry.foreign) throw error("not_found", 404);
     return entry;
   };
-  // `users` is keyed by lower-cased email.
   const userByEmail = (email: string) => users.get(email);
-  const userById = (userId: string) =>
-    [...users.values()].find((user) => user.userId === userId);
+  const userById = (userId: string) => usersById.get(userId);
   const view = (entry: FakeTenant): ProvisionedTenantV1 => {
     const user = userById(entry.adminUserId);
     return structuredClone({
@@ -182,9 +188,9 @@ export function createTestTenantProvisioningService(
       admin();
       const request = checked(parseCreateCustomerRequestV1, input);
       const email = request.admin.email.toLowerCase();
+      // The retry key itself is not part of the payload fingerprint.
       const fingerprint = stable({
-        ...request,
-        requestId: undefined,
+        tenant: request.tenant,
         admin: { ...request.admin, email },
       });
       const replay = retry(`create:${request.requestId}`, fingerprint);
@@ -226,7 +232,7 @@ export function createTestTenantProvisioningService(
           mustChange: true,
           tenantIds: new Set(),
         };
-        users.set(email, user);
+        addUser(user);
       }
       user.tenantIds.add(tenantId);
       const entry: FakeTenant = {
@@ -266,6 +272,8 @@ export function createTestTenantProvisioningService(
     async resetAdminCredential(input) {
       admin();
       const request = checked(parseResetAdminCredentialRequestV1, input);
+      // Like the host, ownership is checked before a replay is answered.
+      const entry = owned(request.tenantId);
       const fingerprint = stable({
         tenantId: request.tenantId,
         userId: request.userId,
@@ -278,7 +286,6 @@ export function createTestTenantProvisioningService(
           userId: request.userId,
           credential: { kind: "none", reason: "already_issued" },
         } satisfies ResetAdminCredentialResultV1;
-      const entry = owned(request.tenantId);
       const user = userById(request.userId);
       const shared =
         user !== undefined &&

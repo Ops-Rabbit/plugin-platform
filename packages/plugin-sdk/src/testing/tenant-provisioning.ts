@@ -47,7 +47,6 @@ interface FakeUser {
   userId: string;
   email: string;
   displayName: string;
-  credentialGeneration: number;
   mustChange: boolean;
   tenantIds: Set<string>;
 }
@@ -120,7 +119,6 @@ export function createTestTenantProvisioningService(
       email: email.toLowerCase(),
       // Display names are capped at 160 characters; emails can be longer.
       displayName: email.slice(0, 160),
-      credentialGeneration: 0,
       mustChange: false,
       tenantIds: new Set(),
     });
@@ -228,7 +226,6 @@ export function createTestTenantProvisioningService(
           userId: nextId("user"),
           email,
           displayName: request.admin.displayName,
-          credentialGeneration: 1,
           mustChange: true,
           tenantIds: new Set(),
         };
@@ -299,7 +296,6 @@ export function createTestTenantProvisioningService(
         shared
       )
         throw error("credential_not_resettable", 409);
-      user.credentialGeneration += 1;
       user.mustChange = true;
       retries.set(`reset:${request.requestId}`, { fingerprint, result: {} });
       return {

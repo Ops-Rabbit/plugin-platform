@@ -105,7 +105,9 @@ contain control characters, invisible formatting characters (such as zero-width 
 bidirectional overrides, blank-looking fillers (such as Hangul fillers and the braille blank),
 tag characters, supplementary variation selectors or other format controls above U+FFFF. A
 name therefore cannot hide line breaks or text, look blank, or display as a different name.
-Emoji, including the basic variation selectors that give them their emoji form, are allowed.
+Emoji, including the two variation selectors that choose text or emoji form (U+FE0E and
+U+FE0F), are allowed. Names are labels: two tenants can still look alike, and the unique `slug`
+identifies a tenant.
 The part of `email` before the `@` is at most 64 characters with no leading, trailing or
 doubled dots. The
 host commits all of the following in one transaction, so a failure leaves no partial customer:
@@ -168,9 +170,14 @@ An existing account never receives deployment-admin rights through this capabili
 
 - `pending_first_sign_in`: the temporary password has not been changed yet;
 - `active`: the user has set their own password;
-- `not_managed`: the account existed before provisioning.
+- `not_managed`: the account existed before this tenant was provisioned.
 
-The UI uses it to decide whether to offer a reset.
+The state describes the account as provisioned for that tenant, so the same account can show
+different states on different tenants. For example, if tenant A's provisioning created the
+account and tenant B was later provisioned with the same email, A shows `pending_first_sign_in`
+or `active` while B shows `not_managed`. A reset through A is still allowed when it meets the
+rules above, and it also changes the password the account uses on B. The UI uses the state to
+decide whether to offer a reset on that tenant.
 
 The plugin must show the value once and drop it. It must never:
 

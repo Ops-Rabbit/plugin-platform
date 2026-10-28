@@ -329,8 +329,9 @@ function record(value: unknown): value is Record<string, unknown> {
 const MAX_COPY_ENTRIES = 1_000;
 
 /**
- * Copies own enumerable data properties of plain objects and arrays. Accessors, symbols, class
- * instances, and cycles are rejected so validation and the returned value see the same data.
+ * Copies own enumerable data properties of plain objects and arrays. Accessors, symbols,
+ * non-enumerable or extra array properties, class instances, and cycles are rejected so
+ * validation and the returned value see the same data, and nothing hidden rides along.
  */
 function plainCopy(
   value: unknown,
@@ -359,9 +360,8 @@ function plainCopy(
   }
   // Bound the walk before allocating anything: contract arrays hold at most a page of tenants and
   // objects a handful of fields, so a sparse or huge input is rejected without being iterated.
-  const length = array
-    ? (value as unknown[]).length
-    : Object.keys(value).length;
+  const names = array ? undefined : Object.getOwnPropertyNames(value);
+  const length = array ? (value as unknown[]).length : names!.length;
   if (length > MAX_COPY_ENTRIES) {
     issues.push({
       path,
@@ -370,18 +370,23 @@ function plainCopy(
     });
     return undefined;
   }
+  // An array may own only its indices and `length`; anything else would be hidden from the copy.
+  if (array && Object.getOwnPropertyNames(value).length !== length + 1) {
+    issues.push({ path, code: "type", message: "Expected plain JSON data." });
+    return undefined;
+  }
   const keys = array
     ? Array.from({ length }, (_, index) => String(index))
-    : Object.keys(value);
+    : names!;
   const copy: Record<string, unknown> | unknown[] = array ? [] : {};
   for (const key of keys) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
     const childPath = array ? `${path}[${key}]` : `${path}.${key}`;
-    if (!descriptor || !("value" in descriptor)) {
+    if (!descriptor || !("value" in descriptor) || !descriptor.enumerable) {
       issues.push({
         path: childPath,
         code: "type",
-        message: "Expected an own data property.",
+        message: "Expected an own enumerable data property.",
       });
       continue;
     }

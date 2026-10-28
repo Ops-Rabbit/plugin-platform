@@ -390,6 +390,8 @@ describe("tenant provisioning requests", () => {
       ["musical symbol format control", 0x1d173],
       ["shorthand format control", 0x1bca0],
       ["Egyptian hieroglyph format control", 0x13430],
+      ["Mongolian free variation selector", 0x180b],
+      ["text-style variation selector", 0xfe00],
     ].map(([label, code]) => ({
       name: `display name with a ${label}`,
       value: {
@@ -959,6 +961,28 @@ describe("tenant provisioning hardening", () => {
     expect(() => parseCreateCustomerRequestV1(request)).toThrow(
       PluginValidationError,
     );
+  });
+
+  it("rejects non-enumerable and extra array properties that a copy would hide", () => {
+    const replay = JSON.parse(
+      smuggledReplay.replace(
+        ',"__proto__":{"value":"Smuggled-Secret-123"}',
+        "",
+      ),
+    );
+    expect(validateCreateCustomerResultV1(replay)).toEqual([]);
+    Object.defineProperty(replay.credential, "value", {
+      value: "Smuggled-Secret-123",
+      enumerable: false,
+    });
+    expect(validateCreateCustomerResultV1(replay)).not.toEqual([]);
+    expect(() => parseCreateCustomerResultV1(replay)).toThrow(
+      PluginValidationError,
+    );
+    const page = { tenants: [tenant], nextCursor: null };
+    expect(validateProvisionedTenantPageV1(page)).toEqual([]);
+    Object.assign(page.tenants, { secret: "Smuggled-Secret-123" });
+    expect(validateProvisionedTenantPageV1(page)).not.toEqual([]);
   });
 
   it("treats optional fields set to undefined as absent", () => {

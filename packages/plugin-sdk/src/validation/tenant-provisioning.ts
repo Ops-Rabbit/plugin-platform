@@ -23,6 +23,8 @@ import {
   CONTRACT_APPS_PATH,
   CONTRACT_CURSOR,
   CONTRACT_EMAIL,
+  CONTRACT_HOST_EMAIL,
+  CONTRACT_HOST_TEXT,
   CONTRACT_IDENTIFIER,
   CONTRACT_PRINTABLE_SECRET,
   CONTRACT_RENDER_URL,
@@ -53,6 +55,18 @@ const email = {
   type: "string",
   maxLength: 254,
   pattern: CONTRACT_EMAIL.source,
+} as const;
+// Results carry host-owned names and emails (existing accounts, tenants renamed in the host),
+// so they are checked only for safe text, not against the stricter request rules above.
+const hostDisplayName = {
+  type: "string",
+  maxLength: 512,
+  pattern: CONTRACT_HOST_TEXT.source,
+} as const;
+const hostEmail = {
+  type: "string",
+  maxLength: 320,
+  pattern: CONTRACT_HOST_EMAIL.source,
 } as const;
 const status = { enum: ["active", "disabled", "archived"] } as const;
 const cursor = { type: "string", pattern: CONTRACT_CURSOR.source } as const;
@@ -101,8 +115,8 @@ const ADMIN = {
   required: ["userId", "email", "displayName", "account", "credentialState"],
   properties: {
     userId: identifier,
-    email,
-    displayName,
+    email: hostEmail,
+    displayName: hostDisplayName,
     account: { enum: ["created", "existing"] },
     credentialState: {
       enum: ["pending_first_sign_in", "active", "not_managed"],
@@ -131,7 +145,7 @@ const TENANT = {
       maxLength: 80,
       pattern: CONTRACT_TENANT_SLUG.source,
     },
-    displayName,
+    displayName: hostDisplayName,
     status,
     homePath: {
       type: "string",
@@ -150,7 +164,7 @@ const CREATED_ADMIN = {
   required: ["userId", "email", "account"],
   properties: {
     userId: identifier,
-    email,
+    email: hostEmail,
     account: { enum: ["created", "existing"] },
   },
 } as const satisfies ContractShape;

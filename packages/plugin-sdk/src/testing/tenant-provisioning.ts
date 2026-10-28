@@ -194,7 +194,8 @@ export function createTestTenantProvisioningService(
       const replay = retry(`create:${request.requestId}`, fingerprint);
       if (replay) {
         const entry = owned(String(replay.tenantId));
-        const user = userById(entry.adminUserId)!;
+        const user = userById(entry.adminUserId);
+        if (!user) throw error("host_error", 500);
         return {
           outcome: "replayed",
           tenant: view(entry),

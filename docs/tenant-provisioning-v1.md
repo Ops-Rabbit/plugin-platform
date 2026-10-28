@@ -100,14 +100,16 @@ const result = await broker.createCustomer({
 ```
 
 `slug` must already be canonical: 2 to 80 lowercase letters, digits or single inner dashes.
-Display names are 1 to 160 characters with no leading or trailing whitespace, and must not
-contain control characters, invisible formatting characters (such as zero-width spaces),
+Display names in requests are 1 to 160 characters with no leading or trailing whitespace, and
+must not contain control characters, invisible formatting characters (such as zero-width spaces),
 bidirectional overrides, blank-looking fillers (such as Hangul fillers and the braille blank),
 tag characters, supplementary variation selectors or other format controls above U+FFFF. A
 name therefore cannot hide line breaks or text, look blank, or display as a different name.
-Emoji, including the two variation selectors that choose text or emoji form (U+FE0E and
-U+FE0F), are allowed. Names are labels: two tenants can still look alike, and the unique `slug`
-identifies a tenant.
+Emoji are allowed, including the two variation selectors that choose text or emoji form
+(U+FE0E and U+FE0F) and the zero-width joiner (U+200D) that builds sequences such as family
+emoji. The zero-width non-joiner (U+200C) is allowed because Persian and several Indic scripts
+need it. Names are labels: two tenants can still look alike, and the unique `slug` identifies a
+tenant.
 The part of `email` before the `@` is at most 64 characters with no leading, trailing or
 doubled dots. The
 host commits all of the following in one transaction, so a failure leaves no partial customer:
@@ -247,6 +249,10 @@ Treat unknown codes as failures.
   the published schema.
 - No request type has a password field, and every object rejects unknown keys.
 - A `replayed` result that carries a temporary password is invalid.
+- Names and emails in results belong to the host: an existing account's details, or a tenant
+  renamed in OpsRabbit, need not meet the request rules. Results only require them to be free of
+  control characters, line breaks and broken Unicode (names up to 512 characters, emails up to
+  320 with one `@`). Render them as plain text.
 
 ## Host responsibilities
 

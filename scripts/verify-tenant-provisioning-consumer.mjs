@@ -63,6 +63,9 @@ assert.deepEqual(await loadProvisioningAccess(context), { available: true, deplo
 const failingAuthority = (code) => ({ tenantProvisioning: { getAuthority: async () => { throw { code }; } } });
 assert.deepEqual(await loadProvisioningAccess(failingAuthority("not_available")), { available: false, deploymentAdmin: false });
 assert.deepEqual(await loadProvisioningAccess(failingAuthority("host_error")), { available: true, deploymentAdmin: false });
+// A malformed authority answer, even one that looks truthy, never unlocks provisioning screens.
+const oddAuthority = { tenantProvisioning: { getAuthority: async () => ({ deploymentAdmin: true, extra: 1 }) } };
+assert.deepEqual(await loadProvisioningAccess(oddAuthority), { available: true, deploymentAdmin: false });
 const credential = createShowOnceCredential();
 const input = { requestId: "consumer-request-0001", tenant: { slug: "acme", displayName: "Acme" }, admin: { email: "owner@acme.test", displayName: "Owner" } };
 const created = await createCustomer(context, input, credential);

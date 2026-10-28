@@ -31,7 +31,8 @@ const UNSAFE_TEXT = [
   [0x115f, 0x1160],
   [0x17b4, 0x17b5],
   [0x180b, 0x180f], // Mongolian free variation selectors and vowel separator
-  [0x200b, 0x200f],
+  [0x200b], // zero-width space; U+200C and U+200D are needed by emoji and some scripts
+  [0x200e, 0x200f],
   [0x2028, 0x202e],
   [0x2060, 0x206f],
   [0x2800],
@@ -69,6 +70,20 @@ export const CONTRACT_TRIMMED_TEXT = new RegExp(
   `^(?![\\s\\S]*(?:${SUPPLEMENTARY_HIDDEN}))${DISPLAY_EDGE}(?:${DISPLAY_INNER}*${DISPLAY_EDGE})?(?![\\s\\S])`,
   "u",
 );
+// Host-owned text in results (names of existing accounts, tenants renamed in the host): any text
+// without control characters, line or paragraph separators, or unpaired surrogates. Plugins
+// render it as plain text; the stricter rules above apply only to what a plugin sends.
+const HOST_UNSAFE_TEXT = `${escapeUnit(0x00)}-${escapeUnit(0x1f)}${escapeUnit(0x7f)}-${escapeUnit(0x9f)}${escapeUnit(0x2028)}${escapeUnit(0x2029)}${escapeUnit(0xd800)}-${escapeUnit(0xdfff)}`;
+export const CONTRACT_HOST_TEXT = new RegExp(
+  `^(?:[^${HOST_UNSAFE_TEXT}]|${SURROGATE_PAIR})*(?![\\s\\S])`,
+  "u",
+);
+// Host-owned email in results: one `@` with no whitespace or control characters around it.
+const HOST_EMAIL_PART = `[^${escapeUnit(0x00)}-${escapeUnit(0x20)}${escapeUnit(0x7f)}@]+`;
+export const CONTRACT_HOST_EMAIL = new RegExp(
+  `^${HOST_EMAIL_PART}@${HOST_EMAIL_PART}(?![\\s\\S])`,
+  "u",
+);
 export const CONTRACT_CURSOR = /^[A-Za-z0-9_-]{1,512}(?![\s\S])/u;
 export const CONTRACT_SHA256 = /^[a-f0-9]{64}(?![\s\S])/u;
 export const CONTRACT_RENDER_URL =
@@ -85,6 +100,8 @@ const patterns = [
   CONTRACT_REQUEST_ID,
   CONTRACT_EMAIL,
   CONTRACT_TRIMMED_TEXT,
+  CONTRACT_HOST_TEXT,
+  CONTRACT_HOST_EMAIL,
   CONTRACT_CURSOR,
   CONTRACT_SHA256,
   CONTRACT_RENDER_URL,

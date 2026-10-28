@@ -3,6 +3,7 @@ import {
   parseCreateCustomerRequestV1,
   parseCreateCustomerResultV1,
   parseProvisionedTenantLogoV1,
+  parseTenantProvisioningAuthorityV1,
 } from "@opsrabbit/plugin-sdk";
 
 /**
@@ -27,8 +28,15 @@ export async function loadProvisioningAccess(context) {
   if (typeof broker?.getAuthority !== "function")
     return { available: false, deploymentAdmin: false };
   try {
-    const { deploymentAdmin } = await broker.getAuthority();
-    return { available: true, deploymentAdmin: deploymentAdmin === true };
+    const authority = parsed(
+      parseTenantProvisioningAuthorityV1,
+      await broker.getAuthority(),
+    );
+    // An unexpected result shape never unlocks provisioning screens.
+    return {
+      available: true,
+      deploymentAdmin: authority?.deploymentAdmin === true,
+    };
   } catch (error) {
     // `not_available`: the host does not offer the broker to this workspace right now.
     return {

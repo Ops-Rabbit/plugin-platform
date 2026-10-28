@@ -20,6 +20,7 @@ import {
   validateManifest,
   validateProvisionedTenantLogoV1,
   validateProvisionedTenantPageV1,
+  validateProvisionedTenantV1,
   validateResetAdminCredentialRequestV1,
   validateResetAdminCredentialResultV1,
   validateUpdateProvisionedTenantRequestV1,
@@ -371,6 +372,31 @@ describe("tenant provisioning requests", () => {
       },
       valid: true,
     },
+    {
+      // Joiners build emoji sequences and are required spelling in Persian and Indic scripts.
+      name: "display name with joiner emoji and a Persian name",
+      value: {
+        ...createRequest,
+        tenant: {
+          slug: "acme",
+          displayName: `${String.fromCodePoint(0x1f468, 0x200d, 0x1f469, 0x200d, 0x1f467)} ${String.fromCodePoint(0x1f3f3, 0xfe0f, 0x200d, 0x1f308)}`,
+        },
+        admin: {
+          email: "owner@acme.test",
+          displayName: String.fromCodePoint(
+            0x645,
+            0x6cc,
+            0x200c,
+            0x62e,
+            0x648,
+            0x627,
+            0x647,
+            0x645,
+          ),
+        },
+      },
+      valid: true,
+    },
     ...[
       ["line break", 0x0a],
       ["NUL", 0x00],
@@ -718,6 +744,34 @@ describe("tenant provisioning results", () => {
     expect(validateProvisionedTenantPageV1({ tenants: [tenant] })).not.toEqual(
       [],
     );
+    // Names and emails in results are host-owned: an existing account or a tenant renamed in the
+    // host need not meet the request rules, and one such row must not fail the whole page.
+    const hostOwned = {
+      ...tenant,
+      displayName: ` Renamed${String.fromCodePoint(0x200b)} in host `.repeat(
+        10,
+      ),
+      admin: {
+        ...tenant.admin,
+        email: ".legacy..owner@acme.test",
+        displayName: "",
+        account: "existing",
+        credentialState: "not_managed",
+      },
+    };
+    expect(
+      validateProvisionedTenantPageV1({
+        tenants: [hostOwned],
+        nextCursor: null,
+      }),
+    ).toEqual([]);
+    for (const unsafe of [
+      { ...hostOwned, displayName: "Line\nbreak" },
+      { ...hostOwned, displayName: `Lone ${String.fromCharCode(0xd800)}` },
+      { ...hostOwned, admin: { ...hostOwned.admin, email: "no-at-sign" } },
+      { ...hostOwned, admin: { ...hostOwned.admin, email: "a b@acme.test" } },
+    ])
+      expect(validateProvisionedTenantV1(unsafe)).not.toEqual([]);
     const logo = {
       url: "/api/configuration/branding/logo?tenant_id=tenant-1&v=1",
       mimeType: "image/png",

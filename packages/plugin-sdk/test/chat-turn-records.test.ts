@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
 import {
+  CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH,
   CHAT_TURN_RECORDS_MAX_MESSAGE_LENGTH,
   CHAT_TURN_RECORDS_MAX_TURN_IDS,
 } from "../src/contracts/chat-turn-records.js";
@@ -209,6 +210,68 @@ const resultCorpus: Array<{ name: string; value: unknown; valid: boolean }> = [
         },
       ],
     },
+    valid: false,
+  },
+  {
+    name: "feedback with comment",
+    value: { turns: [{ ...turn, feedbackComment: "Exactly what I needed." }] },
+    valid: true,
+  },
+  {
+    name: "feedback with null comment",
+    value: { turns: [{ ...turn, feedbackComment: null }] },
+    valid: true,
+  },
+  {
+    name: "comment at the bound",
+    value: {
+      turns: [
+        {
+          ...turn,
+          feedbackComment: "\u{1F600}".repeat(
+            CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH,
+          ),
+        },
+      ],
+    },
+    valid: true,
+  },
+  {
+    name: "overlong comment",
+    value: {
+      turns: [
+        {
+          ...turn,
+          feedbackComment: "x".repeat(
+            CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH + 1,
+          ),
+        },
+      ],
+    },
+    valid: false,
+  },
+  {
+    name: "empty comment",
+    value: { turns: [{ ...turn, feedbackComment: "" }] },
+    valid: false,
+  },
+  {
+    name: "comment without feedback",
+    value: {
+      turns: [
+        {
+          ...turn,
+          feedback: null,
+          feedbackUpdatedAt: null,
+          feedbackComment: "Orphaned comment",
+        },
+      ],
+    },
+    valid: false,
+  },
+  {
+    name: "non-string comment",
+    value: { turns: [{ ...turn, feedbackComment: 42 }] },
     valid: false,
   },
 ];

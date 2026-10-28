@@ -3,6 +3,8 @@ export const CHAT_TURN_RECORDS_SCHEMA_VERSION = "1" as const;
 export const CHAT_TURN_RECORDS_MAX_TURN_IDS = 25;
 /** Maximum Unicode code points of user message text returned per turn. */
 export const CHAT_TURN_RECORDS_MAX_MESSAGE_LENGTH = 2000;
+/** Maximum Unicode code points of an optional feedback comment returned per turn. */
+export const CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH = 2000;
 /** Maximum `getTurns` calls a host allows in one route invocation (one page of up to 100 rows). */
 export const CHAT_TURN_RECORDS_CALLS_PER_INVOCATION = 4;
 
@@ -44,6 +46,13 @@ export interface ChatTurnRecordV1 {
    * exactly when `feedback` is null.
    */
   readonly feedbackUpdatedAt: string | null;
+  /**
+   * The optional comment the user wrote with that feedback, at most
+   * `CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH` code points and never empty. Null when the
+   * feedback has no comment, and always null when `feedback` is null. Absent when the host does
+   * not supply comments, so a plugin must treat a missing field like null.
+   */
+  readonly feedbackComment?: string | null;
 }
 
 export interface ChatTurnRecordsRequestV1 {
@@ -61,7 +70,8 @@ export interface ChatTurnRecordsResultV1 {
 /**
  * Deployment-admin-only, read-only broker for turns admitted through `chatTurnAdmission`.
  * Available only to `requiredRole: "admin"` workspace routes, never to actions, jobs, or tools.
- * Hosts audit every successful read and never expose assistant output, attachments, thinking, or metadata.
+ * Hosts audit every successful read and never expose assistant output, attachments, thinking, or metadata
+ * other than the feedback comment.
  */
 export interface PluginChatTurnRecordsService {
   getTurns(input: ChatTurnRecordsRequestV1): Promise<ChatTurnRecordsResultV1>;

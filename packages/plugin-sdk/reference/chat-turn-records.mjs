@@ -5,8 +5,8 @@ import {
 } from "@opsrabbit/plugin-sdk";
 
 /**
- * Executable reference for a deployment-admin route that shows the question and feedback for
- * turns the plugin admitted. Turn ids come from the plugin's own admission records; the text is
+ * Executable reference for a deployment-admin route that shows the question, feedback, and
+ * optional feedback comment (absent on hosts without comment support) for turns the plugin admitted. Turn ids come from the plugin's own admission records; the text is
  * read on demand, shown once, and never stored, logged, or audited by the plugin.
  *
  * Returns the records found and the ids whose read failed (or exceeded the per-invocation read

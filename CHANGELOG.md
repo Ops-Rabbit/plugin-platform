@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.36.0 - Unreleased
+
+- Add the optional `feedbackComment` field to `ChatTurnRecordV1`: the comment a user wrote with their answer feedback, bounded by `CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH` (2000 code points), never empty, and `null` when there is no comment or no feedback.
+- The field is optional, so `chatTurnRecords/v1` stays backward compatible: hosts without comment support remain valid, and plugins must treat a missing comment like `null`. The result JSON Schema and `validateChatTurnRecordsResult` accept it and reject empty, overlong, non-string, or feedback-less comments.
+- Comments are user-written content: hosts return them only through the audited broker, and plugins must not store, log, or audit them. Align SDK and CLI release versions at 0.36.0.
+
 ## 0.34.0 - Unreleased
 
 - Preserve existing generic/void adapter contexts by making the reference-bearing send context an explicit opt-in generic with a backward-compatible default.

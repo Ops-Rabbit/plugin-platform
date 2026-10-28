@@ -112,7 +112,7 @@ SDK 0.32.0 exports `PluginDocumentCaptureServiceV1`, `PluginCapturedDocumentV1` 
 
 ## Tenant provisioning v1
 
-SDK 0.35.0 exports the `tenantProvisioning` browser broker contract, request/result validators and JSON Schemas, a test fake, and an executable [reference](packages/plugin-sdk/reference/tenant-provisioning.mjs). A deployment admin can onboard a customer from the plugin's own workspace in one host transaction: a tenant, its first admin with a host-generated temporary password shown once, admin access, and enablement of the calling plugin, with the tenant opening on that workspace full screen. See [host responsibilities](docs/tenant-provisioning-v1.md). Runtime availability requires host 0.12.0 or later.
+SDK 0.37.0 exports the `tenantProvisioning` browser broker contract, request/result validators and JSON Schemas, a test fake, and an executable [reference](packages/plugin-sdk/reference/tenant-provisioning.mjs). A deployment admin can onboard a customer from the plugin's own workspace in one host transaction: a tenant, its first admin with a host-generated temporary password shown once, admin access, and enablement of the calling plugin, with the tenant opening on that workspace full screen. See [host responsibilities](docs/tenant-provisioning-v1.md). Runtime availability requires host 0.12.0 or later.
 
 ## Chat turn records v1
 
@@ -133,5 +133,7 @@ The [resource workspace contract](docs/resource-workspaces-v1.md) covers standal
 SDK/CLI 0.30.0 adds declarative source Inbound business configuration for host-owned registration controls. Core owns the checkbox, grants and delivery; plugins declare bounded localized mapping/enrichment fields and tenant-admin read/write actions. Configuration uses revision/incarnation fences. See [the Inbound registration contract](docs/inbound-registration-v1.md).
 
 SDK 0.31.1 adds the `siren` navigation icon for operational incidents. Hosts must render this icon key before plugins select it; see [navigation compatibility](docs/plugin-navigation-sections-v1.md).
+
+SDK 0.36.0 adds the optional `feedbackComment` to `chatTurnRecords/v1` records, so an interaction policy's admin route can show the comment a user wrote with their answer feedback. The field is optional and backward compatible; treat a missing comment like `null`. See [host responsibilities](docs/chat-turn-records-v1.md).
 
 SDK 0.34.0 adds adapter-only channel messaging references for trusted Teams routing and confirmed sent-message quoting. No new send authority, authentication or content store is granted. See [host responsibilities](docs/channel-messaging-v1.md). Runtime use requires coordinated host support.

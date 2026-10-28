@@ -1,4 +1,5 @@
 import {
+  CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH,
   CHAT_TURN_RECORDS_MAX_MESSAGE_LENGTH,
   CHAT_TURN_RECORDS_MAX_TURN_IDS,
 } from "../contracts/chat-turn-records.js";
@@ -11,7 +12,7 @@ const TIMESTAMP_PATTERN =
   "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,9})?Z$";
 const IDENTIFIER = new RegExp(IDENTIFIER_PATTERN, "u");
 const TIMESTAMP = new RegExp(TIMESTAMP_PATTERN, "u");
-const RECORD_KEYS = [
+const REQUIRED_RECORD_KEYS = [
   "turnId",
   "threadId",
   "userMessage",
@@ -19,6 +20,8 @@ const RECORD_KEYS = [
   "feedback",
   "feedbackUpdatedAt",
 ] as const;
+// `feedbackComment` is optional so hosts without comment support stay valid v1 hosts.
+const RECORD_KEYS = [...REQUIRED_RECORD_KEYS, "feedbackComment"] as const;
 
 export const CHAT_TURN_RECORDS_REQUEST_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -50,7 +53,7 @@ export const CHAT_TURN_RECORDS_RESULT_SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: [...RECORD_KEYS],
+        required: [...REQUIRED_RECORD_KEYS],
         properties: {
           turnId: { type: "string", pattern: IDENTIFIER_PATTERN },
           threadId: { type: "string", pattern: IDENTIFIER_PATTERN },
@@ -64,11 +67,21 @@ export const CHAT_TURN_RECORDS_RESULT_SCHEMA = {
             type: ["string", "null"],
             pattern: TIMESTAMP_PATTERN,
           },
+          feedbackComment: {
+            type: ["string", "null"],
+            minLength: 1,
+            maxLength: CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH,
+          },
         },
         allOf: [
           {
             if: { properties: { feedback: { const: null } } },
-            then: { properties: { feedbackUpdatedAt: { const: null } } },
+            then: {
+              properties: {
+                feedbackUpdatedAt: { const: null },
+                feedbackComment: { const: null },
+              },
+            },
             else: { properties: { feedbackUpdatedAt: { type: "string" } } },
           },
           {
@@ -257,6 +270,25 @@ export function validateChatTurnRecordsResult(
         code: "invalid_value",
         message: "feedbackUpdatedAt must be set exactly when feedback is set.",
       });
+    if ("feedbackComment" in turn && turn.feedbackComment !== null) {
+      if (
+        typeof turn.feedbackComment !== "string" ||
+        turn.feedbackComment.length === 0 ||
+        [...turn.feedbackComment].length >
+          CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH
+      )
+        issues.push({
+          path: `${path}.feedbackComment`,
+          code: "invalid_value",
+          message: `feedbackComment must be null or a non-empty string of at most ${CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH} code points.`,
+        });
+      else if (turn.feedback === null)
+        issues.push({
+          path: `${path}.feedbackComment`,
+          code: "invalid_value",
+          message: "feedbackComment may be set only when feedback is set.",
+        });
+    }
   });
   return issues;
 }

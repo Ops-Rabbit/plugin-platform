@@ -265,7 +265,7 @@ SDK 0.32.0 exports `PluginDocumentCaptureServiceV1`, `PluginCapturedDocumentV1` 
 
 ## Tenant provisioning v1
 
-SDK 0.35.0 exports `PluginTenantProvisioningServiceV1`, the request, result, tenant and logo types, `validate*V1`/`parse*V1` functions, the open error codes, the `tenant-provisioning-request-schema` and `tenant-provisioning-result-schema` JSON Schemas, and `createTestTenantProvisioningService` from `./testing`. A native workspace that requests `tenant.provisioning.manage` receives `context.tenantProvisioning` on a supporting host (0.12.0 or later). The host owns tenants, users, credentials, sign-in and branding. See [host responsibilities](../../docs/tenant-provisioning-v1.md).
+SDK 0.37.0 exports `PluginTenantProvisioningServiceV1`, the request, result, tenant and logo types, `validate*V1`/`parse*V1` functions, the open error codes, the `tenant-provisioning-request-schema` and `tenant-provisioning-result-schema` JSON Schemas, and `createTestTenantProvisioningService` from `./testing`. A native workspace that requests `tenant.provisioning.manage` receives `context.tenantProvisioning` on a supporting host (0.12.0 or later). The host owns tenants, users, credentials, sign-in and branding. See [host responsibilities](../../docs/tenant-provisioning-v1.md).
 
 ## Chat turn records v1
 
@@ -284,5 +284,7 @@ Plugins can declare a versioned tenant-bound Inbound lifecycle handler. The stri
 `PluginWorkspaceNavigation` supports Forms workspaces and standalone `plugin_workspace` specialists. `PluginResourceRecordsService` defines core-authorized SQL paging/counting/grouping and transaction-bound resource registration; `PluginResourceLifecycleDefinitionV1` defines atomic deletion under the shared retention framework. `PluginStructuredEnrichmentService` is optional, tenant-model-backed and bounded. These declarations require the coordinated supporting host release. See the platform's `docs/resource-workspaces-v1.md` and executable reference; no host-private imports are supported.
 
 SDK/CLI 0.30.0 adds declarative source Inbound business configuration for host-owned registration controls. Core owns the checkbox, grants and delivery; plugins declare bounded localized mapping/enrichment fields and tenant-admin read/write actions. Configuration uses revision/incarnation fences. See [the Inbound registration contract](../../docs/inbound-registration-v1.md).
+
+SDK 0.36.0 adds the optional `feedbackComment` to `chatTurnRecords/v1` records, so an interaction policy's admin route can show the comment a user wrote with their answer feedback. The field is optional and backward compatible; treat a missing comment like `null`. See [host responsibilities](../../docs/chat-turn-records-v1.md).
 
 SDK 0.34.0 adds adapter-only channel messaging references for trusted Teams routing and confirmed sent-message quoting. No new send authority, authentication or content store is granted. See [host responsibilities](../../docs/channel-messaging-v1.md). Runtime use requires coordinated host support.

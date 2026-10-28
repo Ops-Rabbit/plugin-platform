@@ -1,6 +1,6 @@
 # Tenant Provisioning v1 (2026-10-23)
 
-Status: implemented locally on 2026-10-24 (SDK/CLI 0.35.0), not committed or published. Host implementation is planned in OpsRabbit
+Status: implemented locally on 2026-10-24 (SDK/CLI 0.37.0), not committed or published. Host implementation is planned in OpsRabbit
 `docs/plans/plugin-tenant-provisioning-2026-10-23.md` (branch
 `feat/tenant-provisioning`).
 
@@ -36,7 +36,7 @@ admins, colors/fonts/favicon branding.
 - Results never carry a credential except on the one response that issued it.
   Types make the credential a discriminated union so a replay cannot carry one.
 - Reference + clean-consumer script run against the packed SDK.
-- `pnpm quality` passes; version 0.35.0 (both packages) with changelog,
+- `pnpm quality` passes; version 0.37.0 (both packages) with changelog,
   README, starter reference and training course updated.
 
 ## Design
@@ -304,8 +304,8 @@ The plugin declares intent. The host owns all of the following:
 New `docs/tenant-provisioning-v1.md` (Declaration / Runtime / Credentials /
 Logo / Errors / Host responsibilities / Testing / Future work). Update root and
 SDK READMEs, `docs/starter-reference.md`, `docs/training-course.md`
-(`## Tenant provisioning (SDK 0.35.0)`) and `CHANGELOG.md`. Bump both packages
-and `constants.ts` to 0.35.0.
+(`## Tenant provisioning (SDK 0.37.0)`) and `CHANGELOG.md`. Bump both packages
+and `constants.ts` to 0.37.0.
 
 ## Authorization and data lifecycle
 
@@ -373,7 +373,7 @@ code-search indexed, so it was searched from the tarball at the exact SHA.
 
 ## Closeout
 
-Implemented on branch `feat/tenant-provisioning` at SDK/CLI 0.35.0; not committed, pushed or published.
+Implemented on branch `feat/tenant-provisioning` at SDK/CLI 0.37.0; not committed, pushed or published.
 
 Deviations from the design above:
 
@@ -402,4 +402,8 @@ Independent review (2026-10-25) and fixes:
 
 Backward compatibility (2026-10-25): 47 existing plugin manifests on this machine give identical runtime and JSON Schema results under SDK 0.34.0 and 0.35.0. The full SDK suite (686 tests) passes. The OpsRabbit plugin suites show the same Windows-only failures as clean `main`, plus the expected host-version assertion while the version is temporarily raised.
 
-Training course review: updated with a "Tenant provisioning (SDK 0.35.0)" section.
+Training course review: updated with a "Tenant provisioning (SDK 0.37.0)" section.
+
+Version (2026-10-28): the work was first versioned 0.35.0 (the compatibility check above ran at
+that version). `main` meanwhile released 0.36.0 for the chat-turn feedback comment, so this work
+moved to 0.37.0 to publish as its own npm release.

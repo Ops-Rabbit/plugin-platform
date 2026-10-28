@@ -1,6 +1,6 @@
 # Building Governed OpsRabbit Plugins
 
-## Tenant provisioning (SDK 0.35.0)
+## Tenant provisioning (SDK 0.37.0)
 
 A plugin that sells to many customers can onboard them from its own workspace without building
 user management. Declare `capabilities.tenantProvisioning: { schemaVersion: "1", logo: true }`,
@@ -21,8 +21,9 @@ retained. See [tenant provisioning v1](tenant-provisioning-v1.md).
 
 An interaction policy that charges or limits chat turns often needs to show administrators what
 was asked. Declare `capabilities.chatTurnRecords: { schemaVersion: "1", read: true }` next to
-`chatTurnAdmission`, keep the turn ids your admission already receives, and read the question and
-answer feedback on demand with `context.chatTurnRecords.getTurns({ turnIds })` from a
+`chatTurnAdmission`, keep the turn ids your admission already receives, and read the question,
+answer feedback, and optional feedback comment (SDK 0.36.0; treat a missing `feedbackComment`
+like `null`) on demand with `context.chatTurnRecords.getTurns({ turnIds })` from a
 `requiredRole: "admin"` workspace route. The host returns only turns your plugin admitted,
 audits every successful read, and limits each route invocation to four calls of up to 25 ids. Walk through
 the [executable reference](../packages/plugin-sdk/reference/chat-turn-records.mjs) and its tests:

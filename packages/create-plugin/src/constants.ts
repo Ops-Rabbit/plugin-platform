@@ -1,5 +1,5 @@
-export const CLI_VERSION = "0.35.0";
-export const SDK_VERSION = "^0.35.0";
+export const CLI_VERSION = "0.37.0";
+export const SDK_VERSION = "^0.37.0";
 export const STARTER_IDS = [
   "basic-readonly",
   "operational-action",

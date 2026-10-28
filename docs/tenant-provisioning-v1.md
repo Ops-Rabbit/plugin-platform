@@ -1,6 +1,6 @@
 # Tenant provisioning v1
 
-SDK 0.35.0 adds `tenantProvisioning/v1`. With it, a plugin can onboard customers from its own
+SDK 0.37.0 adds `tenantProvisioning/v1`. With it, a plugin can onboard customers from its own
 native workspace while OpsRabbit stays the owner of tenants, users, sign-in, credentials and
 branding.
 

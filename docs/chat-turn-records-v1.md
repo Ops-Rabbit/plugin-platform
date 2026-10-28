@@ -1,7 +1,8 @@
 # Chat turn records v1
 
 SDK 0.33.0 adds `chatTurnRecords/v1`, a read-only broker. A deployment interaction policy uses
-it to show administrators the question and answer feedback for chat turns it admitted. At
+it to show administrators the question and answer feedback for chat turns it admitted. SDK 0.36.0
+adds the optional feedback comment to each record. At
 admission a plugin receives the turn's identifiers, the actor, and request facts, but never the
 message text. The host keeps the text and feedback and returns them on demand, so the plugin
 never stores a copy.
@@ -48,6 +49,10 @@ request order:
 - `feedback`: `thumbs_up`, `thumbs_down`, or `null`, from the turn's assistant answer.
   `feedbackUpdatedAt` is a UTC timestamp `YYYY-MM-DDTHH:MM:SS[.fraction]Z` (1 to 9 fraction
   digits, an RFC 3339 profile), and is `null` exactly when `feedback` is null.
+- `feedbackComment` (SDK 0.36.0, optional): the comment the user wrote with that feedback, at
+  most `CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH` (2000) Unicode code points and never
+  empty. It is `null` when the feedback has no comment and always `null` when `feedback` is
+  `null`. Hosts that do not supply comments omit the field; treat a missing field like `null`.
 
 Unknown, deleted, and other plugins' turns are omitted, and the omission does not say which.
 Records are presentation data. Never use them for authorization, and never write them to plugin
@@ -84,8 +89,10 @@ A host:
 "admin"` workspace route calls of an enabled plugin that declares the capability.
 - MUST validate requests with `validateChatTurnRecordsRequest` and self-check results with
   `validateChatTurnRecordsResult` before returning them.
-- MUST return only the turn's canonical question and the feedback on its assistant answer. It
-  never returns assistant output, thinking, attachments, usage, or metadata.
+- MUST return only the turn's canonical question, the feedback on its assistant answer, and the
+  optional comment written with that feedback. It never returns assistant output, thinking,
+  attachments, usage, or other metadata. A comment is user-written content, so it is subject to
+  the same no-storage, no-logging, and no-audit rules as the question.
 - MUST durably audit every successful read with the plugin id and turn counts, never content.
   Rejected requests (400, 429) return no content and need no read audit. The
   audit must commit before the content is returned and must not roll back if the route later

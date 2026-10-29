@@ -19,6 +19,14 @@ verified against the packed public SDK in `scripts/verify-chat-turn-records-cons
 reference, not a new generated starter: the broker requires a host that implements
 [chat turn records v1](chat-turn-records-v1.md).
 
+The tenant provisioning reference is
+`packages/plugin-sdk/reference/tenant-provisioning.mjs`. It shows a native workspace that gates
+provisioning screens on `getAuthority()`, creates a customer with a stable retry key, holds the
+temporary password in a show-once container, and uploads the tenant logo separately with retry. It
+is verified against the packed public SDK in `scripts/verify-tenant-provisioning-consumer.mjs`. It
+is a reference, not a new generated starter: the broker requires a host that implements
+[tenant provisioning v1](tenant-provisioning-v1.md).
+
 The `forms-workflow` starter declares `navigation.section: "operations"`.
 See [navigation sections](plugin-navigation-sections-v1.md) for all four groups
 and the release dependency. Host authorization remains independent of placement.

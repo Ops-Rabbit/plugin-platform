@@ -2,6 +2,7 @@ import type { PluginAgentRunsCapabilityV1 } from "./agent-runs.js";
 import type { PluginDocumentCaptureCapabilityV1 } from "./document-capture.js";
 import type { PluginInboundRegistrationCapabilityV1 } from "./inbound-registration.js";
 import type { PluginResourceRecordsCapabilityV1 } from "./resource-records.js";
+import type { PluginTenantProvisioningCapabilityV1 } from "./tenant-provisioning.js";
 
 export const PLUGIN_RISKS = [
   "read",
@@ -138,6 +139,8 @@ export interface PluginDeclaredCapabilities {
   chatTurnAdmission?: { schemaVersion: "1"; scope: "deployment" };
   chatComposerStatus?: { schemaVersion: "1" };
   chatTurnRecords?: { schemaVersion: "1"; read: true };
+  /** Deployment-admin customer onboarding from the plugin's own native workspace. */
+  tenantProvisioning?: PluginTenantProvisioningCapabilityV1;
   deploymentAdminWorkspace?: { schemaVersion: "1" };
   identityDirectory?: { read: true };
   personaHost?: { schemaVersion: "1" };

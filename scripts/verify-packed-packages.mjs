@@ -77,6 +77,8 @@ try {
         "schemas/opsrabbit-structured-enrichment-result.schema.json",
         "schemas/opsrabbit-chat-turn-records-request.schema.json",
         "schemas/opsrabbit-chat-turn-records-result.schema.json",
+        "schemas/opsrabbit-tenant-provisioning-request.schema.json",
+        "schemas/opsrabbit-tenant-provisioning-result.schema.json",
       ])
         if (!paths.includes(schema))
           throw new Error(`SDK package is missing public schema ${schema}`);
@@ -100,6 +102,19 @@ try {
         if (!paths.includes(file))
           throw new Error(
             `SDK package is missing document capture module ${file}`,
+          );
+    if (manifest.name === "@opsrabbit/plugin-sdk")
+      for (const file of [
+        "dist/contracts/tenant-provisioning.js",
+        "dist/contracts/tenant-provisioning.d.ts",
+        "dist/validation/tenant-provisioning.js",
+        "dist/validation/tenant-provisioning.d.ts",
+        "dist/testing/tenant-provisioning.js",
+        "dist/testing/tenant-provisioning.d.ts",
+      ])
+        if (!paths.includes(file))
+          throw new Error(
+            `SDK package is missing tenant provisioning module ${file}`,
           );
     if (
       manifest.name === "@opsrabbit/create-plugin" &&

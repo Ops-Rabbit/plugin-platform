@@ -5,6 +5,8 @@ export * from "./contracts/channel-approvals.js";
 export * from "./contracts/channel-messaging.js";
 export * from "./contracts/chat-turn-records.js";
 export * from "./validation/chat-turn-records.js";
+export * from "./contracts/tenant-provisioning.js";
+export * from "./validation/tenant-provisioning.js";
 export * from "./validation/channel-messaging.js";
 export * from "./validation/channel-approvals.js";
 export * from "./validation/channel-approval-cleanup.js";

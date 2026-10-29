@@ -1,5 +1,22 @@
 # Building Governed OpsRabbit Plugins
 
+## Tenant provisioning (SDK 0.37.0)
+
+A plugin that sells to many customers can onboard them from its own workspace without building
+user management. Declare `capabilities.tenantProvisioning: { schemaVersion: "1", logo: true }`,
+request `tenant.provisioning.manage` in the native frontend, keep `navigation.adminOnly` off, and
+set `minimumOpsRabbitVersion` to 0.12.0. The same workspace serves two audiences: call
+`context.tenantProvisioning.getAuthority()` and show provisioning screens only to deployment
+admins; everyone else gets the customer experience, because new tenants open on this workspace
+full screen. `createCustomer` creates the tenant, its first admin, admin access and your plugin's
+enablement in one host transaction. Generate one `requestId` per submitted form and reuse it for
+retries; a replay never returns a second password, and a lost password is recovered only with
+`resetAdminCredential`. Show the temporary password once and drop it: never store, log, send, or
+audit it. Upload the logo as a separate call that can be retried. Walk through the
+[executable reference](../packages/plugin-sdk/reference/tenant-provisioning.mjs) and test with
+`createTestTenantProvisioningService`, including the `snapshot()` check that no credential is
+retained. See [tenant provisioning v1](tenant-provisioning-v1.md).
+
 ## Chat turn records (SDK 0.33.0)
 
 An interaction policy that charges or limits chat turns often needs to show administrators what

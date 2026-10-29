@@ -110,6 +110,10 @@ SDK 0.31.0 exports `PluginAgentRunsServiceV1`, completion and observation types,
 
 SDK 0.32.0 exports `PluginDocumentCaptureServiceV1`, `PluginCapturedDocumentV1` and request and result validators. See [host responsibilities and reference](docs/plugin-document-capture-v1.md). A binding requests access and grants none; the host fetches under tenant Web Access policy, and plugins never open the connection themselves.
 
+## Tenant provisioning v1
+
+SDK 0.37.0 exports the `tenantProvisioning` browser broker contract, request/result validators and JSON Schemas, a test fake, and an executable [reference](packages/plugin-sdk/reference/tenant-provisioning.mjs). A deployment admin can onboard a customer from the plugin's own workspace in one host transaction: a tenant, its first admin with a host-generated temporary password shown once, admin access, and enablement of the calling plugin, with the tenant opening on that workspace full screen. See [host responsibilities](docs/tenant-provisioning-v1.md). Runtime availability requires host 0.12.0 or later.
+
 ## Chat turn records v1
 
 SDK 0.33.0 exports the read-only `chatTurnRecords` broker contract, request/result validators and JSON Schemas, and an executable [reference](packages/plugin-sdk/reference/chat-turn-records.mjs). A deployment interaction policy's admin route can show the question and answer feedback for turns it admitted; the plugin never stores them. See [host responsibilities](docs/chat-turn-records-v1.md). Runtime availability requires an implementing host.

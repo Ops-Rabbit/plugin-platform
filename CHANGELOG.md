@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.37.0 - Unreleased
+
+- Add `tenantProvisioning/v1`, a browser broker on `OpsRabbitWorkspaceContext.tenantProvisioning` for native workspaces that request `tenant.provisioning.manage`. Deployment admins can check authority, create a customer (tenant, first admin, admin access and enablement of the calling plugin) in one host transaction, reset the first admin's temporary password, list, read and update tenants the plugin provisioned, and upload and read the tenant logo.
+- Results carry a host-generated temporary password only on the response that issued it; replays carry none. Request types have no password field.
+- Display names in requests reject control characters, invisible formatting characters, bidirectional overrides, blank-looking fillers, tag characters, variation selectors other than U+FE0E and U+FE0F, other format controls above U+FFFF and unpaired surrogates; emoji (including zero-width-joiner sequences) and the zero-width non-joiner stay allowed. Host-owned names and emails in results are only checked for safe text. `validate*V1` and `parse*V1` reject non-enumerable properties and extra array properties instead of skipping them. Email local parts reject leading, trailing and doubled dots. An omitted `listTenants` request is the first default-sized page; `null` is rejected. `getLogo` returns `null` for a tenant without a logo, published as `#/$defs/getLogo`. Published patterns behave the same with or without the regex `u` flag.
+- Validate the declaration in runtime validation and the published manifest JSON Schema: the capability and the frontend capability must be declared together, the navigation must be a `plugin_workspace` that is not admin-only, and `minimumOpsRabbitVersion` must be 0.12.0 or later. Existing manifests are unchanged.
+- Publish `tenant-provisioning-request-schema` and `tenant-provisioning-result-schema`, `validate*V1` and frozen-copy `parse*V1` functions, open error codes, an in-memory `createTestTenantProvisioningService` fake, an executable reference and a packed clean-consumer verification.
+- `PluginFrontendCapability` gains `tenant.provisioning.manage`. Code that exhaustively switches over, or keys a complete record by, that union needs the new member; manifest validation results for existing plugins are unchanged.
+- Align SDK and CLI at 0.37.0. Host implementation and publication remain coordinated release dependencies.
+
 ## 0.36.0 - Unreleased
 
 - Add the optional `feedbackComment` field to `ChatTurnRecordV1`: the comment a user wrote with their answer feedback, bounded by `CHAT_TURN_RECORDS_MAX_FEEDBACK_COMMENT_LENGTH` (2000 code points), never empty, and `null` when there is no comment or no feedback.

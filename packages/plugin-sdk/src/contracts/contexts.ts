@@ -48,6 +48,19 @@ export interface PluginInvocationContext {
   readonly embeddedChat?: Readonly<{
     widgetId: string;
     externalUserId: string;
+    /**
+     * Host-signed ES256 compact JWS asserting that this tool call runs for
+     * `externalUserId` of `widgetId` in `tenantId` (embedded identity
+     * assertion v1). Present only when the widget's identity assertion setting
+     * lists this plugin; absent on every other invocation and on older hosts,
+     * so treat it as optional. Minted per tool call and short-lived (60 s).
+     *
+     * A plugin may forward it unchanged to its own downstream API over HTTPS.
+     * Never log it, persist it, return it in tool output, or show it to the
+     * model or user. Downstream verification is described in
+     * `docs/embedded-identity-assertion-v1.md`.
+     */
+    identityAssertion?: string;
   }>;
   readonly tenantRecords?: TenantRecordStore;
   readonly database?: PluginDatabase;

@@ -99,7 +99,7 @@ Claims:
 | `plugin_id`        | the invoked plugin's id                                                                       |
 | `tool_id`          | the invoked tool's id                                                                         |
 | `iat`, `nbf`       | issue time (seconds)                                                                          |
-| `exp`              | `iat + 60`                                                                                    |
+| `exp`              | `iat + 60`, or earlier when the end user's chat session expires sooner                        |
 | `jti`              | random UUID                                                                                   |
 
 ## Public keys (JWKS)
@@ -117,7 +117,10 @@ token you have not yet verified.
 
 Caching: a downstream API may cache the JWKS for up to 300 seconds, as the response header allows.
 When a token names a `kid` that is not in the cached set, refetch the JWKS once (rate-limit
-refetches, for example to one per minute) before rejecting the token.
+refetches, for example to one per minute) before rejecting the token. The host throttles JWKS
+lookups it has not cached and may answer `429` with `Retry-After`; keep serving the cached set
+and retry after that delay. A new key can take up to 60 seconds to appear on every host process,
+which the two-step rotation below absorbs.
 
 Rotation is two-step, so no verifier ever sees a token signed by a key it cannot have:
 

@@ -105,7 +105,7 @@ Claims:
 ## Public keys (JWKS)
 
 `GET <public base URL>/widget/chat/identity/tenants/<tenantId>/jwks.json` returns no-auth,
-cacheable (`Cache-Control: public, max-age=300`)
+cacheable (`Cache-Control: public, max-age=<at most 300>`)
 `{ "keys": [ { "kty": "EC", "crv": "P-256", "x", "y", "kid", "alg": "ES256", "use": "sig" } ] }`
 with the active key, a prepared key that does not sign yet, and any previous key still inside its
 24-hour grace period. The private key
@@ -115,7 +115,8 @@ The JWKS URL is the issuer followed by `/jwks.json`. Configure the issuer (and t
 URL) in the downstream API for each tenant you accept; never build the URL from the `iss` of a
 token you have not yet verified.
 
-Caching: a downstream API may cache the JWKS for up to 300 seconds, as the response header allows.
+Caching: a downstream API may cache the JWKS for as long as the response's `max-age` allows: at
+most 300 seconds, and never past the end of a previous key's grace period.
 When a token names a `kid` that is not in the cached set, refetch the JWKS once (rate-limit
 refetches, for example to one per minute) before rejecting the token. The host throttles JWKS
 lookups it has not cached and may answer `429` with `Retry-After`; keep serving the cached set

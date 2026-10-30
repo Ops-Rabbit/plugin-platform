@@ -9,7 +9,14 @@ import {
 } from "../src/testing/index.js";
 import type { TestEmbeddedChatOptions } from "../src/testing/index.js";
 
-const ASSERTION = "eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJ1c2VyLTEifQ.c2lnbmF0dXJl";
+// Built at runtime: a fixed compact JWS that is never verified here.
+const ASSERTION = [{ alg: "ES256" }, { sub: "user-1" }, "signature"]
+  .map((part) =>
+    Buffer.from(
+      typeof part === "string" ? part : JSON.stringify(part),
+    ).toString("base64url"),
+  )
+  .join(".");
 
 describe("embedded identity assertion contract types", () => {
   it("adds an optional string identityAssertion to embeddedChat", () => {

@@ -17,6 +17,9 @@ import { URL } from "node:url";
 /** Maximum clock skew, in seconds, the contract allows for `exp`, `nbf` and `iat`. */
 export const IDENTITY_ASSERTION_MAX_CLOCK_SKEW_SECONDS = 30;
 
+/** Longest `exp - iat` a verifier accepts. Hosts mint 60-second assertions. */
+export const IDENTITY_ASSERTION_MAX_LIFETIME_SECONDS = 300;
+
 /**
  * Calls the plugin's own downstream API for a chat tool. When the host supplied
  * an identity assertion, it is sent unchanged in `headerName`; when it is
@@ -83,7 +86,8 @@ function isNumericDate(value) {
  * `expected.jwks` is the tenant's JWKS (`{ keys: [...] }`), fetched from the
  * configured JWKS URL or pinned. `issuer`, `audience`, `pluginId`, `widgetId`
  * and `externalUserId` come from the API's own configuration and request,
- * never from the token. `nowSeconds` defaults to the current time.
+ * never from the token. `toolId`, when given, is the tool the endpoint serves.
+ * `nowSeconds` defaults to the current time.
  */
 export function verifyEmbeddedIdentityAssertionV1(token, expected) {
   if (typeof token !== "string") throw new IdentityAssertionError("malformed");
@@ -149,12 +153,20 @@ export function verifyEmbeddedIdentityAssertionV1(token, expected) {
   if (claims.exp + skew <= now) throw new IdentityAssertionError("expired");
   if (claims.nbf - skew > now || claims.iat - skew > now)
     throw new IdentityAssertionError("not_yet_valid");
+  if (
+    claims.exp <= claims.iat ||
+    claims.exp - claims.iat > IDENTITY_ASSERTION_MAX_LIFETIME_SECONDS
+  )
+    throw new IdentityAssertionError("lifetime");
 
   // 4. Plugin and widget.
   if (claims.plugin_id !== expected.pluginId)
     throw new IdentityAssertionError("plugin");
   if (claims.widget_client_id !== expected.widgetId)
     throw new IdentityAssertionError("widget");
+  // An API that maps each endpoint to one tool binds the assertion to it.
+  if (expected.toolId !== undefined && claims.tool_id !== expected.toolId)
+    throw new IdentityAssertionError("tool");
 
   // 5. The end user the call claims to act for (`sub` carries the same value).
   if (

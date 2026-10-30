@@ -174,6 +174,7 @@ describe("test harness embeddedChat option", () => {
 
 interface Reference {
   IDENTITY_ASSERTION_MAX_CLOCK_SKEW_SECONDS: number;
+  IDENTITY_ASSERTION_MAX_LIFETIME_SECONDS: number;
   callDownstreamApi: (
     context: unknown,
     options: {
@@ -200,6 +201,7 @@ interface Reference {
       pluginId: string;
       widgetId: string;
       externalUserId: string;
+      toolId?: string;
       nowSeconds?: number;
     },
   ) => Readonly<Record<string, unknown>>;
@@ -427,6 +429,41 @@ describe("embedded identity assertion reference: downstream verification", () =>
     expect(() => verifyAt(claims({ exp: "later" }))).toThrow(
       expect.objectContaining({ code: "malformed" }),
     );
+  });
+
+  it("allows at most a 300-second lifetime", async () => {
+    const {
+      verifyEmbeddedIdentityAssertionV1,
+      IDENTITY_ASSERTION_MAX_LIFETIME_SECONDS,
+    } = await reference();
+    expect(IDENTITY_ASSERTION_MAX_LIFETIME_SECONDS).toBe(300);
+    const verifyAt = (payload: Record<string, unknown>) =>
+      verifyEmbeddedIdentityAssertionV1(mint(payload), { ...expected, jwks });
+    expect(() => verifyAt(claims({ exp: now + 300 }))).not.toThrow();
+    for (const exp of [now + 301, now + 86_400, now]) {
+      expect(() => verifyAt(claims({ exp }))).toThrow(
+        expect.objectContaining({ code: "lifetime" }),
+      );
+    }
+  });
+
+  it("binds the assertion to a tool when the API names one", async () => {
+    const { verifyEmbeddedIdentityAssertionV1 } = await reference();
+    const token = mint(claims());
+    expect(
+      verifyEmbeddedIdentityAssertionV1(token, {
+        ...expected,
+        jwks,
+        toolId: "lookup",
+      }).tool_id,
+    ).toBe("lookup");
+    expect(() =>
+      verifyEmbeddedIdentityAssertionV1(token, {
+        ...expected,
+        jwks,
+        toolId: "other-tool",
+      }),
+    ).toThrow(expect.objectContaining({ code: "tool" }));
   });
 
   it.each([

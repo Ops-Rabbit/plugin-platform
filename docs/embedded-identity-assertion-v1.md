@@ -107,7 +107,8 @@ Claims:
 `GET <public base URL>/widget/chat/identity/tenants/<tenantId>/jwks.json` returns no-auth,
 cacheable (`Cache-Control: public, max-age=300`)
 `{ "keys": [ { "kty": "EC", "crv": "P-256", "x", "y", "kid", "alg": "ES256", "use": "sig" } ] }`
-with the active key and any previous key still inside its rotation grace period. The private key
+with the active key, a prepared key that does not sign yet, and any previous key still inside its
+24-hour grace period. The private key
 never leaves the host: it is stored encrypted, per tenant.
 
 The JWKS URL is the issuer followed by `/jwks.json`. Configure the issuer (and therefore the JWKS
@@ -118,11 +119,16 @@ Caching: a downstream API may cache the JWKS for up to 300 seconds, as the respo
 When a token names a `kid` that is not in the cached set, refetch the JWKS once (rate-limit
 refetches, for example to one per minute) before rejecting the token.
 
-Rotation: an admin rotates the tenant key; the new key signs from then on and the previous public
-key stays in the JWKS for 24 hours, then is removed. Downstream services that pin keys must add
-the new public key before rotating. A service that fetches the JWKS picks up the new key within
-its cache lifetime and the unknown-`kid` refetch, and keeps accepting tokens signed with the
-previous key for the grace period.
+Rotation is two-step, so no verifier ever sees a token signed by a key it cannot have:
+
+1. An admin prepares a new key. It is published in the JWKS at once but does not sign.
+2. Services that pin keys copy the updated JWKS (old and new key) and deploy. Services that fetch
+   the JWKS have it within their cache lifetime.
+3. The admin activates the new key. It signs from then on; the previous key stays in the JWKS for
+   24 hours, then is removed, and pinned copies can drop it.
+
+A service that fetches the JWKS also picks up a key it has not seen through the unknown-`kid`
+refetch.
 
 ## Downstream verification (what a consuming API must check)
 
@@ -130,9 +136,11 @@ previous key for the grace period.
    copy).
 2. `iss` equals the expected tenant issuer; `aud` equals the expected audience.
 3. `exp` is in the future and `nbf`/`iat` are not in the future (allow at most 30 seconds of clock
-   skew).
+   skew), and `exp - iat` is positive and at most 300 seconds.
 4. `plugin_id` equals the expected plugin, and `widget_client_id` equals the expected widget.
 5. `external_user_id` equals the end user the call claims to act for.
+6. Recommended: when each endpoint serves one tool, `tool_id` equals that tool, so an assertion
+   cannot be replayed against another tool's endpoint.
 
 Reject the token if any check fails, and take every expected value from the API's own
 configuration or request, never from the token. Accept only `alg: "ES256"`; reject `none`, HMAC
@@ -176,6 +184,8 @@ export function verifyIdentityAssertion(token, expected) {
   if (!(claims.exp + skew > now)) throw new Error("expired");
   if (!(claims.nbf - skew <= now && claims.iat - skew <= now))
     throw new Error("not yet valid");
+  if (!(claims.exp > claims.iat && claims.exp - claims.iat <= 300))
+    throw new Error("lifetime");
   if (claims.plugin_id !== expected.pluginId) throw new Error("plugin");
   if (claims.widget_client_id !== expected.widgetId) throw new Error("widget");
   if (

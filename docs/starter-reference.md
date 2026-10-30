@@ -27,6 +27,15 @@ is verified against the packed public SDK in `scripts/verify-tenant-provisioning
 is a reference, not a new generated starter: the broker requires a host that implements
 [tenant provisioning v1](tenant-provisioning-v1.md).
 
+The embedded identity assertion reference is
+`packages/plugin-sdk/reference/embedded-identity-assertion.mjs`. Its plugin half forwards
+`context.embeddedChat.identityAssertion` unchanged over HTTPS to the plugin's own API, and calls
+exactly as before when it is absent; its downstream half verifies the ES256 signature and claims
+with Node `crypto`. It is verified against the packed public SDK in
+`scripts/verify-embedded-identity-assertion-consumer.mjs`. It is a reference, not a new generated
+starter: the field needs no manifest declaration and requires a host that implements
+[embedded identity assertion v1](embedded-identity-assertion-v1.md).
+
 The `forms-workflow` starter declares `navigation.section: "operations"`.
 See [navigation sections](plugin-navigation-sections-v1.md) for all four groups
 and the release dependency. Host authorization remains independent of placement.

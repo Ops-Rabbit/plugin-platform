@@ -110,6 +110,10 @@ SDK 0.31.0 exports `PluginAgentRunsServiceV1`, completion and observation types,
 
 SDK 0.32.0 exports `PluginDocumentCaptureServiceV1`, `PluginCapturedDocumentV1` and request and result validators. See [host responsibilities and reference](docs/plugin-document-capture-v1.md). A binding requests access and grants none; the host fetches under tenant Web Access policy, and plugins never open the connection themselves.
 
+## Embedded identity assertion v1
+
+SDK 0.38.0 adds the optional `context.embeddedChat.identityAssertion`: a host-signed ES256 compact JWS, minted per Embedded Chat tool call and valid for 60 seconds, present only when the widget's admin-controlled setting lists the plugin. A plugin may forward it unchanged over HTTPS to its own downstream API, which verifies it against the tenant's public JWKS; never log, persist, return or display it. There is no manifest capability or host version gate, and older hosts omit the field. See [the contract](docs/embedded-identity-assertion-v1.md) and the executable [reference](packages/plugin-sdk/reference/embedded-identity-assertion.mjs).
+
 ## Tenant provisioning v1
 
 SDK 0.37.0 exports the `tenantProvisioning` browser broker contract, request/result validators and JSON Schemas, a test fake, and an executable [reference](packages/plugin-sdk/reference/tenant-provisioning.mjs). A deployment admin can onboard a customer from the plugin's own workspace in one host transaction: a tenant, its first admin with a host-generated temporary password shown once, admin access, and enablement of the calling plugin, with the tenant opening on that workspace full screen. See [host responsibilities](docs/tenant-provisioning-v1.md). Runtime availability requires host 0.12.0 or later.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.38.0 - Unreleased
+
+- Add embedded identity assertion v1: the optional `identityAssertion` string on `PluginInvocationContext.embeddedChat`. It is a host-signed ES256 compact JWS saying a tool call runs for the verified external user of a widget in a tenant. The host mints one per Embedded Chat tool call, valid for 60 seconds, only when the widget's admin-controlled setting lists the plugin. A plugin may forward it unchanged over HTTPS to its own downstream API, which verifies it against the tenant's public JWKS; it must never be logged, persisted, returned in tool output, or shown to the model or user.
+- Document eligibility, claims, the per-tenant JWKS URL and caching, two-step key rotation (prepare, then activate) with a 24-hour grace period, and the downstream verification checklist (including a 300-second lifetime cap and optional `tool_id` binding) with a Node `crypto` example in [embedded identity assertion v1](docs/embedded-identity-assertion-v1.md). Add an executable reference (plugin forwarding and downstream verification) and a packed clean-consumer verification with strict TypeScript positive and negative consumers.
+- `createTestContext` accepts `embeddedChat` (`widgetId`, `externalUserId`, optional `identityAssertion`), copied and frozen, and rejects empty ids and an assertion that is not a compact JWS. `createAuthorizedTestContext` keeps only the widget identity for declared actions and drops `embeddedChat` for scheduled jobs and undeclared actions, because only tool calls receive the assertion. The testing entry point exports `TestEmbeddedChatOptions`.
+- No manifest capability, JSON Schema change or `minimumOpsRabbitVersion` gate: the field is optional and absent on older hosts, so existing manifests and plugins are unchanged. Align SDK and CLI at 0.38.0. Host implementation and publication remain coordinated release dependencies.
+
 ## 0.37.0 - Unreleased
 
 - Add `tenantProvisioning/v1`, a browser broker on `OpsRabbitWorkspaceContext.tenantProvisioning` for native workspaces that request `tenant.provisioning.manage`. Deployment admins can check authority, create a customer (tenant, first admin, admin access and enablement of the calling plugin) in one host transaction, reset the first admin's temporary password, list, read and update tenants the plugin provisioned, and upload and read the tenant logo.

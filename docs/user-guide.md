@@ -46,6 +46,11 @@ untrusted and evidence text must map exactly to host-supplied source offsets.
   as a selected workspace id, together with separately verified embedded-user
   identity. Bindings are routing hints, not authorization, and plugins must
   validate them before selecting customer data.
+- **Embedded Chat identity assertion**: when an admin enables it for a widget
+  and lists the plugin, agent tools also receive a short-lived assertion signed
+  by OpsRabbit that the plugin can pass to its own backend, so that backend can
+  confirm which end user the call is for. It is off by default and never shown
+  to users. See [embedded identity assertion v1](embedded-identity-assertion-v1.md).
 - **Insights**: dashboards and saved queries based on plugin-owned Forms data.
 - **Read routes and widgets**: role-gated JSON data routes and host-rendered
   widgets for supported plugin surfaces.

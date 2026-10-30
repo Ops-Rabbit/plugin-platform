@@ -34,6 +34,45 @@ export interface TestContext extends PluginInvocationContext {
   readonly logs: TestLogEntry[];
 }
 
+/**
+ * Verified Embedded Chat identity a test supplies for a tool invocation. Use a
+ * placeholder `identityAssertion` such as `"header.payload.signature"` unless
+ * the test verifies a real signature.
+ */
+export type TestEmbeddedChatOptions = NonNullable<
+  PluginInvocationContext["embeddedChat"]
+>;
+
+const COMPACT_JWS = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+
+function testEmbeddedChat(
+  value: TestEmbeddedChatOptions,
+): TestEmbeddedChatOptions {
+  if (typeof value !== "object" || value === null)
+    throw new TypeError("embeddedChat must be an object.");
+  const { widgetId, externalUserId, identityAssertion } = value;
+  if (typeof widgetId !== "string" || widgetId.trim() === "")
+    throw new TypeError("embeddedChat.widgetId must be a non-empty string.");
+  if (typeof externalUserId !== "string" || externalUserId.trim() === "")
+    throw new TypeError(
+      "embeddedChat.externalUserId must be a non-empty string.",
+    );
+  // The host omits the field rather than sending an empty or malformed value.
+  if (
+    identityAssertion !== undefined &&
+    (typeof identityAssertion !== "string" ||
+      !COMPACT_JWS.test(identityAssertion))
+  )
+    throw new TypeError(
+      "embeddedChat.identityAssertion must be a compact JWS (header.payload.signature) when present.",
+    );
+  return Object.freeze({
+    widgetId,
+    externalUserId,
+    ...(identityAssertion === undefined ? {} : { identityAssertion }),
+  });
+}
+
 export function createTestContext(
   options: {
     tenantId?: string;
@@ -49,6 +88,11 @@ export function createTestContext(
     documentCapture?: PluginDocumentCaptureServiceV1;
     dataInsightAuthorization?: DataInsightAuthorizationContext;
     settings?: Readonly<Record<string, JsonValue>>;
+    /**
+     * Verified Embedded Chat identity for a chat tool invocation, optionally
+     * with the host-signed `identityAssertion`. Copied and frozen.
+     */
+    embeddedChat?: TestEmbeddedChatOptions;
   } = {},
 ): TestContext {
   const logs: TestLogEntry[] = [];
@@ -60,6 +104,9 @@ export function createTestContext(
     logger,
     logs,
     settings: options.settings ?? {},
+    ...(options.embeddedChat === undefined
+      ? {}
+      : { embeddedChat: testEmbeddedChat(options.embeddedChat) }),
     ...(options.tenantRecords === undefined
       ? {}
       : { tenantRecords: options.tenantRecords }),
@@ -93,6 +140,11 @@ export type TestInvocation =
  * Builds the public service surface authorized by a manifest and invocation.
  * This is intentionally stricter than createTestContext, which remains a
  * backwards-compatible low-level injection helper.
+ *
+ * Actions and scheduled jobs are not plugin tool calls, so `embeddedChat`
+ * never carries an `identityAssertion` here, and scheduled jobs never run in
+ * an Embedded Chat turn and receive no `embeddedChat` at all. Test a tool that
+ * forwards the assertion with createTestContext.
  */
 export function createAuthorizedTestContext(
   manifest: PluginManifest,
@@ -106,8 +158,13 @@ export function createAuthorizedTestContext(
     host: suppliedHost,
     agentRuns: suppliedAgentRuns,
     documentCapture: suppliedDocumentCapture,
+    embeddedChat: suppliedEmbeddedChat,
     ...baseOptions
   } = options;
+  const checkedEmbeddedChat =
+    suppliedEmbeddedChat === undefined
+      ? undefined
+      : testEmbeddedChat(suppliedEmbeddedChat);
   const declaration = manifest.capabilities.knowledge;
   const action =
     invocation.kind === "action"
@@ -122,6 +179,14 @@ export function createAuthorizedTestContext(
         )
       : undefined;
   const invocationDeclared = action !== undefined || scheduledJob !== undefined;
+  // Only a declared action keeps the widget identity, and never the assertion.
+  const embeddedChat: TestEmbeddedChatOptions | undefined =
+    checkedEmbeddedChat === undefined || action === undefined
+      ? undefined
+      : {
+          widgetId: checkedEmbeddedChat.widgetId,
+          externalUserId: checkedEmbeddedChat.externalUserId,
+        };
   const readOnlyInvocation = action?.risk === "read";
   const rejectMutation = async (): Promise<never> => {
     throw new Error(
@@ -341,6 +406,7 @@ export function createAuthorizedTestContext(
       : undefined;
   return createTestContext({
     ...baseOptions,
+    ...(embeddedChat === undefined ? {} : { embeddedChat }),
     ...(agentRuns === undefined ? {} : { agentRuns }),
     ...(documentCapture === undefined ? {} : { documentCapture }),
     ...(suppliedHost &&

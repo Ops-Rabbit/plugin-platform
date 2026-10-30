@@ -128,6 +128,31 @@ validate the requested binding against that identity, `context.tenantId`, and th
 plugin's authorization source before selecting data.
 Never place credentials or secrets in bindings.
 
+### Embedded Chat identity assertion
+
+SDK 0.38.0 adds the optional `context.embeddedChat.identityAssertion`
+([embedded identity assertion v1](../../docs/embedded-identity-assertion-v1.md)).
+It is a host-signed ES256 compact JWS saying the tool call runs for
+`externalUserId` of `widgetId` in `tenantId`. The host mints one per tool call,
+valid for 60 seconds, and only when the widget's identity assertion setting lists
+this plugin; otherwise, and on older hosts, the field is absent. There is no
+manifest capability or `minimumOpsRabbitVersion` gate.
+
+```ts
+const assertion = context.embeddedChat?.identityAssertion;
+const headers: Record<string, string> =
+  assertion === undefined ? {} : { "x-example-user-assertion": assertion };
+```
+
+Forward it unchanged, over HTTPS, only to the plugin's own downstream API that
+is its audience. Never log it, persist it, return it in tool output, or show it
+to the model or user. The downstream API verifies the signature against the
+tenant's JWKS and checks `iss`, `aud`, lifetime (at most 30 seconds of clock
+skew), `plugin_id`, `widget_client_id` and `external_user_id`; the contract
+document has the checklist, a Node `crypto` example, and key rotation rules.
+In tests, pass `embeddedChat` (with or without `identityAssertion`) to
+`createTestContext` and cover both the present and the absent case.
+
 Forms-backed plugins may declare a host-rendered workspace through the optional
 `navigation` manifest field. The host validates the `/apps/<module>` path,
 supported icon, module key, and referenced title/icon settings. Navigation is

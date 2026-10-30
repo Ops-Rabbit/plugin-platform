@@ -1,5 +1,9 @@
 # Building Governed OpsRabbit Plugins
 
+## Embedded identity assertion (SDK 0.38.0)
+
+`context.embeddedChat.identityAssertion` is an optional host-signed ES256 compact JWS asserting that an Embedded Chat tool call runs for the verified `externalUserId` of `widgetId` in the tenant. The host mints one per Embedded Chat tool call, valid for 60 seconds, only when an admin lists the plugin in the widget's identity assertion setting; otherwise, and on older hosts, it is absent, and there is no manifest capability or host version gate. When your tool calls its own downstream API, forward the assertion unchanged over HTTPS so the API can verify the end user against the tenant's public JWKS. Never log, persist, return, or display it, and never send it anywhere else. Test both cases with `createTestContext({ embeddedChat: { widgetId, externalUserId, identityAssertion } })`, and walk through the [executable reference](../packages/plugin-sdk/reference/embedded-identity-assertion.mjs), whose downstream half applies the verification checklist in [embedded identity assertion v1](embedded-identity-assertion-v1.md).
+
 ## Tenant provisioning (SDK 0.37.0)
 
 A plugin that sells to many customers can onboard them from its own workspace without building
@@ -430,6 +434,7 @@ interface PluginInvocationContext {
   readonly embeddedChat?: Readonly<{
     widgetId: string;
     externalUserId: string;
+    identityAssertion?: string;
   }>;
   readonly tenantRecords?: TenantRecordStore;
   readonly database?: PluginDatabase;
@@ -443,6 +448,8 @@ interface PluginInvocationContext {
 Optional brokers must be checked and code must fail closed when one is absent.
 
 For chat tool invocations, `conversationBindings` can carry deterministic values selected when an Embedded Chat conversation starts, such as a workspace id. They bypass model argument copying but remain untrusted browser-supplied data. `embeddedChat` is different: it contains the external user and widget identity verified from the signed token. A plugin must validate each requested binding against that verified identity, `tenantId`, and its own authorization source before using it to select customer data. Bindings are absent on other invocation surfaces and must never contain secrets.
+
+The optional `embeddedChat.identityAssertion` is covered in [Embedded identity assertion (SDK 0.38.0)](#embedded-identity-assertion-sdk-0380).
 
 ### Lab A: tenant records
 

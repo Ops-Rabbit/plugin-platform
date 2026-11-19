@@ -29,6 +29,15 @@ export interface PluginPersonaHostService {
     moduleKey: string;
     grants?: Array<{ templateId: string; policyKey: string; groupId: string }>;
   }): Promise<Array<{ templateId: string; dashboardId: string }>>;
+  /**
+   * Reconciles group grants for a Forms submission to exactly the desired set.
+   * Revokes active grants for groups not in desiredGroupIds; adds missing ones.
+   * Returns the count of added and revoked grants.
+   */
+  reconcileSubmissionGroupGrants(input: {
+    submissionId: string;
+    desiredGroupIds: string[];
+  }): Promise<{ added: number; revoked: number }>;
 }
 
 export interface PluginInvocationContext {

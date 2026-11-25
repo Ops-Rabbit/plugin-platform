@@ -22,6 +22,8 @@ import {
 } from "../contracts/manifest.js";
 import {
   PLUGIN_FRONTEND_CAPABILITIES,
+  WORKSPACE_ACTOR_EMAIL_CAPABILITY,
+  WORKSPACE_SESSION_END_CAPABILITY,
   PLUGIN_FRONTEND_SDK_VERSION,
 } from "../contracts/frontend.js";
 
@@ -180,6 +182,23 @@ export function validateManifest(
         "capabilities.tenantProvisioning requires minimumOpsRabbitVersion 0.12.0 or later.",
       ),
     );
+  if (
+    record(input.frontend) &&
+    Array.isArray(input.frontend.capabilities) &&
+    !hasMinimumVersion(input.minimumOpsRabbitVersion, 0, 13, 0)
+  )
+    for (const capability of [
+      WORKSPACE_ACTOR_EMAIL_CAPABILITY,
+      WORKSPACE_SESSION_END_CAPABILITY,
+    ])
+      if (input.frontend.capabilities.includes(capability))
+        issues.push(
+          issue(
+            "$.minimumOpsRabbitVersion",
+            "unsupported",
+            `${capability} requires minimumOpsRabbitVersion 0.13.0 or later.`,
+          ),
+        );
   validateTenantProvisioningSurface(
     input.capabilities,
     input.frontend,

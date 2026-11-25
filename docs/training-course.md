@@ -1,5 +1,9 @@
 # Building Governed OpsRabbit Plugins
 
+## Signed-in identity and sign-out (SDK 0.40.0)
+
+A workspace can show who is signed in and offer Sign out without building authentication. Request `actor.email.read` to receive the user's own email as `context.actor.email`, and `session.end` to receive `context.session.signOut()`. Set `minimumOpsRabbitVersion` to 0.13.0. Treat absent members as "not available" and hide the control. Call `signOut()` only from a click, after `context.confirmation.confirm`, and keep the button disabled while the host navigates to its login page. Display the email, but never store, log or send it anywhere; never call authentication endpoints or clear cookies yourself. See [workspace signed-in identity and sign-out v1](workspace-session-identity-v1.md).
+
 ## Embedded identity assertion (SDK 0.38.0)
 
 `context.embeddedChat.identityAssertion` is an optional host-signed ES256 compact JWS asserting that an Embedded Chat tool call runs for the verified `externalUserId` of `widgetId` in the tenant. The host mints one per Embedded Chat tool call, valid for 60 seconds, only when an admin lists the plugin in the widget's identity assertion setting; otherwise, and on older hosts, it is absent, and there is no manifest capability or host version gate. When your tool calls its own downstream API, forward the assertion unchanged over HTTPS so the API can verify the end user against the tenant's public JWKS. Never log, persist, return, or display it, and never send it anywhere else. Test both cases with `createTestContext({ embeddedChat: { widgetId, externalUserId, identityAssertion } })`, and walk through the [executable reference](../packages/plugin-sdk/reference/embedded-identity-assertion.mjs), whose downstream half applies the verification checklist in [embedded identity assertion v1](embedded-identity-assertion-v1.md).

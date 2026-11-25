@@ -27,6 +27,15 @@ is verified against the packed public SDK in `scripts/verify-tenant-provisioning
 is a reference, not a new generated starter: the broker requires a host that implements
 [tenant provisioning v1](tenant-provisioning-v1.md).
 
+The workspace signed-in identity and sign-out reference is
+`packages/plugin-sdk/reference/workspace-session-identity.mjs`. It shows a native workspace profile
+panel that displays `actor.displayName` and the optional `actor.email`, and a Sign out control that
+confirms with the user and then calls `context.session.signOut()`, hiding the control when the host
+offers no session service. It is verified against the packed public SDK in
+`scripts/verify-workspace-session-identity-consumer.mjs`. It is a reference, not a new generated
+starter: the capabilities require a host that implements
+[workspace signed-in identity and sign-out v1](workspace-session-identity-v1.md).
+
 The embedded identity assertion reference is
 `packages/plugin-sdk/reference/embedded-identity-assertion.mjs`. Its plugin half forwards
 `context.embeddedChat.identityAssertion` unchanged over HTTPS to the plugin's own API, and calls

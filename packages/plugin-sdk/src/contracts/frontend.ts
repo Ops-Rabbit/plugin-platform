@@ -15,10 +15,38 @@ export const PLUGIN_FRONTEND_CAPABILITIES = [
   "plugin.resources.manage",
   "plugin.investigations.open",
   "tenant.provisioning.manage",
+  "actor.email.read",
+  "session.end",
 ] as const;
 
 export type PluginFrontendCapability =
   (typeof PLUGIN_FRONTEND_CAPABILITIES)[number];
+
+/** Frontend capability that adds the signed-in user's own email to `actor.email`. */
+export const WORKSPACE_ACTOR_EMAIL_CAPABILITY = "actor.email.read" as const;
+/** Frontend capability that adds `session.signOut()` to the workspace context. */
+export const WORKSPACE_SESSION_END_CAPABILITY = "session.end" as const;
+/** First OpsRabbit plugin host version that supplies `actor.email` and `session`. */
+export const WORKSPACE_SESSION_IDENTITY_MINIMUM_OPSRABBIT_VERSION =
+  "0.13.0" as const;
+
+/**
+ * Host-owned sign-out for the current OpsRabbit session. Present only when the workspace
+ * requests `session.end` on a supporting host.
+ */
+export interface OpsRabbitWorkspaceSessionV1 {
+  /**
+   * Ends the signed-in user's current OpsRabbit session and opens the OpsRabbit login page.
+   * The host revokes the session on the server and clears its own client state; the plugin
+   * never calls authentication endpoints, reads cookies or clears storage itself.
+   *
+   * Call it from a user gesture, after the plugin's own confirmation. The host rejects the
+   * call when the workspace is unloaded, when there is no recent user activation, or when the
+   * capability was not declared. On success the page navigates away; a promise that resolves
+   * means the host is already signing out, so keep the control disabled.
+   */
+  signOut(): Promise<void>;
+}
 
 export interface PluginNativeWorkspace {
   kind: "native_workspace";
@@ -47,6 +75,11 @@ export interface OpsRabbitWorkspaceContext {
   actor: {
     id: string;
     displayName: string;
+    /**
+     * The signed-in user's own email. Present only when the workspace requests
+     * `actor.email.read` on a supporting host. Display it; never persist, log or send it.
+     */
+    email?: string;
     role: "viewer" | "operator" | "admin";
     access: Readonly<Record<string, boolean>>;
   };
@@ -72,6 +105,11 @@ export interface OpsRabbitWorkspaceContext {
    * tenant.provisioning.manage on a supporting host. Treat absence as "not available".
    */
   tenantProvisioning?: PluginTenantProvisioningServiceV1;
+  /**
+   * Present only when the workspace requests session.end on a supporting host. Treat absence
+   * as "sign-out is not available here".
+   */
+  session?: OpsRabbitWorkspaceSessionV1;
   /** Resolve a declared asset to an authenticated, lifecycle-bound object URL. */
   assets: { url(path: string): Promise<string> };
   /** Invoke a manifest-declared action owned by the currently mounted plugin. */

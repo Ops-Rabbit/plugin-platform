@@ -110,6 +110,10 @@ SDK 0.31.0 exports `PluginAgentRunsServiceV1`, completion and observation types,
 
 SDK 0.32.0 exports `PluginDocumentCaptureServiceV1`, `PluginCapturedDocumentV1` and request and result validators. See [host responsibilities and reference](docs/plugin-document-capture-v1.md). A binding requests access and grants none; the host fetches under tenant Web Access policy, and plugins never open the connection themselves.
 
+## Workspace signed-in identity and sign-out v1
+
+SDK 0.40.0 adds two opt-in native workspace capabilities: `actor.email.read` supplies the signed-in user's own email as `context.actor.email`, and `session.end` supplies `context.session.signOut()`, which asks the host to revoke the OpsRabbit session and open its login page. Both require `minimumOpsRabbitVersion` 0.13.0. See [workspace signed-in identity and sign-out v1](docs/workspace-session-identity-v1.md) and the executable [reference](packages/plugin-sdk/reference/workspace-session-identity.mjs).
+
 ## Embedded identity assertion v1
 
 SDK 0.38.0 adds the optional `context.embeddedChat.identityAssertion`: a host-signed ES256 compact JWS, minted per Embedded Chat tool call and valid for 60 seconds, present only when the widget's admin-controlled setting lists the plugin. A plugin may forward it unchanged over HTTPS to its own downstream API, which verifies it against the tenant's public JWKS; never log, persist, return or display it. There is no manifest capability or host version gate, and older hosts omit the field. See [the contract](docs/embedded-identity-assertion-v1.md) and the executable [reference](packages/plugin-sdk/reference/embedded-identity-assertion.mjs).

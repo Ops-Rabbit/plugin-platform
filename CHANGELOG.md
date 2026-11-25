@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.40.0 - Unreleased
+
+- Add workspace signed-in identity and sign-out v1: two opt-in native workspace frontend capabilities. `actor.email.read` adds the signed-in user's own email as `OpsRabbitWorkspaceContext.actor.email`; `session.end` adds `OpsRabbitWorkspaceContext.session.signOut()` (`OpsRabbitWorkspaceSessionV1`), which asks the host to revoke the OpsRabbit session, clear its client state and open the login page. The host requires recent user activation and a mounted workspace; plugins never call authentication endpoints or clear cookies.
+- Runtime validation and the published manifest JSON Schema accept both capabilities on standalone and Forms workspaces and reject them when `minimumOpsRabbitVersion` is missing, a pre-release of 0.13.0, or lower than 0.13.0. Export `WORKSPACE_ACTOR_EMAIL_CAPABILITY`, `WORKSPACE_SESSION_END_CAPABILITY` and `WORKSPACE_SESSION_IDENTITY_MINIMUM_OPSRABBIT_VERSION`.
+- `PluginFrontendCapability` gains `actor.email.read` and `session.end`. Code that exhaustively switches over, or keys a complete record by, that union needs the new members; existing manifests validate as before. `PLUGIN_FRONTEND_SDK_VERSION` stays `"1"`.
+- Add [workspace signed-in identity and sign-out v1](docs/workspace-session-identity-v1.md), an executable reference and a packed clean-consumer verification with strict TypeScript positive and negative consumers. Align SDK and CLI at 0.40.0. Host implementation and publication remain coordinated release dependencies.
+
 ## 0.38.0 - Unreleased
 
 - Add embedded identity assertion v1: the optional `identityAssertion` string on `PluginInvocationContext.embeddedChat`. It is a host-signed ES256 compact JWS saying a tool call runs for the verified external user of a widget in a tenant. The host mints one per Embedded Chat tool call, valid for 60 seconds, only when the widget's admin-controlled setting lists the plugin. A plugin may forward it unchanged over HTTPS to its own downstream API, which verifies it against the tenant's public JWKS; it must never be logged, persisted, returned in tool output, or shown to the model or user.

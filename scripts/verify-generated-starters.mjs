@@ -63,6 +63,14 @@ execFileSync(
     stdio: "inherit",
   },
 );
+execFileSync(
+  "node",
+  ["scripts/verify-workspace-session-identity-consumer.mjs"],
+  {
+    cwd: root,
+    stdio: "inherit",
+  },
+);
 
 try {
   const sdk = pack("packages/plugin-sdk");

@@ -51,6 +51,10 @@ untrusted and evidence text must map exactly to host-supplied source offsets.
   by OpsRabbit that the plugin can pass to its own backend, so that backend can
   confirm which end user the call is for. It is off by default and never shown
   to users. See [embedded identity assertion v1](embedded-identity-assertion-v1.md).
+- **Signed-in profile and sign-out**: a plugin workspace can show your name and,
+  if the plugin asks for it, your email, and offer a Sign out button. Signing out
+  there ends your OpsRabbit session and returns you to the OpsRabbit login page.
+  See [workspace signed-in identity and sign-out v1](workspace-session-identity-v1.md).
 - **Insights**: dashboards and saved queries based on plugin-owned Forms data.
 - **Read routes and widgets**: role-gated JSON data routes and host-rendered
   widgets for supported plugin surfaces.
